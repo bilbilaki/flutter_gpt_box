@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
     final locale = Stores.setting.locale.get();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'GPT Box',
+      title: 'GPT Box fork',
       locale: locale.toLocale,
       localizationsDelegates: const [
         ...AppLocalizations.localizationsDelegates,

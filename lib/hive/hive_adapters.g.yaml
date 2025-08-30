@@ -5,7 +5,7 @@ nextTypeId: 11
 types:
   ChatHistoryItem:
     typeId: 0
-    nextIndex: 7
+    nextIndex: 11
     fields:
       role:
         index: 0
@@ -21,9 +21,17 @@ types:
         index: 5
       reasoning:
         index: 6
+      inputTokens:
+        index: 7
+      outputTokens:
+        index: 8
+      totalTokens:
+        index: 9
+      nanobenana:
+        index: 10
   ChatContentType:
     typeId: 1
-    nextIndex: 4
+    nextIndex: 5
     fields:
       text:
         index: 0
@@ -33,6 +41,8 @@ types:
         index: 2
       file:
         index: 3
+      nanobenana:
+        index: 4
   ChatContent:
     typeId: 2
     nextIndex: 3
@@ -69,7 +79,7 @@ types:
         index: 6
   ChatConfig:
     typeId: 6
-    nextIndex: 17
+    nextIndex: 20
     fields:
       prompt:
         index: 0
@@ -91,14 +101,28 @@ types:
         index: 15
       imgModel:
         index: 16
+      file:
+        index: 17
+      image:
+        index: 18
+      audio:
+        index: 19
   ChatType:
     typeId: 7
-    nextIndex: 2
+    nextIndex: 6
     fields:
       text:
         index: 0
       img:
         index: 1
+      audio:
+        index: 2
+      voice:
+        index: 3
+      voicejustin:
+        index: 4
+      autoenglishtrans:
+        index: 5
   ChatSettings:
     typeId: 8
     nextIndex: 3

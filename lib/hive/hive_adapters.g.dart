@@ -24,13 +24,17 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
       toolCallId: fields[4] as String?,
       toolCalls: (fields[5] as List?)?.cast<ChatCompletionMessageToolCall>(),
       reasoning: fields[6] as String?,
+      inputTokens: (fields[7] as num?)?.toInt(),
+      outputTokens: (fields[8] as num?)?.toInt(),
+      totalTokens: (fields[9] as num?)?.toInt(),
+      nanobenana: fields[10] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatHistoryItem obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.role)
       ..writeByte(1)
@@ -44,7 +48,15 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
       ..writeByte(5)
       ..write(obj.toolCalls)
       ..writeByte(6)
-      ..write(obj.reasoning);
+      ..write(obj.reasoning)
+      ..writeByte(7)
+      ..write(obj.inputTokens)
+      ..writeByte(8)
+      ..write(obj.outputTokens)
+      ..writeByte(9)
+      ..write(obj.totalTokens)
+      ..writeByte(10)
+      ..write(obj.nanobenana);
   }
 
   @override
@@ -73,6 +85,8 @@ class ChatContentTypeAdapter extends TypeAdapter<ChatContentType> {
         return ChatContentType.image;
       case 3:
         return ChatContentType.file;
+      case 4:
+        return ChatContentType.nanobenana;
       default:
         return ChatContentType.text;
     }
@@ -89,6 +103,8 @@ class ChatContentTypeAdapter extends TypeAdapter<ChatContentType> {
         writer.writeByte(2);
       case ChatContentType.file:
         writer.writeByte(3);
+      case ChatContentType.nanobenana:
+        writer.writeByte(4);
     }
   }
 
@@ -254,13 +270,16 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       genTitlePrompt: fields[14] as String?,
       genTitleModel: fields[15] as String?,
       imgModel: fields[16] as String?,
+      file: fields[17] as String?,
+      image: fields[18] as String?,
+      audio: fields[19] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.prompt)
       ..writeByte(1)
@@ -280,7 +299,13 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       ..writeByte(15)
       ..write(obj.genTitleModel)
       ..writeByte(16)
-      ..write(obj.imgModel);
+      ..write(obj.imgModel)
+      ..writeByte(17)
+      ..write(obj.file)
+      ..writeByte(18)
+      ..write(obj.image)
+      ..writeByte(19)
+      ..write(obj.audio);
   }
 
   @override
@@ -305,6 +330,14 @@ class ChatTypeAdapter extends TypeAdapter<ChatType> {
         return ChatType.text;
       case 1:
         return ChatType.img;
+      case 2:
+        return ChatType.audio;
+      case 3:
+        return ChatType.voice;
+      case 4:
+        return ChatType.voicejustin;
+      case 5:
+        return ChatType.autoenglishtrans;
       default:
         return ChatType.text;
     }
@@ -317,6 +350,14 @@ class ChatTypeAdapter extends TypeAdapter<ChatType> {
         writer.writeByte(0);
       case ChatType.img:
         writer.writeByte(1);
+      case ChatType.audio:
+        writer.writeByte(2);
+      case ChatType.voice:
+        writer.writeByte(3);
+      case ChatType.voicejustin:
+        writer.writeByte(4);
+      case ChatType.autoenglishtrans:
+        writer.writeByte(5);
     }
   }
 

@@ -13,7 +13,7 @@ abstract final class MigrationFns {
   /// It requires [context] to show a dialog to ask for user confirmation.
   static Future<void> appendV1ToUrl(int lastVer, int now,
       {BuildContext? context}) async {
-    if (lastVer >= 314) return;
+    if (lastVer >= 0) return;
 
     var userConfirm = false;
     final cfgs = Stores.config.fetchAll();
@@ -21,8 +21,8 @@ abstract final class MigrationFns {
       final cfg = cfgs[key];
       if (cfg == null) continue;
       // Skip github models, it has no '/v1' suffix.
-      if (cfg.url == Urls.githubModels) continue;
       if (cfg.url.endsWith('/v1')) continue;
+      if (cfg.url == Urls.githubModels) continue;
 
       if (!userConfirm) {
         userConfirm =

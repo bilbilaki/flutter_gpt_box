@@ -56,13 +56,9 @@ $userCotentLocator''';
     if (models == null || models.isEmpty) return null;
 
     const preferedModels = [
-      'deepseek-chat',
-      'deepseek-v3',
-      'gpt-4o-mini',
-      'claude-3.5-sonnet',
-      'claude-3-5-sonnet',
-      'gemini-2.0-flash',
-      'gpt-3.5-turbo',
+      'gemini-2.5-flash-lite',
+      'gpt-5-nano',
+      'gpt-4.1-nano',
     ];
 
     for (final pModel in preferedModels) {

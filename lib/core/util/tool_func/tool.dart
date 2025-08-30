@@ -34,7 +34,7 @@ abstract final class OpenAIFuncCalls {
 
   static Future<Set<ChatCompletionTool>> get tools async {
     if (!Stores.mcp.enabled.get()) return {};
-    
+
     try {
       // All tools are now handled through MCP protocol
       return McpTools.tools;
@@ -52,18 +52,20 @@ abstract final class OpenAIFuncCalls {
     switch (resp.type) {
       case ChatCompletionMessageToolCallType.function:
         final targetName = resp.function.name;
-        final parts = targetName.split('::');
-        
-        // For internal tools, we still need to ask for confirmation
-        if (parts.length == 2 && parts[0] == InternalMcpServer.serverName) {
-          final toolName = parts[1];
-          final func = internalTools.firstWhereOrNull((e) => e.name == toolName);
+
+        // Resolve function id mapping to server/tool name
+        final mapping = McpTools._functionNameMap[targetName];
+        if (mapping != null && mapping.key == InternalMcpServer.serverName) {
+          final toolName = mapping.value;
+          final func = internalTools.firstWhereOrNull(
+            (e) => e.name == toolName,
+          );
           if (func != null) {
             final args = await _parseMap(resp.function.arguments);
             if (!await askConfirm(func, func.help(resp, args))) return null;
           }
         }
-        
+
         // All tools are now handled through MCP protocol
         return await McpTools.handle(resp, onToolLog);
     }

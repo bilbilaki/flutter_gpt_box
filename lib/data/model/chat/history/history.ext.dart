@@ -64,7 +64,8 @@ extension ChatHistoryItemX on ChatHistoryItem {
               ChatContentType.text => e.raw,
               ChatContentType.image => '![$id](${e.raw})',
               ChatContentType.audio => '[$id](${e.raw})',
-              ChatContentType.file => '[$id](file://${e.raw})',
+              ChatContentType.file => '[$id](${e.raw})',
+          ChatContentType.nanobenana => '![$id](${e.raw})',
             })
         .join('\n');
   }

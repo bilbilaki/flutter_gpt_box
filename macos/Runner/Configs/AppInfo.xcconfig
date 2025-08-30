@@ -8,7 +8,7 @@
 PRODUCT_NAME = GPT Box
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = tech.lolli.gpt
+PRODUCT_BUNDLE_IDENTIFIER = tech.lolli_unofficial.gpt
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2023 tech.lolli. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2023 tech.lolli_unofficial. All rights reserved.

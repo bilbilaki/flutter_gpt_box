@@ -32,7 +32,7 @@ final class McpStore extends HiveStore {
   /// Models regexp list, split by ','
   late final mcpRegExp = propertyDefault(
     'toolsRegExp',
-    'gpt-4o|gpt-4-turbo|gpt-3.5-turbo|deepseek',
+    'gpt|gemini|grok|llama|gemma|mistral|codestral|deepseek',
   );
 
   late final mcpServers = propertyDefault('mcpServers', <String>[]);

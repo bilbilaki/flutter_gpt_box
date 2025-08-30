@@ -50,8 +50,8 @@
 平台 | 下载
 --- | ---
 iOS & macOS | [AppStore](https://apps.apple.com/app/id6476033062)
-Android | [Github](https://github.com/lollipopkit/flutter_gpt_box/releases) / [CDN](https://cdn.lpkt.cn/gptbox/pkg/?order=desc) / [OpenAPK](https://www.openapk.net/gptbox/flutter.gpt.box/)
-Linux & Windows | [Github](https://github.com/lollipopkit/flutter_gpt_box/releases) / [CDN](https://cdn.lpkt.cn/gptbox/pkg/?order=desc)
+Android | [Github](https://github.com/lollipopkit/flutter_gpt_inosuke_editation_box/releases) / [CDN](https://cdn.lpkt.cn/gptbox/pkg/?order=desc) / [OpenAPK](https://www.openapk.net/gptbox/flutter.gpt.box/)
+Linux & Windows | [Github](https://github.com/lollipopkit/flutter_gpt_inosuke_editation_box/releases) / [CDN](https://cdn.lpkt.cn/gptbox/pkg/?order=desc)
 
 由于未完成备案，请移步 **AppStore 其他区** 下载。  
 请从你 **信任的** 来源下载。
@@ -70,8 +70,8 @@ Linux & Windows | [Github](https://github.com/lollipopkit/flutter_gpt_box/releas
 3. 欢迎所有有效、正面的反馈，主观（比如你觉得其他UI更好看）的反馈不一定会接受
 
 确认了解上述内容后：
-- 如果你有**任何问题或者功能请求**，请在 [讨论](https://github.com/lollipopkit/flutter_gpt_box/discussions/new/choose) 中交流。
-- 如果 app 有**任何 bug**，请在 [问题](https://github.com/lollipopkit/flutter_gpt_box/issues/new) 中反馈。
+- 如果你有**任何问题或者功能请求**，请在 [讨论](https://github.com/lollipopkit/flutter_gpt_inosuke_editation_box/discussions/new/choose) 中交流。
+- 如果 app 有**任何 bug**，请在 [问题](https://github.com/lollipopkit/flutter_gpt_inosuke_editation_box/issues/new) 中反馈。
 
 
 ## 🧱 贡献

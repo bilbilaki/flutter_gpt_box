@@ -83,9 +83,7 @@ void _onTapDelChatItem(
   final idx = chatItems.indexOf(chatItem) + 1;
   final result = await context.showRoundDialog<bool>(
     title: l10n.attention,
-    child: Text(
-      l10n.delFmt('${chatItem.role.localized}#$idx', l10n.chat),
-    ),
+    child: Text(l10n.delFmt('${chatItem.role.localized}#$idx', l10n.chat)),
     actions: Btnx.okReds,
   );
   if (result != true) return;
@@ -213,26 +211,33 @@ void _onShareChat(BuildContext context) async {
 
   final result = curChat.gen4Share(context);
   var compressImg = false;
-  final (pic, err) = await context.showLoadingDialog(fn: () async {
-    final raw = await _screenshotCtrl.captureFromLongWidget(
-      result,
-      context: context,
-      constraints: const BoxConstraints(maxWidth: 577),
-      pixelRatio: MediaQuery.devicePixelRatioOf(context),
-      delay: Durations.short4,
-    );
-    compressImg = Stores.setting.compressImg.get();
-    if (compressImg) {
-      return await ImageUtil.compress(raw, mime: 'image/png');
-    }
-    return raw;
-  });
+  final (pic, err) = await context.showLoadingDialog(
+    fn: () async {
+      final raw = await _screenshotCtrl.captureFromLongWidget(
+        result,
+        context: context,
+        constraints: const BoxConstraints(maxWidth: 577),
+        pixelRatio: MediaQuery.devicePixelRatioOf(context),
+        delay: Durations.short4,
+      );
+      compressImg = Stores.setting.compressImg.get();
+      if (compressImg) {
+        return await ImageUtil.compress(raw, mime: 'image/png');
+      }
+      return raw;
+    },
+  );
   if (err != null || pic == null) return;
 
   final title = _curChat?.name ?? l10n.untitled;
   final ext = compressImg ? 'jpg' : 'png';
   final mime = compressImg ? 'image/jpeg' : 'image/png';
-  await Pfs.shareBytes(bytes: pic, title: title, fileName: '$title.$ext', mime: mime);
+  await Pfs.shareBytes(
+    bytes: pic,
+    title: title,
+    fileName: '$title.$ext',
+    mime: mime,
+  );
 }
 
 Future<void> _onTapFilePick(BuildContext context) async {
@@ -252,6 +257,9 @@ Future<void> _onTapFilePick(BuildContext context) async {
       'png',
       'jpg',
       'jpeg',
+      'mp3',
+      'wav',
+      'flac',
     ],
   );
   final files = result?.files;
@@ -373,8 +381,8 @@ void _locateHistoryListener() {
       final height = _historyScrollCtrl.position.viewportDimension;
       final visible =
           offset - _historyLocateTollerance <= idx * _historyItemHeight &&
-              offset + height + _historyLocateTollerance >=
-                  (idx + 1) * _historyItemHeight;
+          offset + height + _historyLocateTollerance >=
+              (idx + 1) * _historyItemHeight;
       _locateHistoryBtn.value = !visible;
     },
     id: 'calcChatLocateBtn',
@@ -434,14 +442,18 @@ void _onTapEditMsg(BuildContext context, ChatHistoryItem chatItem) async {
 
 void _autoScroll(String chatId) {
   if (Stores.setting.scrollBottom.get()) {
-    Fns.throttle(() {
-      // Only scroll to bottom when current chat is the working chat
-      final isCurrentChat = chatId == _curChatId.value;
-      if (!isCurrentChat) return;
-      // If users stop the scroll, then disable auto scroll
-      if (_userStoppedScroll) return;
-      _scrollBottom();
-    }, id: 'autoScroll', duration: 100);
+    Fns.throttle(
+      () {
+        // Only scroll to bottom when current chat is the working chat
+        final isCurrentChat = chatId == _curChatId.value;
+        if (!isCurrentChat) return;
+        // If users stop the scroll, then disable auto scroll
+        if (_userStoppedScroll) return;
+        _scrollBottom();
+      },
+      id: 'autoScroll',
+      duration: 100,
+    );
   }
 }
 
@@ -505,7 +517,7 @@ void _onSwitchModel(BuildContext context, {bool notifyKey = false}) async {
 //       // If file is image
 //       if (mime.startsWith('image/')) {
 //         // explainImage / editImage
-//         if (_inputCtrl.text.isNotEmpty) {
+//         if (inputCtrl.text.isNotEmpty) {
 //           return null;
 //         }
 //         return ChatType.varifyImage;
@@ -520,9 +532,9 @@ void _onSwitchModel(BuildContext context, {bool notifyKey = false}) async {
 //   return null;
 // }
 
-// /// Send [_inputCtrl.text] to OpenAI and get the chat type by the AI response.
+// /// Send [inputCtrl.text] to OpenAI and get the chat type by the AI response.
 // Future<ChatType?> _getChatTypeByAI() async {
-//   if (_inputCtrl.text.isEmpty) return null;
+//   if (inputCtrl.text.isEmpty) return null;
 
 //   final config = OpenAICfg.current;
 //   final result = await OpenAI.instance.chat.create(
@@ -537,7 +549,7 @@ void _onSwitchModel(BuildContext context, {bool notifyKey = false}) async {
 // ''',
 //       ).toOpenAI,
 //       ChatHistoryItem.single(
-//         raw: _inputCtrl.text,
+//         raw: inputCtrl.text,
 //         role: ChatRole.user,
 //       ).toOpenAI,
 //     ],

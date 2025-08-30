@@ -66,7 +66,14 @@ final class ChatHistoryItem {
   final List<ChatCompletionMessageToolCall>? toolCalls;
   @JsonKey(includeIfNull: false)
   String? reasoning;
-
+  @JsonKey(includeIfNull: false)
+  final int? inputTokens; // New parameter for input token count
+  @JsonKey(includeIfNull: false)
+  final int? outputTokens; // New parameter for output token count
+  @JsonKey(includeIfNull: false)
+  final int? totalTokens; // New parameter for total token count
+  @JsonKey(includeIfNull: false)
+  final String? nanobenana;
   ChatHistoryItem({
     required this.role,
     required this.content,
@@ -75,6 +82,10 @@ final class ChatHistoryItem {
     this.toolCallId,
     this.toolCalls,
     this.reasoning,
+    this.inputTokens, // Initialize new parameter
+    this.outputTokens, // Initialize new parameter
+    this.totalTokens,
+    this.nanobenana, // Initialize new parameter
   });
 
   ChatHistoryItem.gen({
@@ -83,6 +94,10 @@ final class ChatHistoryItem {
     this.toolCallId,
     this.toolCalls,
     this.reasoning,
+    this.inputTokens, // Initialize new parameter
+    this.outputTokens, // Initialize new parameter
+    this.totalTokens, // Initialize new parameter
+    this.nanobenana,
   }) : createdAt = DateTime.now(),
        id = shortid.generate();
 
@@ -94,6 +109,10 @@ final class ChatHistoryItem {
     this.toolCallId,
     this.toolCalls,
     this.reasoning,
+    this.inputTokens, // Initialize new parameter
+    this.outputTokens, // Initialize new parameter
+    this.totalTokens,
+    this.nanobenana // Initialize new parameter
   }) : content = [ChatContent.noid(type: type, raw: raw)],
        createdAt = createdAt ?? DateTime.now(),
        id = shortid.generate();
@@ -115,12 +134,14 @@ enum ChatContentType {
   text,
   audio,
   image,
-  file;
+  file,
+  nanobenana;
 
   bool get isText => this == text;
   bool get isAudio => this == audio;
   bool get isImage => this == image;
   bool get isFile => this == file;
+  bool get isNanoBenana => this == nanobenana;
 }
 
 @JsonSerializable()
@@ -146,6 +167,9 @@ final class ChatContent with EquatableMixin {
       id = shortid.generate();
   ChatContent.file(this.raw)
     : type = ChatContentType.file,
+      id = shortid.generate();
+  ChatContent.nanobenana(this.raw)
+    : type = ChatContentType.nanobenana,
       id = shortid.generate();
 
   factory ChatContent.fromJson(Map<String, dynamic> json) =>

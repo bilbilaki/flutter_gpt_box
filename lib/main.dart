@@ -12,8 +12,11 @@ import 'package:gpt_box/data/res/build_data.dart';
 import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/hive/hive_registrar.g.dart';
+import 'package:gpt_box/view/translator/configuration/translator_config.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
+
+late TranslatorConfig translatorConfig;
 
 Future<void> main() async {
   _runInZone(() async {
@@ -52,9 +55,21 @@ Future<void> _initDb() async {
   // Note that DateTimeAdapter will have no effect as DateTimeWithTimezoneAdapter takes precedence. 
   // If you want to override the existing adapter, the typeIds must match.
   // Hive.registerAdapter(DateTimeAdapter()); // 4
+  Hive.registerAdapter(TranslatorConfigAdapter());//25
+
   Hive.registerAdapter(ChatCompletionMessageToolCallAdapter()); // 9
   Hive.registerAdapter(ChatCompletionMessageFunctionCallAdapter()); // 10
-
+  final configBox = await Hive.openBox<TranslatorConfig>('app_config');
+if (configBox.isEmpty) {
+    // Box is empty, this is the first run!
+    print("First run: Creating default configuration...");
+    translatorConfig = TranslatorConfig.withDefaults();
+    configBox.put('config', translatorConfig); // Save the new default config
+  } else {
+    // Box has data, load the existing configuration
+    print("Loading existing configuration...");
+    translatorConfig = configBox.get('config')!; // Load it from the box
+  }
   await PrefStore.shared.init();
   await Stores.init();
 }

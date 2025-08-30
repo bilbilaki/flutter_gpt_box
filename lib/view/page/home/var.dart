@@ -1,6 +1,6 @@
 part of 'home.dart';
 
-final _inputCtrl = TextEditingController();
+final inputCtrl = TextEditingController();
 final _chatScrollCtrl = ScrollController()
   ..addListener(() {
     Fns.throttle(_chatFabRN.notify, id: 'chat_fab_rn', duration: 30);
@@ -66,3 +66,60 @@ var _noChatDeleteConfirmTS = 0;
 final _autoHideCtrl = AutoHideController();
 
 var _userStoppedScroll = false;
+
+class _StreamingPlayer {
+  final AudioPlayer _player = AudioPlayer();
+  bool _playing = false;
+  bool _stopped = false;
+  File? _currentFile;
+  int _segmentIndex = 0;
+  final Directory _tmpDir;
+
+  _StreamingPlayer._(this._tmpDir);
+
+  static Future<_StreamingPlayer> create() async {
+    final d = await Directory.systemTemp.createTemp('tts_stream_');
+    return _StreamingPlayer._(d);
+  }
+
+  /// Append bytes for a segment and play sequentially.
+  /// Caller should ensure bytes form a valid WAV (or PCM turned into a WAV header prior).
+  Future<void> appendAndPlay(Uint8List bytes, {bool isLast = false}) async {
+    if (_stopped) return;
+    final path = p.join(_tmpDir.path, 'seg_${_segmentIndex++}.wav');
+    final f = File(path);
+    await f.writeAsBytes(bytes, flush: true);
+    // If nothing playing, play immediately, otherwise queue by waiting
+    if (!_playing) {
+      _playFileAndWait(f);
+    }
+  }
+
+  Future<void> _playFileAndWait(File f) async {
+    _playing = true;
+    _currentFile = f;
+    try {
+      await _player.play(DeviceFileSource(f.path));
+      // wait until completion or stop called
+      // audioplayers emits onPlayerComplete if needed - but simple await above usually returns immediately
+      // Best: listen to player state
+      final completer = Completer<void>();
+      void handleComplete(_) {
+        completer.complete();
+      }
+
+      _player.onPlayerComplete.listen(handleComplete);
+      await completer.future.timeout(const Duration(seconds: 30), onTimeout: () {});
+      // cleanup
+      try { await f.delete(); } catch (_) {}
+    } catch (_) {}
+    _playing = false;
+  }
+
+  Future<void> stop() async {
+    _stopped = true;
+    try { await _player.stop(); } catch (_) {}
+    // cleanup tmp dir
+    try { if (_tmpDir.existsSync()) _tmpDir.deleteSync(recursive: true); } catch (_) {}
+  }
+}

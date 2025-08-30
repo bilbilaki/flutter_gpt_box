@@ -24,6 +24,10 @@ abstract class ChatConfig with _$ChatConfig {
     String? genTitlePrompt,
     String? genTitleModel,
     String? imgModel,
+    // Newly added nullable fields
+    String? file,
+    String? image,
+    String? audio,
   }) = _ChatConfig;
 
   factory ChatConfig.fromJson(Map<String, dynamic> json) =>
@@ -50,10 +54,10 @@ extension ChatConfigX on ChatConfig {
   );
 
   String get displayName => switch (id) {
-    // Corresponding as `id == defaultId && name.isEmpty`
-    defaultId when name.isEmpty => l10n.defaulT,
-    _ => name,
-  };
+        // Corresponding as `id == defaultId && name.isEmpty`
+        defaultId when name.isEmpty => l10n.defaulT,
+        _ => name,
+      };
 
   void save() => Stores.config.put(this);
 
@@ -86,6 +90,12 @@ extension ChatConfigX on ChatConfig {
       prompt: params_['prompt'] ?? '',
       name: params_['name'] ?? '',
       genTitlePrompt: params_['genTitlePrompt'],
+      genTitleModel: params_['genTitleModel'],
+      imgModel: params_['imgModel'],
+      // Parse newly added nullable fields
+      file: params_['file'],
+      image: params_['image'],
+      audio: params_['audio'],
       historyLen: params_['historyLen'] ?? defaultHistoryLen,
     );
   }

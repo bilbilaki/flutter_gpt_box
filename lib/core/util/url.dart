@@ -1,10 +1,10 @@
 abstract final class AppLink {
   /// lpkt.cn
-  static const scheme = 'lpkt.cn';
-  static const host = 'gptbox';
+  static const scheme = 'https';
+  static const host = 'inosuke.page.link';
 
   /// lpkt.cn://gptbox
-  static const prefix = '$scheme://$host';
+  static const prefix = '$scheme://$host/esil';
 
   static const newChatPath = '/new';
   static const openChatPath = '/open';

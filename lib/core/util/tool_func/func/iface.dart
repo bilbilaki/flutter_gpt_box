@@ -4,10 +4,7 @@ abstract final class ToolFunc {
   final String name;
   final _Map parametersSchema;
 
-  const ToolFunc({
-    required this.name,
-    required this.parametersSchema,
-  });
+  const ToolFunc({required this.name, required this.parametersSchema});
 
   String get description;
 
@@ -31,10 +28,19 @@ ${json.encode(args)}
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log);
 
   ChatCompletionTool get into => ChatCompletionTool(
-      type: ChatCompletionToolType.function,
-      function: FunctionObject(
-        name: name,
-        description: description,
-        parameters: parametersSchema,
-      ));
+    type: ChatCompletionToolType.function,
+    function: FunctionObject(
+      name: name,
+      description: description,
+      parameters: (() {
+        final m = <String, dynamic>{'type': 'object', 'properties': {}};
+        try {
+          m['properties'] = Map<String, dynamic>.from(parametersSchema as Map);
+        } catch (_) {
+          // ignore and keep defaults
+        }
+        return m;
+      })(),
+    ),
+  );
 }

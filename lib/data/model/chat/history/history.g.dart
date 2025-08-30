@@ -21,8 +21,8 @@ Map<String, dynamic> _$ChatHistoryToJson(ChatHistory instance) =>
     <String, dynamic>{
       'id': instance.id,
       'items': instance.items,
-      if (instance.name case final value?) 'name': value,
-      if (instance.settings case final value?) 'settings': value,
+      'name': ?instance.name,
+      'settings': ?instance.settings,
     };
 
 ChatHistoryItem _$ChatHistoryItemFromJson(Map<String, dynamic> json) =>
@@ -42,6 +42,10 @@ ChatHistoryItem _$ChatHistoryItemFromJson(Map<String, dynamic> json) =>
           )
           .toList(),
       reasoning: json['reasoning'] as String?,
+      inputTokens: (json['inputTokens'] as num?)?.toInt(),
+      outputTokens: (json['outputTokens'] as num?)?.toInt(),
+      totalTokens: (json['totalTokens'] as num?)?.toInt(),
+      nanobenana: json['nanobenana'] as String?,
     );
 
 Map<String, dynamic> _$ChatHistoryItemToJson(ChatHistoryItem instance) =>
@@ -50,9 +54,13 @@ Map<String, dynamic> _$ChatHistoryItemToJson(ChatHistoryItem instance) =>
       'content': instance.content,
       'createdAt': instance.createdAt.toIso8601String(),
       'id': instance.id,
-      if (instance.toolCallId case final value?) 'toolCallId': value,
-      if (instance.toolCalls case final value?) 'toolCalls': value,
-      if (instance.reasoning case final value?) 'reasoning': value,
+      'toolCallId': ?instance.toolCallId,
+      'toolCalls': ?instance.toolCalls,
+      'reasoning': ?instance.reasoning,
+      'inputTokens': ?instance.inputTokens,
+      'outputTokens': ?instance.outputTokens,
+      'totalTokens': ?instance.totalTokens,
+      'nanobenana': ?instance.nanobenana,
     };
 
 const _$ChatRoleEnumMap = {
@@ -80,6 +88,7 @@ const _$ChatContentTypeEnumMap = {
   ChatContentType.audio: 'audio',
   ChatContentType.image: 'image',
   ChatContentType.file: 'file',
+  ChatContentType.nanobenana: 'nanobenana',
 };
 
 ChatSettings _$ChatSettingsFromJson(Map<String, dynamic> json) => ChatSettings(

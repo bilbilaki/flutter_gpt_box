@@ -18,6 +18,9 @@ _ChatConfig _$ChatConfigFromJson(Map<String, dynamic> json) => _ChatConfig(
   genTitlePrompt: json['genTitlePrompt'] as String?,
   genTitleModel: json['genTitleModel'] as String?,
   imgModel: json['imgModel'] as String?,
+  file: json['file'] as String?,
+  image: json['image'] as String?,
+  audio: json['audio'] as String?,
 );
 
 Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
@@ -32,4 +35,7 @@ Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
       'genTitlePrompt': instance.genTitlePrompt,
       'genTitleModel': instance.genTitleModel,
       'imgModel': instance.imgModel,
+      'file': instance.file,
+      'image': instance.image,
+      'audio': instance.audio,
     };
