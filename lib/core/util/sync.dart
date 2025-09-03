@@ -5,7 +5,7 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:gpt_box/data/model/app/backup2.dart';
 import 'package:gpt_box/data/model/app/utils.dart';
 
-final icloud = ICloud(containerId: 'iCloud.tech.lolli_unofficial.gptbox');
+final icloud = ICloud(containerId: '');
 
 final class BakSync extends SyncIface {
   const BakSync._() : super();

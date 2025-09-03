@@ -8,7 +8,7 @@ final class _IntroPage extends StatelessWidget {
   const _IntroPage(this.pages);
 
   static const _builders = {
-    237: _buildAppSettings,
+    1: _buildAppSettings,
   };
 
   @override

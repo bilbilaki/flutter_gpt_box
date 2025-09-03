@@ -31,6 +31,12 @@ class InternalMcpServer {
       case 'httpReq':
         onToolLog('[$serverName] Executing HTTP request tool...');
         return await TfHttpReq.instance.run(mockCall, arguments, onToolLog);
+        case 'terminal':
+        onToolLog('[$serverName] Executing Terminal request tool...');
+        return await TfTerminal.instance.run(mockCall, arguments, onToolLog);
+           case 'urlluancher':
+        onToolLog('[$serverName] Opening url for User...');
+        return await TfUrlLuancher.instance.run(mockCall, arguments, onToolLog);
       default:
         onToolLog('[$serverName] Unknown tool: $toolName');
         return null;

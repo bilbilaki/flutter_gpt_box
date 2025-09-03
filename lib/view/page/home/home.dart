@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:app_links/app_links.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
@@ -32,8 +31,6 @@ import 'package:gpt_box/view/page/home/settings_drawer.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
 import 'package:gpt_box/view/translator/interfaces/chunker_translator.dart';
 import 'package:gpt_box/view/widget/canvas_free.dart';
-import 'package:gpt_box/view/widget/chunker_interface.dart';
-import 'package:gpt_box/view/widget/image_base64_viewer.dart';
 import 'package:gpt_box/view/widget/voice_assistant.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:typed_data';

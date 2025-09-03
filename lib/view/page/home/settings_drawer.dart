@@ -1,5 +1,7 @@
+import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/data/store/setting.dart';
 
 class AiSettingsDrawerHive extends StatefulWidget {
@@ -17,10 +19,15 @@ class _AiSettingsDrawerHiveState extends State<AiSettingsDrawerHive> {
     final openAIVoiceOptions = const [
       'alloy', 'ash', 'echo', 'ballad', 'sage', 'coral', 'shimmer',
     ];
-
+UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
+    final themeMode = switch (Stores.setting.themeMode.get()) {
+      1 => ThemeMode.light,
+      2 => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
     return Drawer(
       width: 320,
-      backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      backgroundColor: UIs.colorSeed,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(left: Radius.circular(0)),
       ),
@@ -335,7 +342,7 @@ class _SliderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = (double v) => Padding(
+    Padding child(double v) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,10 +425,17 @@ class _Expansion extends StatelessWidget {
 
   const _Expansion({required this.title, required this.children});
 
+
   @override
   Widget build(BuildContext context) {
+    UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
+    final themeMode = switch (Stores.setting.themeMode.get()) {
+      1 => ThemeMode.light,
+      2 => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
     return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      data: Theme.of(context).copyWith(dividerColor: UIs.colorSeed),
       child: ExpansionTile(
         title: Text(title, style: const TextStyle(color: Colors.white)),
         children: children,

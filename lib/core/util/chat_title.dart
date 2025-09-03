@@ -15,9 +15,7 @@ abstract final class ChatTitleUtil {
 Generate a title for the user content behind `$userCotentLocator` with requirements: 
 0. you are generating a title, not a content.
 1. the language of the generated title should be the same as the user content
-2. title length <= 10 characters if Chinese, Japanese, Korean, etc.
-3. title lengt <= $_maxLen letters if English, German, French, etc.
-4. the title should be meaningful, concise, no additional punctuation and only title itself.
+2. title should be short , 2 or 3 word.
 $userCotentLocator''';
 
   static final _punctionsRm = RegExp('[“”]');
@@ -57,8 +55,8 @@ $userCotentLocator''';
 
     const preferedModels = [
       'gemini-2.5-flash-lite',
-      'gpt-5-nano',
       'gpt-4.1-nano',
+      
     ];
 
     for (final pModel in preferedModels) {

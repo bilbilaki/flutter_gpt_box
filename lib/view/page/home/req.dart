@@ -898,7 +898,7 @@ Future<Stream> _callAudioInModelStream({
     messages: [...prevMessages, userMsg],
     audio: ChatCompletionAudioOptions(
       voice: voice ?? await getCurrentVoice(),
-      format: ChatCompletionAudioFormat.wav,
+      format: ChatCompletionAudioFormat.pcm16,
     ),
     temperature: aiSettings.temperature,
   );
@@ -975,7 +975,7 @@ Future<void> _onLiveVoiceTurnParallel(
       Loggers.app.warning('STT error: $e');
       sttCompleter.complete('');
     });
-  } catch (e, s) {
+  } catch (e) {
     Loggers.app.warning('Start STT failed: $e');
     sttCompleter.complete('');
   }
@@ -1714,21 +1714,41 @@ Future<void> _onCreateTextTranslated(
     context.showSnackBar(msg);
     return;
   }
-  final config = Cfg.current;
-  final translatetxt = await Cfg.client.createChatCompletion(
-    request: CreateChatCompletionRequest(
-      messages: [
-        ChatCompletionMessage.user(
-          content: ChatCompletionUserMessageContent.string(
-            'just without any changes to text content translate that to English and return translated text without anything more . Text Content : ${input}',
-          ),
+ const int maxAttempts = 10;
+  const Duration delayBetween = Duration(milliseconds: 300);
+  final String translatePrompt =
+      'just without any changes to text content translate that to English and return translated text without anything more . Text Content : ${input}';
+  String translated = '';
+  CreateChatCompletionResponse? translatetxt;
+  for (int attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      translatetxt = await Cfg.client.createChatCompletion(
+        request: CreateChatCompletionRequest(
+          messages: [
+            ChatCompletionMessage.user(
+              content:
+                  ChatCompletionUserMessageContent.string(translatePrompt),
+            ),
+          ],
+          model: ChatCompletionModel.modelId('gemini-2.5-flash-lite'),
         ),
-      ],
-      model: ChatCompletionModel.modelId('gemini-2.5-flash-lite'),
-    ),
-  );
+      );
+      translated =
+          translatetxt.choices.firstOrNull?.message.content?.trim() ?? '';
+    } catch (e) {
+      translated = '';
+    }
+    if (translated.isNotEmpty) break;
+    await Future.delayed(delayBetween);
+  }
+  if (translated.isEmpty) {
+    final msg = 'Translator returned empty result';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
   final questionContents = <ChatContent>[
-    ChatContent.text(translatetxt.choices.first.message.content ?? input),
+    ChatContent.text(translated),
   ];
   for (final file in files) {
     // Ensure images are sent as base64 data URL
@@ -1746,7 +1766,7 @@ Future<void> _onCreateTextTranslated(
   inputCtrl.clear();
   _chatRN.notify();
   _autoScroll(chatId);
-  final titleCompleter = await _genChatTitle(context, chatId, config);
+  final titleCompleter = await _genChatTitle(context, chatId, Cfg.current);
 
   final mcpCompatible = Cfg.isMcpCompatible();
 
@@ -1769,7 +1789,7 @@ Future<void> _onCreateTextTranslated(
       resp = await Cfg.client.createChatCompletion(
         request: CreateChatCompletionRequest(
           messages: msgs,
-          model: ChatCompletionModel.modelId(config.model),
+          model: ChatCompletionModel.modelId(Cfg.current.model),
           tools: availableMcp.toList(),
         ),
       );
@@ -1831,7 +1851,7 @@ Future<void> _onCreateTextTranslated(
   final chatStream = Cfg.client.createChatCompletionStream(
     request: CreateChatCompletionRequest(
       messages: msgs,
-      model: ChatCompletionModel.modelId(config.model),
+      model: ChatCompletionModel.modelId(Cfg.current.model),
     ),
   );
   final assistReply = ChatHistoryItem.single(role: ChatRole.assist);

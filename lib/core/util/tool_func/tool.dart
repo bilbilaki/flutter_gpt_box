@@ -6,30 +6,36 @@ import 'package:dio/dio.dart';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Element;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:flutter_js/extensions/fetch.dart';
 // import 'package:flutter_js/flutter_js.dart';
 import 'package:gpt_box/data/model/chat/history/history.dart';
 import 'package:gpt_box/data/res/build_data.dart';
 import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/store/all.dart';
+import 'package:gpt_box/generated/l10n/l10n.dart';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 part 'type.dart';
 part 'func/iface.dart';
 part 'func/http.dart';
-// part 'func/js.dart';
+part 'func/terminal.dart';
 part 'func/memory.dart';
 part 'func/history.dart';
 part 'mcp.dart';
 part 'internal_mcp_server.dart';
+part 'func/urlluancher.dart';
 
 abstract final class OpenAIFuncCalls {
   static const internalTools = [
     TfMemory.instance,
     TfHistory.instance,
     // TfJs.instance,
+    TfTerminal.instance,
     TfHttpReq.instance,
+    TfUrlLuancher.instance,
   ];
 
   static Future<Set<ChatCompletionTool>> get tools async {

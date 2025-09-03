@@ -55,7 +55,7 @@ Future<void> _initDb() async {
   // Note that DateTimeAdapter will have no effect as DateTimeWithTimezoneAdapter takes precedence. 
   // If you want to override the existing adapter, the typeIds must match.
   // Hive.registerAdapter(DateTimeAdapter()); // 4
-  Hive.registerAdapter(TranslatorConfigAdapter());//25
+  // Hive.registerAdapter(TranslatorConfigAdapter());//25
 
   Hive.registerAdapter(ChatCompletionMessageToolCallAdapter()); // 9
   Hive.registerAdapter(ChatCompletionMessageFunctionCallAdapter()); // 10
@@ -85,7 +85,7 @@ void _setupLogger() {
 }
 
 Future<void> _initAppComponents() async {
-  DeepLinks.appId = AppLink.host;
+  // DeepLinks.appId = AppLink.host;
   UserApi.init();
 
   final sets = Stores.setting;
@@ -101,10 +101,10 @@ Future<void> _initAppComponents() async {
   Cfg.applyClient();
   Cfg.updateModels();
 
-  BakSync.instance.init();
-  BakSync.instance.sync();
+  // BakSync.instance.init();
+  // BakSync.instance.sync();
 
-  if (Stores.setting.joinBeta.get()) AppUpdate.chan = AppUpdateChan.beta;
+  // if (Stores.setting.joinBeta.get()) AppUpdate.chan = AppUpdateChan.beta;
 
-  Stores.trash.autoDelete();
+  // Stores.trash.autoDelete();
 }
