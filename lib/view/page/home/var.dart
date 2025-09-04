@@ -123,3 +123,48 @@ class _StreamingPlayer {
     try { if (_tmpDir.existsSync()) _tmpDir.deleteSync(recursive: true); } catch (_) {}
   }
 }
+
+
+/// Returns the current local time as a [DateTime] object.
+DateTime getDeviceLocalTime() {
+  return DateTime.now();
+}
+
+/// Returns the current local time as a formatted string.
+///
+/// [showSeconds] determines whether seconds should be included in the output.
+/// The format will be 'HH:mm' or 'HH:mm:ss'.
+String getDeviceLocalTimeString({bool showSeconds = true}) {
+  final now = DateTime.now();
+  final hour = now.hour.toString().padLeft(2, '0');
+  final minute = now.minute.toString().padLeft(2, '0');
+  final second = now.second.toString().padLeft(2, '0');
+
+  if (showSeconds) {
+    return '$hour:$minute:$second';
+  } else {
+    return '$hour:$minute';
+  }
+}
+
+/// Returns the current local date as a formatted string.
+///
+/// The format will be 'YYYY-MM-DD'.
+String getDeviceLocalDateString() {
+  final now = DateTime.now();
+  final year = now.year.toString();
+  final month = now.month.toString().padLeft(2, '0');
+  final day = now.day.toString().padLeft(2, '0');
+
+  return '$year-$month-$day';
+}
+
+/// Returns the current local date and time as a single formatted string.
+///
+/// [showSeconds] determines whether seconds should be included in the time part.
+/// The format will be 'YYYY-MM-DD HH:mm' or 'YYYY-MM-DD HH:mm:ss'.
+String getDeviceLocalDateTimeString({bool showSeconds = true}) {
+  final datePart = getDeviceLocalDateString();
+  final timePart = getDeviceLocalTimeString(showSeconds: showSeconds);
+  return '$datePart $timePart';
+}

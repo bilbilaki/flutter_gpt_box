@@ -37,6 +37,21 @@ class InternalMcpServer {
            case 'urlluancher':
         onToolLog('[$serverName] Opening url for User...');
         return await TfUrlLuancher.instance.run(mockCall, arguments, onToolLog);
+           case 'smssender':
+        onToolLog('[$serverName] Sending SMS Message...');
+        return await TfSMSSender.instance.run(mockCall, arguments, onToolLog);
+          case 'downloader':
+        onToolLog('[$serverName] Managing Download Task...');
+        return await TfDownloader.instance.run(mockCall, arguments, onToolLog);
+           case 'filemanager':
+        onToolLog('[$serverName]  Managing Files...');
+        return await TfFileManager.instance.run(mockCall, arguments, onToolLog);
+           case 'pdfmanager':
+        onToolLog('[$serverName]  Useing PDF Tools...');
+        return await TfPdfManager.instance.run(mockCall, arguments, onToolLog);
+             case 'zipmanager':
+        onToolLog('[$serverName]  Useing PDF Tools...');
+        return await TfZipManager.instance.run(mockCall, arguments, onToolLog);
       default:
         onToolLog('[$serverName] Unknown tool: $toolName');
         return null;

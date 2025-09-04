@@ -16,7 +16,10 @@ extension HiveRegistrar on HiveInterface {
     registerAdapter(ChatRoleAdapter());
     registerAdapter(ChatSettingsAdapter());
     registerAdapter(ChatTypeAdapter());
+    registerAdapter(DownloadTaskAdapter());
+    registerAdapter(TaskStatusAdapter());
     registerAdapter(TranslatorConfigAdapter());
+    registerAdapter(UpdatesAdapter());
   }
 }
 
@@ -30,6 +33,9 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
     registerAdapter(ChatRoleAdapter());
     registerAdapter(ChatSettingsAdapter());
     registerAdapter(ChatTypeAdapter());
+    registerAdapter(DownloadTaskAdapter());
+    registerAdapter(TaskStatusAdapter());
     registerAdapter(TranslatorConfigAdapter());
+    registerAdapter(UpdatesAdapter());
   }
 }

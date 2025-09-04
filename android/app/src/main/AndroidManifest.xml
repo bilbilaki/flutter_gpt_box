@@ -12,6 +12,9 @@
 
 <!-- For Android 13 (API 33) and above, you need this to show the notification -->
 <uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.SEND_SMS"/>
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <uses-permission android:name="android.permission.WRITE_CONTACTS"/>
 
     <!-- Needed for recording audio -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />

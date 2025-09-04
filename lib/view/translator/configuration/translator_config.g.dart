@@ -8,7 +8,7 @@ part of 'translator_config.dart';
 
 class TranslatorConfigAdapter extends TypeAdapter<TranslatorConfig> {
   @override
-  final int typeId = 25;
+  final typeId = 25;
 
   @override
   TranslatorConfig read(BinaryReader reader) {
@@ -19,21 +19,21 @@ class TranslatorConfigAdapter extends TypeAdapter<TranslatorConfig> {
     return TranslatorConfig()
       ..apiKey = fields[0] as String
       ..baseUrl = fields[1] as String
-      ..rateLimitReq = fields[2] as int
-      ..rateLimitToken = fields[3] as int
-      ..inputCost = fields[4] as double
-      ..outputCost = fields[5] as double
-      ..waitSec = fields[6] as int
-      ..inputTokenCount = fields[7] as int
-      ..outputTokenCount = fields[8] as int
+      ..rateLimitReq = (fields[2] as num).toInt()
+      ..rateLimitToken = (fields[3] as num).toInt()
+      ..inputCost = (fields[4] as num).toDouble()
+      ..outputCost = (fields[5] as num).toDouble()
+      ..waitSec = (fields[6] as num).toInt()
+      ..inputTokenCount = (fields[7] as num).toInt()
+      ..outputTokenCount = (fields[8] as num).toInt()
       ..inputLang = fields[9] as String
       ..outputLang = fields[10] as String
       ..autoDetectInput = fields[11] as bool
-      ..batchN = fields[12] as int
+      ..batchN = (fields[12] as num).toInt()
       ..outputFormat = fields[13] as String
       ..modelId = fields[14] as String
       ..systemPrompt = fields[15] as String
-      ..temp = fields[16] as double
+      ..temp = (fields[16] as num).toDouble()
       ..geminiApi = fields[17] as String
       ..geminiPrompt = fields[18] as String;
   }

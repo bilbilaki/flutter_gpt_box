@@ -411,3 +411,170 @@ class ChatSettingsAdapter extends TypeAdapter<ChatSettings> {
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
+
+class DownloadTaskAdapter extends TypeAdapter<DownloadTask> {
+  @override
+  final typeId = 11;
+
+  @override
+  DownloadTask read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return DownloadTask(
+      id: fields[0] == null ? '' : fields[0] as String,
+      url: fields[1] as String,
+      urlQueryParameters: fields[2] == null
+          ? {}
+          : (fields[2] as Map).cast<String, String>(),
+      filename: fields[3] == null ? '' : fields[3] as String,
+      headers: fields[4] == null
+          ? {}
+          : (fields[4] as Map).cast<String, String>(),
+      directory: fields[5] == null ? '' : fields[5] as String,
+      updates: fields[6] == null
+          ? Updates.statusAndProgress
+          : fields[6] as Updates,
+      requiresWiFi: fields[7] == null ? false : fields[7] as bool,
+      retries: fields[8] == null ? 0 : (fields[8] as num).toInt(),
+      allowPause: fields[9] == null ? false : fields[9] as bool,
+      metaData: fields[10] as String?,
+      createdAt: fields[11] as DateTime?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, DownloadTask obj) {
+    writer
+      ..writeByte(12)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.url)
+      ..writeByte(2)
+      ..write(obj.urlQueryParameters)
+      ..writeByte(3)
+      ..write(obj.filename)
+      ..writeByte(4)
+      ..write(obj.headers)
+      ..writeByte(5)
+      ..write(obj.directory)
+      ..writeByte(6)
+      ..write(obj.updates)
+      ..writeByte(7)
+      ..write(obj.requiresWiFi)
+      ..writeByte(8)
+      ..write(obj.retries)
+      ..writeByte(9)
+      ..write(obj.allowPause)
+      ..writeByte(10)
+      ..write(obj.metaData)
+      ..writeByte(11)
+      ..write(obj.createdAt);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DownloadTaskAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class UpdatesAdapter extends TypeAdapter<Updates> {
+  @override
+  final typeId = 12;
+
+  @override
+  Updates read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return Updates.none;
+      case 1:
+        return Updates.status;
+      case 2:
+        return Updates.statusAndProgress;
+      default:
+        return Updates.none;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, Updates obj) {
+    switch (obj) {
+      case Updates.none:
+        writer.writeByte(0);
+      case Updates.status:
+        writer.writeByte(1);
+      case Updates.statusAndProgress:
+        writer.writeByte(2);
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdatesAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class TaskStatusAdapter extends TypeAdapter<TaskStatus> {
+  @override
+  final typeId = 13;
+
+  @override
+  TaskStatus read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return TaskStatus.queued;
+      case 1:
+        return TaskStatus.running;
+      case 2:
+        return TaskStatus.paused;
+      case 3:
+        return TaskStatus.complete;
+      case 4:
+        return TaskStatus.canceled;
+      case 5:
+        return TaskStatus.failed;
+      default:
+        return TaskStatus.queued;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, TaskStatus obj) {
+    switch (obj) {
+      case TaskStatus.queued:
+        writer.writeByte(0);
+      case TaskStatus.running:
+        writer.writeByte(1);
+      case TaskStatus.paused:
+        writer.writeByte(2);
+      case TaskStatus.complete:
+        writer.writeByte(3);
+      case TaskStatus.canceled:
+        writer.writeByte(4);
+      case TaskStatus.failed:
+        writer.writeByte(5);
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TaskStatusAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}

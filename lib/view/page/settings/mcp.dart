@@ -43,6 +43,11 @@ final class _McpPageState extends State<McpPage>
         _buildSwitchTile(TfHttpReq.instance),
         _buildSwitchTile(TfTerminal.instance),
         _buildSwitchTile(TfUrlLuancher.instance),
+        _buildSwitchTile(TfSMSSender.instance),
+        _buildSwitchTile(TfDownloader.instance),
+        _buildSwitchTile(TfPdfManager.instance),
+        _buildSwitchTile(TfFileManager.instance),
+        _buildSwitchTile(TfZipManager.instance),
         _buildMemory(),
       ],
     );
@@ -387,36 +392,39 @@ class McpServer {
 }
 
 /// Default preset list (S1..S4) provided by the user
+// Original file (assuming McpServer class is defined elsewhere)
+
+// Don't forget to import your env.dart file
+
 const List<McpServer> _defaultMcpPresets = [
   McpServer(
     name: 'DuckDuckGo Search Server',
-    url:
-        'https://server.smithery.ai/@nickclyde/duckduckgo-mcp-server/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik',
+    url: duckDuckGoServerUrl,
     description:
         'About\nEnable web search capabilities through DuckDuckGo. Fetch and parse webpage content intelligently for enhanced LLM interaction.\n\nTools\nsearch\nSearch DuckDuckGo and return formatted results. Args: query: The search query string max_results: Maximum number of results to return (default: 10) ctx: MCP context for logging\n\nfetch_content\nFetch and parse content from a webpage URL. Args: url: The webpage URL to fetch content from ctx: MCP context for logging',
   ),
   McpServer(
     name: 'YouTube Toolbox',
-    url:
-        'https://server.smithery.ai/@jikime/py-mcp-youtube-toolbox/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik',
+    url: youtubeToolboxServerUrl,
     description:
         'About\nProvide AI assistants with powerful tools to interact with YouTube, including video searching, transcript extraction, comment retrieval, and more. Enable advanced filtering, detailed video and channel information, trending video discovery, and transcript analysis. Enhance AI capabilities with comprehensive YouTube data access and summarization features.\n\nTools\nsearch_videos\nget_video_details\nget_channel_details\nget_video_comments\nget_video_transcript\nget_related_videos\nget_trending_videos\nget_video_enhanced_transcript\n(etc.)',
   ),
   McpServer(
     name: 'Movie Recommender',
-    url:
-        'https://server.smithery.ai/@iremert/movie-recommender-mcp/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik',
+    url: movieRecommenderServerUrl,
     description:
         'About\nProvide personalized movie recommendations based on user preferences and viewing history. Enhance user experience by suggesting relevant movies tailored to individual tastes. Enable seamless integration of movie data and recommendation logic into applications.\n\nTools\nget_movies\nGet movie suggestions based on keyword.',
   ),
   McpServer(
     name: 'Bright Data',
-    url:
-        'https://server.smithery.ai/@luminati-io/brightdata-mcp/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik',
+    url: brightDataServerUrl,
     description:
         'About\nOne MCP for the Web. Easily search, crawl, navigate, and extract websites without getting blocked. Ideal for discovering and retrieving structured insights from any public source - effortlessly and ethically.\n\nTools\nsearch_engine\nscrape_as_markdown\nscrape_as_html\nextract\n(plus many more advanced scraping and web data tools)',
   ),
-  McpServer(name: 'Hugging Face MCP Server',url: "https://server.smithery.ai/@shreyaskarnik/huggingface-mcp-server/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik",description: '''About
+  McpServer(
+      name: 'Hugging Face MCP Server',
+      url: huggingFaceServerUrl,
+      description: '''About
 Access Hugging Face's models, datasets, and research papers seamlessly. Interact with a wide range of resources and tools to enhance your LLM's capabilities. Utilize prompt templates for efficient model comparisons and paper summaries.
 
 Tools
@@ -450,7 +458,10 @@ Search for collections on Hugging Face Hub
 
 get-collection-info
 Get detailed information about a specific collection'''),
-McpServer(name: "PubChem Data Access Server", url: "https://server.smithery.ai/@BioContext/pubchem-mcp/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik",description:'''About
+  McpServer(
+      name: "PubChem Data Access Server",
+      url: pubChemServerUrl,
+      description: '''About
 Provide seamless access to PubChem chemical and bioassay data through a standardized MCP interface. Search compounds, retrieve detailed chemical and bioassay information, and query molecular properties to enhance your chemical data workflows. Integrate effortlessly with any MCP client to enrich your applications with comprehensive PubChem data.
 
 Tools
@@ -468,9 +479,11 @@ Search for bioassays related to a compound or target. Args: query: Search query 
 
 get_substance_details
 Get detailed information about a specific substance by its PubChem SID. Args: sid: PubChem Substance ID (SID) Returns: Dictionary with substance details
-''' ),
-McpServer(name: "Crypto Research Server"
-, url: "https://server.smithery.ai/@maxvint/mcp-crypto-research/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik",description: '''About
+'''),
+  McpServer(
+      name: "Crypto Research Server",
+      url: cryptoResearchServerUrl,
+      description: '''About
 Provide a specialized MCP server that enables integration with cryptocurrency research data and tools. Facilitate access to crypto-related resources and operations to enhance LLM applications with up-to-date blockchain and crypto insights. Empower users to leverage crypto data seamlessly within their AI workflows.
 
 Tools
@@ -488,7 +501,10 @@ Search for reports on Research knowledge base.
 
 research_search_news
 Search for news on Research knowledge base.'''),
-McpServer(name: "PubMed Article Search and Analysis Server", url: "https://server.smithery.ai/@geobio/pubmed-mcp-server/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik",description: '''Enable AI assistants to search, access, and analyze biomedical literature from PubMed through a simple MCP interface. Perform keyword and advanced searches, retrieve detailed metadata, download full-text PDFs, and conduct deep paper analysis to support biomedical research. Facilitate efficient and comprehensive exploration of scientific articles programmatically.
+  McpServer(
+      name: "PubMed Article Search and Analysis Server",
+      url: pubMedServerUrl,
+      description: '''Enable AI assistants to search, access, and analyze biomedical literature from PubMed through a simple MCP interface. Perform keyword and advanced searches, retrieve detailed metadata, download full-text PDFs, and conduct deep paper analysis to support biomedical research. Facilitate efficient and comprehensive exploration of scientific articles programmatically.
 
 Tools
 search_pubmed_key_words
@@ -496,7 +512,10 @@ search_pubmed_advanced
 get_pubmed_article_metadata
 download_pubmed_pdf
 '''),
-McpServer(name: "OpenAI Agent Library", url: "https://server.smithery.ai/@Yaxin9Luo/openai_agent_library_mcp/mcp?api_key=3e3ab069-350a-43e5-af40-a4996b0d9bc2&profile=amateur-beetle-4oI0ik",description: '''Enhance your applications with powerful language model capabilities. Integrate seamlessly with external data and tools to create intelligent agents that can perform complex tasks. Empower your projects with dynamic interactions and real-world data manipulation.
+  McpServer(
+      name: "OpenAI Agent Library",
+      url: openAIAgentLibraryServerUrl,
+      description: '''Enhance your applications with powerful language model capabilities. Integrate seamlessly with external data and tools to create intelligent agents that can perform complex tasks. Empower your projects with dynamic interactions and real-world data manipulation.
 
 Tools
 

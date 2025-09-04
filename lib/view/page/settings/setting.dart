@@ -13,8 +13,10 @@ import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/res/url.dart';
 import 'package:gpt_box/data/store/all.dart';
+import 'package:gpt_box/env.dart';
 import 'package:gpt_box/generated/l10n/l10n.dart';
 import 'package:gpt_box/view/page/backup/view.dart';
+import 'package:gpt_box/view/page/home/home.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:shortid/shortid.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -119,12 +121,12 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     final children = [
       _buildUserName(),
       if (isMobile) _buildScrollSwitchChat(),
-      //_buildFontSize(),
+      _buildFontSize(),
       _buildGenTitle(),
       _buildAutoScrollBottom(),
       _buildSoftWrap(),
       //_buildCalcTokenLen(),
-      //_buildReplay(),
+      _buildReplay(),
       _buildMoreMore(),
     ];
     return Column(children: children.map((e) => e.cardx).toList());
@@ -246,40 +248,43 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     );
   }
 
-  // Widget _buildFontSize() {
-  //   return ValueListenableBuilder(
-  //     valueListenable: _store.fontSize.listenable(),
-  //     builder: (_, val, __) => ListTile(
-  //       leading: const Icon(Icons.text_fields),
-  //       title: Text(l10n.fontSize),
-  //       trailing: Text(
-  //         val.toString(),
-  //         style: UIs.text13Grey,
-  //       ),
-  //       subtitle: Text(l10n.fontSizeSettingTip, style: UIs.text13Grey),
-  //       onTap: () async {
-  //         final ctrl = TextEditingController(text: val.toString());
-  //         final result = await context.showRoundDialog<String>(
-  //           title: l10n.fontSize,
-  //           child: Input(
-  //             icon: Icons.text_fields,
-  //             controller: ctrl,
-  //             hint: '12',
-  //             type: const TextInputType.numberWithOptions(decimal: true),
-  //           ),
-  //           actions: Btns.oks(onTap: () => context.pop(ctrl.text)),
-  //         );
-  //         if (result == null) return;
-  //         final newVal = double.tryParse(result);
-  //         if (newVal == null) {
-  //           context.showSnackBar('Invalid number: $result');
-  //           return;
-  //         }
-  //         _store.fontSize.put(newVal);
-  //       },
-  //     ),
-  //   );
-  // }
+  Widget _buildFontSize() {
+    return ValueListenableBuilder(
+      valueListenable: ss.fontSize.listenable(),
+      builder: (_, val, __) => ListTile(
+        leading: const Icon(Icons.text_fields),
+        title: Text(l10n.fontSize),
+        trailing: Text(
+          val.toString(),
+          style: UIs.text13Grey,
+        ),
+        subtitle: Text(l10n.fontSizeSettingTip, style: UIs.text13Grey),
+        onTap: () async {
+          final ctrl = TextEditingController(text: val.toString());
+          final result = await context.showRoundDialog<String>(
+            title: l10n.fontSize,
+            child: Input(
+              icon: Icons.text_fields,
+              controller: ctrl,
+              hint: '12',
+              type: const TextInputType.numberWithOptions(decimal: true),
+            ),
+            actions: Btn.ok(onTap: () {
+                _onSaveColor(Colors.green);
+                context.pop();
+              }).toList,
+          );
+          if (result == null) return;
+          final newVal = double.tryParse(result);
+          if (newVal == null) {
+            context.showSnackBar('Invalid number: $result');
+            return;
+          }
+          ss.fontSize.put(newVal);
+        },
+      ),
+    );
+  }
 
   Widget _buildGenTitle() {
     return ListTile(
@@ -331,13 +336,13 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   //   );
   // }
 
-  // Widget _buildReplay() {
-  //   return ListTile(
-  //     leading: const Icon(Icons.replay),
-  //     title: Text(l10n.replay),
-  //     trailing: StoreSwitch(prop: _store.replay),
-  //   );
-  // }
+  Widget _buildReplay() {
+    return ListTile(
+      leading: const Icon(Icons.replay),
+      title: Text(l10n.replay),
+      trailing: StoreSwitch(prop: ss.replay),
+    );
+  }
 
   Widget _buildAppMore() {
     return ExpandTile(

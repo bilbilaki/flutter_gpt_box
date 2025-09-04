@@ -1,3 +1,5 @@
+import 'package:gpt_box/data/model/app/download_task.dart';
+import 'package:gpt_box/data/store/download.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:gpt_box/data/model/chat/config.dart';
 import 'package:gpt_box/data/model/chat/history/history.dart';
@@ -13,5 +15,8 @@ import 'package:openai_dart/openai_dart.dart';
   AdapterSpec<ChatConfig>(),
   AdapterSpec<ChatType>(),
   AdapterSpec<ChatSettings>(),
+  AdapterSpec<DownloadTask>(),
+  AdapterSpec<Updates>(),
+  AdapterSpec<TaskStatus>(),
 ])
 part 'hive_adapters.g.dart';

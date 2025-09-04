@@ -202,7 +202,41 @@ final class _ProfilePageState extends State<ProfilePage>
       },
     );
   }
+// Widget _buildOpenAISpeechModel() {
+//     final cfg = Cfg.current;
+//     final val = cfg.speechModel;
+//     return ListTile(
+//       leading: const Icon(Icons.speaker),
+//       title: Text(l10n.tts),
+//       trailing: const Icon(Icons.keyboard_arrow_right),
+//       subtitle: Text(val, style: UIs.text13Grey),
+//       onTap: () async {
+//         final model = await _showPickModelDialog(l10n.model, val);
+//         if (model != null) {
+//           Cfg.setTo(Cfg.current.copyWith(speechModel: model));
+//           _cfgRN.notify();
+//         }
+//       },
+//     );
+//   }
 
+//   Widget _buildOpenAITranscribeModel() {
+//     final cfg = OpenAICfg.current;
+//     final val = cfg.transcribeModel;
+//     return ListTile(
+//       leading: const Icon(Icons.transcribe),
+//       title: Text(l10n.stt),
+//       trailing: const Icon(Icons.keyboard_arrow_right),
+//       subtitle: Text(val, style: UIs.text13Grey),
+//       onTap: () async {
+//   final model = await _showPickModelDialog(l10n.model, val);
+//         if (model != null) {
+//           OpenAICfg.setTo(OpenAICfg.current.copyWith(transcribeModel: model));
+//           _cfgRN.notify();
+//         }
+//       },
+//     );
+//   }
   Widget _buildOpenAIUrl(String val) {
     return ListTile(
       leading: const Icon(Icons.link),

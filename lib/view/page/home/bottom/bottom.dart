@@ -142,6 +142,8 @@ final class _HomeBottomState extends State<_HomeBottom> {
       ],
     );
   }
+final url = "https://www.google.com";
+
 
 Widget _buildBottomFnsTwoRows() {
   return Column(
@@ -183,6 +185,11 @@ Widget _buildBottomFnsTwoRows() {
             icon: const Icon(Icons.translate, size: 19),
             onPressed: () => _navigateToAnotherPage(context),
           ),
+          //     IconButton(
+          //   tooltip: 'G sign',
+          //   icon: const Icon(Icons.g_mobiledata, size: 19),
+          //   onPressed: () => _navigateToWebView(context),
+          // ),
           IconButton(
             tooltip: 'Voice mode',
             onPressed: () {
@@ -511,6 +518,11 @@ Widget _buildBottomFnsScrollable() {
       _fadeRoute( ChunkerInterfaceand()),
     ); // Replace AnotherPage with your desired page
   }
+// Future<void> _navigateToWebView(BuildContext context) async {
+//     await Navigator.of(context).push<void>(
+//       _fadeRoute( ()),
+//     ); // Replace AnotherPage with your desired page
+//   }
 
   Widget _buildRoundRect(Widget child) {
     return Container(
