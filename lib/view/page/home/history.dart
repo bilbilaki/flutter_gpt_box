@@ -42,7 +42,7 @@ class _HistoryPageState extends State<_HistoryPage>
 
   Widget get _buildHisotry {
     return _historyRN.listen(() {
-      final keys = _allHistories.keys.toList();
+      final keys = allHistories.keys.toList();
       final len = keys.length;
       return SliverPadding(
         padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 11),
@@ -59,7 +59,7 @@ class _HistoryPageState extends State<_HistoryPage>
   }
 
   Widget _buildHistoryListItem(String chatId) {
-    final entity = _allHistories[chatId];
+    final entity = allHistories[chatId];
     if (entity == null) return UIs.placeholder;
 
     return ListTile(

@@ -16,6 +16,7 @@ import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/env.dart';
 import 'package:gpt_box/generated/l10n/l10n.dart';
 import 'package:gpt_box/view/page/backup/view.dart';
+import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/home/home.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:shortid/shortid.dart';
@@ -109,9 +110,9 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   Widget _buildApp() {
     final children = [
       _buildLocale(),
-      _buildColorSeed(),
+      // _buildColorSeed(),
       _buildThemeMode(),
-      _buildCheckUpdate(),
+      // _buildCheckUpdate(),
       _buildAppMore(),
     ];
     return Column(children: children.map((e) => e.cardx).toList());
@@ -121,12 +122,12 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     final children = [
       _buildUserName(),
       if (isMobile) _buildScrollSwitchChat(),
-      _buildFontSize(),
+      // _buildFontSize(),
       _buildGenTitle(),
       _buildAutoScrollBottom(),
       _buildSoftWrap(),
       //_buildCalcTokenLen(),
-      _buildReplay(),
+      // _buildReplay(),
       _buildMoreMore(),
     ];
     return Column(children: children.map((e) => e.cardx).toList());
@@ -161,35 +162,35 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     );
   }
 
-  Widget _buildColorSeed() {
-    return ValueListenableBuilder(
-      valueListenable: _setStore.themeColorSeed.listenable(),
-      builder: (_, val, _) {
-        final primaryColor = Color(val);
-        return ListTile(
-          leading: const Icon(Icons.colorize),
-          title: Text(l10n.themeColorSeed),
-          trailing: ClipOval(
-            child: Container(color: primaryColor, height: 27, width: 27),
-          ),
-          onTap: () async {
-            var color = primaryColor;
-            await context.showRoundDialog(
-              title: libL10n.select,
-              child: ColorPicker(
-                color: primaryColor,
-                onColorChanged: (c) => color = c,
-              ),
-              actions: Btn.ok(onTap: () {
-                _onSaveColor(color);
-                context.pop();
-              }).toList,
-            );
-          },
-        );
-      },
-    );
-  }
+  // Widget _buildColorSeed() {
+  //   return ValueListenableBuilder(
+  //     valueListenable: _setStore.themeColorSeed.listenable(),
+  //     builder: (_, val, _) {
+  //       final primaryColor = Color(val);
+  //       return ListTile(
+  //         leading: const Icon(Icons.colorize),
+  //         title: Text(l10n.themeColorSeed),
+  //         trailing: ClipOval(
+  //           child: Container(color: primaryColor, height: 27, width: 27),
+  //         ),
+  //         onTap: () async {
+  //           var color = primaryColor;
+  //           await context.showRoundDialog(
+  //             title: libL10n.select,
+  //             child: ColorPicker(
+  //               color: primaryColor,
+  //               onColorChanged: (c) => color = c,
+  //             ),
+  //             actions: Btn.ok(onTap: () {
+  //               _onSaveColor(color);
+  //               context.pop();
+  //             }).toList,
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
 
   void _onSaveColor(Color c) {
     _setStore.themeColorSeed.put(c.value255);

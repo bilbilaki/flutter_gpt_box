@@ -3,14 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:extended_image/extended_image.dart' hide Client;
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Element;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gpt_box/core/providers/downlooad.dart';
 import 'package:gpt_box/core/services/file_index.dart';
 import 'package:gpt_box/core/services/pdf_opration.dart';
+import 'package:gpt_box/core/services/terminal_sessin_manager.dart';
 import 'package:gpt_box/data/model/app/download_task.dart';
 // import 'package:flutter_js/extensions/fetch.dart';
 // import 'package:flutter_js/flutter_js.dart';
@@ -18,18 +17,18 @@ import 'package:gpt_box/data/model/chat/history/history.dart';
 import 'package:gpt_box/data/res/build_data.dart';
 import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/store/all.dart';
-import 'package:gpt_box/generated/l10n/l10n.dart';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:mcp_dart/mcp_dart.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shortid/shortid.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'dart:async';
-import 'dart:convert';
-import 'dart:developer';
 import 'package:native_zip/native_zip.dart';
 import 'package:sms_sender_background/sms_sender.dart';
+import 'package:shelf/shelf.dart';
+import 'package:shelf/shelf_io.dart' as io;
+import 'package:shelf_static/shelf_static.dart';
 part 'type.dart';
 part 'func/iface.dart';
 part 'func/http.dart';
@@ -44,6 +43,7 @@ part 'func/download.dart';
 part 'func/ziptool.dart';
 part 'func/filemanager.dart';
 part 'func/pdftool.dart';
+part 'func/webbuilder.dart';
 
 abstract final class OpenAIFuncCalls {
   static const internalTools = [
@@ -58,6 +58,7 @@ abstract final class OpenAIFuncCalls {
     TfFileManager.instance,
     TfPdfManager.instance,
     TfZipManager.instance,
+    TfWebBuilder.instance,
   ];
 
   static Future<Set<ChatCompletionTool>> get tools async {

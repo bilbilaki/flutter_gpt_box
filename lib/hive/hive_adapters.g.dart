@@ -270,6 +270,11 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       genTitlePrompt: fields[14] as String?,
       genTitleModel: fields[15] as String?,
       imgModel: fields[16] as String?,
+      audioModel: fields[20] as String?,
+      tskrModel: fields[21] as String?,
+      altrModel: fields[22] as String?,
+      wrkrModel: fields[23] as String?,
+      trnscrbModel: fields[24] as String?,
       file: fields[17] as String?,
       image: fields[18] as String?,
       audio: fields[19] as String?,
@@ -279,7 +284,7 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(18)
       ..writeByte(0)
       ..write(obj.prompt)
       ..writeByte(1)
@@ -305,7 +310,17 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       ..writeByte(18)
       ..write(obj.image)
       ..writeByte(19)
-      ..write(obj.audio);
+      ..write(obj.audio)
+      ..writeByte(20)
+      ..write(obj.audioModel)
+      ..writeByte(21)
+      ..write(obj.tskrModel)
+      ..writeByte(22)
+      ..write(obj.altrModel)
+      ..writeByte(23)
+      ..write(obj.wrkrModel)
+      ..writeByte(24)
+      ..write(obj.trnscrbModel);
   }
 
   @override

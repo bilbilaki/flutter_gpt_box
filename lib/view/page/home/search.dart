@@ -49,7 +49,7 @@ class _ChatSearchDelegate extends SearchDelegate<ChatHistory> {
         list.add(chat);
       }
       return list;
-    }, _allHistories);
+    }, allHistories);
   }
 
   Widget _buildSuggestionList(BuildContext context) {

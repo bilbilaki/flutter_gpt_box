@@ -24,6 +24,12 @@ abstract class ChatConfig with _$ChatConfig {
     String? genTitlePrompt,
     String? genTitleModel,
     String? imgModel,
+    String? audioModel,
+    String? tskrModel,
+    String? altrModel,
+    String? wrkrModel,
+        String? trnscrbModel,
+
     // Newly added nullable fields
     String? file,
     String? image,
@@ -43,6 +49,13 @@ extension ChatConfigX on ChatConfig {
   static const defaultUrl = 'https://api.openai.com/v1';
   static const defaultHistoryLen = 7;
   static const defaultImgModel = 'dall-e-3';
+  static const defaultaudioModel = 'gpt-4o-mini-audio-preview';
+    static const defaulttrnscrbModel = 'gpt-4o-mini-transcribe-preview';
+    static const defaulttaskrModel = 'gemini-2.5-flash';
+    static const defaultaltrModel = 'gemini-2.5-flash-lite';
+        static const defaultwrkrModel = 'gpt-4.1-mini';
+
+
   static const defaultOne = ChatConfig(
     id: defaultId,
     prompt: '',
@@ -51,6 +64,12 @@ extension ChatConfigX on ChatConfig {
     model: '',
     historyLen: defaultHistoryLen,
     name: '',
+    imgModel: defaultImgModel,
+    // audioModel: defaultaudioModel,
+    // trnscrbModel: defaulttrnscrbModel,
+    // tskrModel: defaulttaskrModel,
+    // altrModel: defaultaltrModel,
+    // wrkrModel: defaultwrkrModel,
   );
 
   String get displayName => switch (id) {
@@ -97,6 +116,15 @@ extension ChatConfigX on ChatConfig {
       image: params_['image'],
       audio: params_['audio'],
       historyLen: params_['historyLen'] ?? defaultHistoryLen,
+      tskrModel: params_['TaskerModel']??defaulttaskrModel,
+            audioModel: params_['AudioModel']??defaultaudioModel,
+                  altrModel: params_['AlterModel']??defaultaltrModel,
+
+      wrkrModel: params_['TaskerModel']??defaultwrkrModel,
+            trnscrbModel: params_['TaskerModel']??defaulttrnscrbModel,
+
+
+
     );
   }
 }

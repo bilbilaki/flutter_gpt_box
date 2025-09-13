@@ -98,7 +98,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
     // This uses the existing voice input flow (VoiceJustInput) so it attaches the audio base64.
     final chatId = _curChatId.value;
     final text = inputCtrl.text; // keep any current text
-    _onVoiceJustInput(context, chatId, text, [path]);
+    _onTtsModel(context, chatId, text, [path]);
   }
 
   @override
@@ -142,7 +142,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
       ],
     );
   }
-final url = "https://www.google.com";
+//final url = "https://www.google.com";
 
 
 Widget _buildBottomFnsTwoRows() {
@@ -172,7 +172,7 @@ Widget _buildBottomFnsTwoRows() {
           _buildRight(),
         ],
       ),
-      const SizedBox(height: 6),
+      const SizedBox(height: 2),
       Row(
         children: [
           IconButton(
@@ -190,27 +190,27 @@ Widget _buildBottomFnsTwoRows() {
           //   icon: const Icon(Icons.g_mobiledata, size: 19),
           //   onPressed: () => _navigateToWebView(context),
           // ),
-          IconButton(
-            tooltip: 'Voice mode',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => VoiceAssistantScreen(
-                    controller: VoiceSessionController(
-                      chatId: _curChatId.value,
-                      onUserPartial: (p) {
-                        // Optional: Show floating live transcript
-                      },
-                      onTtsChunk: (pcm) {
-                        // Hook for UI animations; playback handling can be implemented by you if needed
-                      },
-                    ),
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.record_voice_over, size: 20),
-          ),
+         // IconButton(
+         //   tooltip: 'Voice mode',
+          //  onPressed: () {
+            //   Navigator.of(context).push(
+            //     MaterialPageRoute(
+            //       builder: (_) => VoiceAssistantScreen(
+            //         // controller: VoiceSessionController(
+            //         //   chatId: _curChatId.value,
+            //         //   onUserPartial: (p) {
+            //         //     // Optional: Show floating live transcript
+            //         //   },
+            //         //   onTtsChunk: (pcm) {
+            //         //     // Hook for UI animations; playback handling can be implemented by you if needed
+            //         //   },
+            //        // ),
+            //       ),
+            //     ),
+            //   );
+         //   },
+            // icon: const Icon(Icons.record_voice_over, size: 20),
+        //  ),
           const Spacer(),
           UIs.width7,
           _buildSwitchChatType(),
@@ -221,74 +221,74 @@ Widget _buildBottomFnsTwoRows() {
   );
 }
 
-Widget _buildBottomFnsScrollable() {
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    padding: const EdgeInsets.symmetric(horizontal: 8),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          onPressed: () {
-            _switchChat(_newChat().id);
-            _historyRN.notify();
-            if (_curPage.value == HomePageEnum.history) {
-              _switchPage(HomePageEnum.chat);
-            }
-          },
-          icon: const Icon(MingCute.add_fill, size: 17),
-        ),
-        IconButton(
-          onPressed: () => _onTapDeleteChat(_curChatId.value, context),
-          icon: const Icon(Icons.delete, size: 19),
-        ),
-        _buildFileBtn(),
-        _buildSettingsBtn(), // existing chat settings
-        _buildOpenSettingsDrawerBtn(), // new: open Hive-backed drawer
-        _buildRight(),
-        IconButton(
-          tooltip: 'Canvas',
-          icon: const Icon(Icons.edit_note_rounded, size: 19),
-          onPressed: () => _openCanvas(context, inputCtrl),
-        ),
-        IconButton(
-          tooltip: 'Translate Files',
-          icon: const Icon(Icons.translate, size: 19),
-          onPressed: () => _navigateToAnotherPage(context),
-        ),
-        IconButton(
-          tooltip: 'Voice mode',
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => VoiceAssistantScreen(
-                  controller: VoiceSessionController(
-                    chatId: _curChatId.value,
-                    onUserPartial: (p) {
-                      // Optional: Show floating live transcript
-                    },
-                    onTtsChunk: (pcm) {
-                      // Hook for UI animations; playback handling can be implemented by you if needed
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
-          icon: const Icon(Icons.record_voice_over, size: 20),
-        ),
-        const SizedBox(width: 12),
-        UIs.width7,
-        _buildSwitchChatType(),
-        UIs.width7,
-      ],
-    ),
-  );
-}
+// Widget _buildBottomFnsScrollable() {
+//   return SingleChildScrollView(
+//     scrollDirection: Axis.horizontal,
+//     padding:  EdgeInsets.symmetric(horizontal: 8),
+//     child: Row(
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         IconButton(
+//           onPressed: () {
+//             _switchChat(_newChat().id);
+//             _historyRN.notify();
+//             if (_curPage.value == HomePageEnum.history) {
+//               _switchPage(HomePageEnum.chat);
+//             }
+//           },
+//           icon:  Icon(MingCute.add_fill, size: 17),
+//         ),
+//         IconButton(
+//           onPressed: () => _onTapDeleteChat(_curChatId.value, context),
+//           icon:  Icon(Icons.delete, size: 17),
+//         ),
+//         _buildFileBtn(),
+//         _buildSettingsBtn(), // existing chat settings
+//         _buildOpenSettingsDrawerBtn(), // new: open Hive-backed drawer
+//         _buildRight(),
+//         IconButton(
+//           tooltip: 'Canvas',
+//           icon: const Icon(Icons.edit_note_rounded, size: 17),
+//           onPressed: () => _openCanvas(context, inputCtrl),
+//         ),
+//         IconButton(
+//           tooltip: 'Translate Files',
+//           icon: const Icon(Icons.translate, size: 17),
+//           onPressed: () => _navigateToAnotherPage(context),
+//         ),
+//         IconButton(
+//           tooltip: 'Voice mode',
+//           onPressed: (){}, //{
+//           //  Navigator.of(context).push(
+//            //   MaterialPageRoute(
+//            //     builder: (_) => VoiceAssistantScreen(
+//               //     controller: VoiceSessionController(
+//               //       chatId: _curChatId.value,
+//               //       onUserPartial: (p) {
+//               //         // Optional: Show floating live transcript
+//               //       },
+//               //       onTtsChunk: (pcm) {
+//               //         // Hook for UI animations; playback handling can be implemented by you if needed
+//               //       },
+//               //     ),
+//                //  ),
+//             //   ),
+//           //  ),
+//        //  ] },
+//           icon:  Icon(Icons.record_voice_over, size: 17),
+//         ),
+//         const SizedBox(width: 4),
+//         UIs.width7,
+//         _buildSwitchChatType(),
+//         UIs.width7,
+//       ],
+//     ),
+//   );
+// }
   Widget _buildSettingsBtn() {
     return IconButton(
       onPressed: _onTapSetting,
-      icon: const Icon(Icons.settings, size: 19),
+      icon:  Icon(Icons.settings, size: 17),
     );
   }
 
@@ -304,7 +304,7 @@ Widget _buildBottomFnsScrollable() {
         }
         scaffold.openEndDrawer();
       },
-      icon: const Icon(Icons.tune, size: 19),
+      icon:  Icon(Icons.tune, size: 17),
     );
   }
 
@@ -425,12 +425,12 @@ Widget _buildBottomFnsScrollable() {
                         Btn.icon(
                           onTap: () =>
                               _onCreateRequest(context, _curChatId.value),
-                          icon: const Icon(Icons.send, size: 19),
+                          icon: const Icon(Icons.send, size: 18),
                         ),
                       IconButton(
                         tooltip: 'Prompt generator',
                         onPressed: _openPromptGenerator,
-                        icon: const Icon(Icons.auto_awesome, size: 20),
+                        icon: const Icon(Icons.auto_awesome, size: 18),
                       ),
                     ],
                   );

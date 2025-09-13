@@ -50,8 +50,11 @@ class InternalMcpServer {
         onToolLog('[$serverName]  Useing PDF Tools...');
         return await TfPdfManager.instance.run(mockCall, arguments, onToolLog);
              case 'zipmanager':
-        onToolLog('[$serverName]  Useing PDF Tools...');
-        return await TfZipManager.instance.run(mockCall, arguments, onToolLog);
+        onToolLog('[$serverName]  Useing Zip Manager Tools...');
+        return await TfZipManager.instance.run(mockCall, arguments, onToolLog);    
+          case 'webbuilder':
+        onToolLog('[$serverName]  Useing Web Builder Tools please wait...');
+        return await TfWebBuilder.instance.run(mockCall, arguments, onToolLog); 
       default:
         onToolLog('[$serverName] Unknown tool: $toolName');
         return null;

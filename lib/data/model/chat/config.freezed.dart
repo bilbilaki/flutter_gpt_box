@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ChatConfig {
 
- String get prompt; String get url; String get key; String get model; int get historyLen; String get id; String get name; String? get genTitlePrompt; String? get genTitleModel; String? get imgModel;// Newly added nullable fields
+ String get prompt; String get url; String get key; String get model; int get historyLen; String get id; String get name; String? get genTitlePrompt; String? get genTitleModel; String? get imgModel; String? get audioModel; String? get tskrModel; String? get altrModel; String? get wrkrModel; String? get trnscrbModel;// Newly added nullable fields
  String? get file; String? get image; String? get audio;
 /// Create a copy of ChatConfig
 /// with the given fields replaced by the non-null parameter values.
@@ -30,12 +30,12 @@ $ChatConfigCopyWith<ChatConfig> get copyWith => _$ChatConfigCopyWithImpl<ChatCon
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatConfig&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.url, url) || other.url == url)&&(identical(other.key, key) || other.key == key)&&(identical(other.model, model) || other.model == model)&&(identical(other.historyLen, historyLen) || other.historyLen == historyLen)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.genTitlePrompt, genTitlePrompt) || other.genTitlePrompt == genTitlePrompt)&&(identical(other.genTitleModel, genTitleModel) || other.genTitleModel == genTitleModel)&&(identical(other.imgModel, imgModel) || other.imgModel == imgModel)&&(identical(other.file, file) || other.file == file)&&(identical(other.image, image) || other.image == image)&&(identical(other.audio, audio) || other.audio == audio));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatConfig&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.url, url) || other.url == url)&&(identical(other.key, key) || other.key == key)&&(identical(other.model, model) || other.model == model)&&(identical(other.historyLen, historyLen) || other.historyLen == historyLen)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.genTitlePrompt, genTitlePrompt) || other.genTitlePrompt == genTitlePrompt)&&(identical(other.genTitleModel, genTitleModel) || other.genTitleModel == genTitleModel)&&(identical(other.imgModel, imgModel) || other.imgModel == imgModel)&&(identical(other.audioModel, audioModel) || other.audioModel == audioModel)&&(identical(other.tskrModel, tskrModel) || other.tskrModel == tskrModel)&&(identical(other.altrModel, altrModel) || other.altrModel == altrModel)&&(identical(other.wrkrModel, wrkrModel) || other.wrkrModel == wrkrModel)&&(identical(other.trnscrbModel, trnscrbModel) || other.trnscrbModel == trnscrbModel)&&(identical(other.file, file) || other.file == file)&&(identical(other.image, image) || other.image == image)&&(identical(other.audio, audio) || other.audio == audio));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,prompt,url,key,model,historyLen,id,name,genTitlePrompt,genTitleModel,imgModel,file,image,audio);
+int get hashCode => Object.hash(runtimeType,prompt,url,key,model,historyLen,id,name,genTitlePrompt,genTitleModel,imgModel,audioModel,tskrModel,altrModel,wrkrModel,trnscrbModel,file,image,audio);
 
 
 
@@ -46,7 +46,7 @@ abstract mixin class $ChatConfigCopyWith<$Res>  {
   factory $ChatConfigCopyWith(ChatConfig value, $Res Function(ChatConfig) _then) = _$ChatConfigCopyWithImpl;
 @useResult
 $Res call({
- String prompt, String url, String key, String model, int historyLen, String id, String name, String? genTitlePrompt, String? genTitleModel, String? imgModel, String? file, String? image, String? audio
+ String prompt, String url, String key, String model, int historyLen, String id, String name, String? genTitlePrompt, String? genTitleModel, String? imgModel, String? audioModel, String? tskrModel, String? altrModel, String? wrkrModel, String? trnscrbModel, String? file, String? image, String? audio
 });
 
 
@@ -63,7 +63,7 @@ class _$ChatConfigCopyWithImpl<$Res>
 
 /// Create a copy of ChatConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? prompt = null,Object? url = null,Object? key = null,Object? model = null,Object? historyLen = null,Object? id = null,Object? name = null,Object? genTitlePrompt = freezed,Object? genTitleModel = freezed,Object? imgModel = freezed,Object? file = freezed,Object? image = freezed,Object? audio = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? prompt = null,Object? url = null,Object? key = null,Object? model = null,Object? historyLen = null,Object? id = null,Object? name = null,Object? genTitlePrompt = freezed,Object? genTitleModel = freezed,Object? imgModel = freezed,Object? audioModel = freezed,Object? tskrModel = freezed,Object? altrModel = freezed,Object? wrkrModel = freezed,Object? trnscrbModel = freezed,Object? file = freezed,Object? image = freezed,Object? audio = freezed,}) {
   return _then(_self.copyWith(
 prompt: null == prompt ? _self.prompt : prompt // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -75,6 +75,11 @@ as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non
 as String,genTitlePrompt: freezed == genTitlePrompt ? _self.genTitlePrompt : genTitlePrompt // ignore: cast_nullable_to_non_nullable
 as String?,genTitleModel: freezed == genTitleModel ? _self.genTitleModel : genTitleModel // ignore: cast_nullable_to_non_nullable
 as String?,imgModel: freezed == imgModel ? _self.imgModel : imgModel // ignore: cast_nullable_to_non_nullable
+as String?,audioModel: freezed == audioModel ? _self.audioModel : audioModel // ignore: cast_nullable_to_non_nullable
+as String?,tskrModel: freezed == tskrModel ? _self.tskrModel : tskrModel // ignore: cast_nullable_to_non_nullable
+as String?,altrModel: freezed == altrModel ? _self.altrModel : altrModel // ignore: cast_nullable_to_non_nullable
+as String?,wrkrModel: freezed == wrkrModel ? _self.wrkrModel : wrkrModel // ignore: cast_nullable_to_non_nullable
+as String?,trnscrbModel: freezed == trnscrbModel ? _self.trnscrbModel : trnscrbModel // ignore: cast_nullable_to_non_nullable
 as String?,file: freezed == file ? _self.file : file // ignore: cast_nullable_to_non_nullable
 as String?,image: freezed == image ? _self.image : image // ignore: cast_nullable_to_non_nullable
 as String?,audio: freezed == audio ? _self.audio : audio // ignore: cast_nullable_to_non_nullable
@@ -89,7 +94,7 @@ as String?,
 @JsonSerializable()
 
 class _ChatConfig extends ChatConfig {
-  const _ChatConfig({this.prompt = '', this.url = ChatConfigX.defaultUrl, this.key = '', this.model = '', this.historyLen = ChatConfigX.defaultHistoryLen, this.id = ChatConfigX.defaultId, this.name = '', this.genTitlePrompt, this.genTitleModel, this.imgModel, this.file, this.image, this.audio}): super._();
+  const _ChatConfig({this.prompt = '', this.url = ChatConfigX.defaultUrl, this.key = '', this.model = '', this.historyLen = ChatConfigX.defaultHistoryLen, this.id = ChatConfigX.defaultId, this.name = '', this.genTitlePrompt, this.genTitleModel, this.imgModel, this.audioModel, this.tskrModel, this.altrModel, this.wrkrModel, this.trnscrbModel, this.file, this.image, this.audio}): super._();
   factory _ChatConfig.fromJson(Map<String, dynamic> json) => _$ChatConfigFromJson(json);
 
 @override@JsonKey() final  String prompt;
@@ -102,6 +107,11 @@ class _ChatConfig extends ChatConfig {
 @override final  String? genTitlePrompt;
 @override final  String? genTitleModel;
 @override final  String? imgModel;
+@override final  String? audioModel;
+@override final  String? tskrModel;
+@override final  String? altrModel;
+@override final  String? wrkrModel;
+@override final  String? trnscrbModel;
 // Newly added nullable fields
 @override final  String? file;
 @override final  String? image;
@@ -120,12 +130,12 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatConfig&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.url, url) || other.url == url)&&(identical(other.key, key) || other.key == key)&&(identical(other.model, model) || other.model == model)&&(identical(other.historyLen, historyLen) || other.historyLen == historyLen)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.genTitlePrompt, genTitlePrompt) || other.genTitlePrompt == genTitlePrompt)&&(identical(other.genTitleModel, genTitleModel) || other.genTitleModel == genTitleModel)&&(identical(other.imgModel, imgModel) || other.imgModel == imgModel)&&(identical(other.file, file) || other.file == file)&&(identical(other.image, image) || other.image == image)&&(identical(other.audio, audio) || other.audio == audio));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatConfig&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.url, url) || other.url == url)&&(identical(other.key, key) || other.key == key)&&(identical(other.model, model) || other.model == model)&&(identical(other.historyLen, historyLen) || other.historyLen == historyLen)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.genTitlePrompt, genTitlePrompt) || other.genTitlePrompt == genTitlePrompt)&&(identical(other.genTitleModel, genTitleModel) || other.genTitleModel == genTitleModel)&&(identical(other.imgModel, imgModel) || other.imgModel == imgModel)&&(identical(other.audioModel, audioModel) || other.audioModel == audioModel)&&(identical(other.tskrModel, tskrModel) || other.tskrModel == tskrModel)&&(identical(other.altrModel, altrModel) || other.altrModel == altrModel)&&(identical(other.wrkrModel, wrkrModel) || other.wrkrModel == wrkrModel)&&(identical(other.trnscrbModel, trnscrbModel) || other.trnscrbModel == trnscrbModel)&&(identical(other.file, file) || other.file == file)&&(identical(other.image, image) || other.image == image)&&(identical(other.audio, audio) || other.audio == audio));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,prompt,url,key,model,historyLen,id,name,genTitlePrompt,genTitleModel,imgModel,file,image,audio);
+int get hashCode => Object.hash(runtimeType,prompt,url,key,model,historyLen,id,name,genTitlePrompt,genTitleModel,imgModel,audioModel,tskrModel,altrModel,wrkrModel,trnscrbModel,file,image,audio);
 
 
 
@@ -136,7 +146,7 @@ abstract mixin class _$ChatConfigCopyWith<$Res> implements $ChatConfigCopyWith<$
   factory _$ChatConfigCopyWith(_ChatConfig value, $Res Function(_ChatConfig) _then) = __$ChatConfigCopyWithImpl;
 @override @useResult
 $Res call({
- String prompt, String url, String key, String model, int historyLen, String id, String name, String? genTitlePrompt, String? genTitleModel, String? imgModel, String? file, String? image, String? audio
+ String prompt, String url, String key, String model, int historyLen, String id, String name, String? genTitlePrompt, String? genTitleModel, String? imgModel, String? audioModel, String? tskrModel, String? altrModel, String? wrkrModel, String? trnscrbModel, String? file, String? image, String? audio
 });
 
 
@@ -153,7 +163,7 @@ class __$ChatConfigCopyWithImpl<$Res>
 
 /// Create a copy of ChatConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? prompt = null,Object? url = null,Object? key = null,Object? model = null,Object? historyLen = null,Object? id = null,Object? name = null,Object? genTitlePrompt = freezed,Object? genTitleModel = freezed,Object? imgModel = freezed,Object? file = freezed,Object? image = freezed,Object? audio = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? prompt = null,Object? url = null,Object? key = null,Object? model = null,Object? historyLen = null,Object? id = null,Object? name = null,Object? genTitlePrompt = freezed,Object? genTitleModel = freezed,Object? imgModel = freezed,Object? audioModel = freezed,Object? tskrModel = freezed,Object? altrModel = freezed,Object? wrkrModel = freezed,Object? trnscrbModel = freezed,Object? file = freezed,Object? image = freezed,Object? audio = freezed,}) {
   return _then(_ChatConfig(
 prompt: null == prompt ? _self.prompt : prompt // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -165,6 +175,11 @@ as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non
 as String,genTitlePrompt: freezed == genTitlePrompt ? _self.genTitlePrompt : genTitlePrompt // ignore: cast_nullable_to_non_nullable
 as String?,genTitleModel: freezed == genTitleModel ? _self.genTitleModel : genTitleModel // ignore: cast_nullable_to_non_nullable
 as String?,imgModel: freezed == imgModel ? _self.imgModel : imgModel // ignore: cast_nullable_to_non_nullable
+as String?,audioModel: freezed == audioModel ? _self.audioModel : audioModel // ignore: cast_nullable_to_non_nullable
+as String?,tskrModel: freezed == tskrModel ? _self.tskrModel : tskrModel // ignore: cast_nullable_to_non_nullable
+as String?,altrModel: freezed == altrModel ? _self.altrModel : altrModel // ignore: cast_nullable_to_non_nullable
+as String?,wrkrModel: freezed == wrkrModel ? _self.wrkrModel : wrkrModel // ignore: cast_nullable_to_non_nullable
+as String?,trnscrbModel: freezed == trnscrbModel ? _self.trnscrbModel : trnscrbModel // ignore: cast_nullable_to_non_nullable
 as String?,file: freezed == file ? _self.file : file // ignore: cast_nullable_to_non_nullable
 as String?,image: freezed == image ? _self.image : image // ignore: cast_nullable_to_non_nullable
 as String?,audio: freezed == audio ? _self.audio : audio // ignore: cast_nullable_to_non_nullable

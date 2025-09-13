@@ -89,7 +89,7 @@ extension on _TrashSheetState {
   void _restore(ChatHistory item, String key) {
     Stores.trash.removeHistory(key);
     Stores.history.put(item);
-    _allHistories[key] = item;
+    allHistories[key] = item;
     _historyRN.notify();
 
     context.pop();

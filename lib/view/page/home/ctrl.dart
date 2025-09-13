@@ -1,9 +1,9 @@
 part of 'home.dart';
 
 void _switchChat([String? id]) {
-  id ??= _allHistories.keys.firstOrNull ?? _newChat().id;
+  id ??= allHistories.keys.firstOrNull ?? _newChat().id;
 
-  final chat = _allHistories[id];
+  final chat = allHistories[id];
   if (chat == null) {
     final msg = 'Switch Chat($id) not found';
     Loggers.app.warning(msg);
@@ -23,7 +23,7 @@ void _switchChat([String? id]) {
 }
 
 void _switchPreviousChat() {
-  final iter = _allHistories.keys.iterator;
+  final iter = allHistories.keys.iterator;
   bool next = false;
   while (iter.moveNext()) {
     if (next) {
@@ -35,7 +35,7 @@ void _switchPreviousChat() {
 }
 
 void _switchNextChat() {
-  final iter = _allHistories.keys.iterator;
+  final iter = allHistories.keys.iterator;
   String? last;
   while (iter.moveNext()) {
     if (iter.current == _curChatId.value) {
@@ -49,7 +49,7 @@ void _switchNextChat() {
 }
 
 void _storeChat(String chatId) {
-  final chat = _allHistories[chatId];
+  final chat = allHistories[chatId];
   if (chat == null) {
     final msg = 'Store Chat($chatId) not found';
     Loggers.app.warning(msg);
@@ -61,7 +61,7 @@ void _storeChat(String chatId) {
 
 ChatHistory _newChat() {
   late final ChatHistory newHistory;
-  if (_allHistories.isEmpty && !Stores.setting.initHelpShown.get()) {
+  if (allHistories.isEmpty && !Stores.setting.initHelpShown.get()) {
     newHistory = ChatHistoryX.example;
   } else {
     newHistory = ChatHistoryX.empty;
@@ -69,7 +69,7 @@ ChatHistory _newChat() {
 
   /// Put newHistory to the first place, the default implementation of Dart's
   /// Map will put the new item to the last place.
-  _allHistories = {newHistory.id: newHistory, ..._allHistories};
+  allHistories = {newHistory.id: newHistory, ...allHistories};
   return newHistory;
 }
 
@@ -94,7 +94,7 @@ void _onTapDelChatItem(
 }
 
 void _onTapDeleteChat(String chatId, BuildContext context) {
-  final entity = _allHistories[chatId];
+  final entity = allHistories[chatId];
   if (entity == null) {
     final msg = 'Delete Chat($chatId) not found';
     Loggers.app.warning(msg);
@@ -141,7 +141,7 @@ void _onDeleteChat(String chatId) {
   if (_curChatId.value == chatId) {
     _switchPreviousChat();
   }
-  final rmed = _allHistories.remove(chatId);
+  final rmed = allHistories.remove(chatId);
   _historyRN.notify();
 
   if (rmed != null) {
@@ -150,7 +150,7 @@ void _onDeleteChat(String chatId) {
 }
 
 void _onTapRenameChat(String chatId, BuildContext context) async {
-  final entity = _allHistories[chatId];
+  final entity = allHistories[chatId];
   if (entity == null) {
     final msg = 'Rename Chat($chatId) not found';
     Loggers.app.warning(msg);
@@ -169,7 +169,7 @@ void _onTapRenameChat(String chatId, BuildContext context) async {
   );
   if (title == null || title.isEmpty) return;
   final ne = entity.copyWith(name: title)..save();
-  _allHistories[chatId] = ne;
+  allHistories[chatId] = ne;
   _historyRN.notify();
   _storeChat(chatId);
   _appbarTitleVN.value = title;
@@ -260,6 +260,12 @@ Future<void> _onTapFilePick(BuildContext context) async {
       'mp3',
       'wav',
       'flac',
+      'csv',
+      'json',
+      'dart',
+      'py',
+      'html',
+      'sh',
     ],
   );
   final files = result?.files;
@@ -330,14 +336,14 @@ Future<void> _onTapFilePick(BuildContext context) async {
 // }
 
 // void _removeDuplicateHistory(BuildContext context) async {
-//   final rmIds = await compute(_findAllDuplicateIds, _allHistories);
+//   final rmIds = await compute(_findAllDuplicateIds, allHistories);
 //   if (rmIds.isEmpty) return;
 
 //   final rmCount = rmIds.length;
 //   final children = <Widget>[Text(l10n.rmDuplicationFmt(rmCount))];
 //   for (int idx = 0; idx < rmCount; idx++) {
 //     final id = rmIds.elementAt(idx);
-//     final item = _allHistories[id];
+//     final item = allHistories[id];
 //     if (item == null) continue;
 //     children.add(Text(
 //       '${idx + 1}. ${item.items.firstOrNull?.toMarkdown ?? libL10n.empty}',
@@ -359,10 +365,10 @@ Future<void> _onTapFilePick(BuildContext context) async {
 //         onPressed: () {
 //           for (final id in rmIds) {
 //             Stores.history.delete(id);
-//             _allHistories.remove(id);
+//             allHistories.remove(id);
 //           }
 //           _historyRN.notify();
-//           if (!_allHistories.keys.contains(_curChatId)) {
+//           if (!allHistories.keys.contains(_curChatId)) {
 //             _switchChat();
 //           }
 //         },
@@ -376,7 +382,7 @@ void _locateHistoryListener() {
   Fns.throttle(
     () {
       // Calculate _curChatId is visible or not
-      final idx = _allHistories.keys.toList().indexOf(_curChatId.value);
+      final idx = allHistories.keys.toList().indexOf(_curChatId.value);
       final offset = _historyScrollCtrl.offset;
       final height = _historyScrollCtrl.position.viewportDimension;
       final visible =
@@ -391,7 +397,7 @@ void _locateHistoryListener() {
 }
 
 void _gotoHistory(String chatId) {
-  final idx = _allHistories.keys.toList().indexOf(chatId);
+  final idx = allHistories.keys.toList().indexOf(chatId);
   if (idx == -1) return;
   _historyScrollCtrl.animateTo(
     idx * _historyItemHeight,

@@ -568,7 +568,7 @@ done
         break;
       case 'Claude':
         if (apiKey.isEmpty || (model == null || model.isEmpty)) return null;
-        m = Claude(apiKey: apiKey, model: model);
+        m = Claude(apiKey: apiKey, model: model, version: '');
         break;
       case 'Grok':
         if (apiKey.isEmpty || (model == null || model.isEmpty)) return null;
@@ -822,19 +822,7 @@ done
           ? const <String>[]
           : argsRaw.split(RegExp(r'\s+'));
 
-      try {
-        final config = await LspStdioConfig.start(
-          executable: exe,
-          args: args,
-          filePath: filePath,
-          workspacePath: workspacePath,
-          languageId: languageId,
-        );
-        return config;
-      } catch (e) {
-        debugPrint('LSP init failed: $e');
-        return null;
-      }
+      return null;
     }
   }
 

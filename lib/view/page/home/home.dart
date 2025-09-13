@@ -2,12 +2,22 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gpt_box/core/audio/audio_utils.dart';
+import 'package:gpt_box/core/audio/transcription_service.dart';
+import 'package:gpt_box/core/audio/tts_service.dart';
+import 'package:gpt_box/core/deep_research/responses_models.dart';
+import 'package:gpt_box/core/deep_research/responses_service.dart';
+import 'package:gpt_box/core/responses/web_search_helpers.dart';
+import 'package:gpt_box/core/responses/codex_local_shell.dart';
+import 'package:gpt_box/core/responses/responses_service.dart' as respsvc;
+import 'package:gpt_box/core/responses/responses_models.dart' as respmod;
 import 'package:gpt_box/core/google/core.dart';
 import 'package:gpt_box/core/util/sync.dart';
 import 'package:gpt_box/core/util/url.dart';
@@ -37,6 +47,7 @@ import 'package:icons_plus/icons_plus.dart';
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:logging/logging.dart';
 import 'package:openai_dart/openai_dart.dart' as openai;
 import 'package:siri_wave/siri_wave.dart';
 // import 'package:image_picker/image_picker.dart';
@@ -44,6 +55,7 @@ import 'package:openai_dart/openai_dart.dart' hide Image;
 import 'package:path/path.dart' as p;
 import 'package:record/record.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:uuid/uuid.dart';
 part '../../widget/audio.dart';
 part 'chat.dart';
 part 'history.dart';
@@ -59,7 +71,7 @@ part 'url_scheme.dart';
 part 'req.dart';
 part 'md_copy.dart';
 part 'trash.dart';
-
+//part '../../widget/v1.dart';
 final aiSettings = AiSettings();
 
 const int kTtsSampleRate =
@@ -145,7 +157,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 
   static void afterRestore() {
-    _allHistories = Stores.history.fetchAll();
+    allHistories = Stores.history.fetchAll();
     _historyRN.notify();
     _chatRN.notify();
     _switchChat();
@@ -196,7 +208,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {
-    _allHistories = Stores.history.fetchAll();
+    allHistories = Stores.history.fetchAll();
     _refreshTimeTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted) _timeRN.notify();
     });

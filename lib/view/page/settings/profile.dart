@@ -66,7 +66,7 @@ final class _ProfilePageState extends State<ProfilePage>
           _buildQuickShare(),
           _buildPrompt(cfg.prompt),
           _buildHistoryLength(cfg.historyLen),
-          _buildGenTitlePrompt(cfg.genTitlePrompt),
+        //  _buildGenTitlePrompt(cfg.genTitlePrompt),
           //_buildFollowChatModel(),
         ];
         return Column(children: children.map((e) => e.cardx).toList());
@@ -286,6 +286,11 @@ final class _ProfilePageState extends State<ProfilePage>
           children: [
             _buildOpenAIChatModel(),
             _buildOpenAIImgModel(),
+            _buildOpenAITaskerModel(),
+            _buildOpenAIAlterModel(),
+_buildOpenAITranscribeModel(),
+_buildOpenAIVoiceModel(),
+_buildOpenAIWrkerModel(),
             // _buildOpenAISpeechModel(),
             // _buildOpenAITranscribeModel(),
           ],
@@ -307,6 +312,103 @@ final class _ProfilePageState extends State<ProfilePage>
           initial: val,
           onSelected: (model) {
             final newCfg = cfg.copyWith(model: model);
+            Cfg.setTo(cfg: newCfg);
+          },
+        );
+      },
+    );
+  }
+  Widget _buildOpenAITaskerModel() {
+    final cfg = Cfg.current;
+    final val = cfg.imgModel;
+    return ListTile(
+      leading: const Icon(Icons.chat),
+      title: Text('Tasker Administator Model'),
+      trailing: Text(val??'', style: UIs.text13Grey),
+      onTap: () {
+        Cfg.showPickModelDialog(
+          context,
+          initial: val,
+          onSelected: (model) {
+            final newCfg = cfg.copyWith(imgModel: model);
+            Cfg.setTo(cfg: newCfg);
+          },
+        );
+      },
+    );
+  }
+  Widget _buildOpenAIAlterModel() {
+    final cfg = Cfg.current;
+    final val = cfg.altrModel;
+    return ListTile(
+      leading: const Icon(Icons.chat),
+      title: Text('Alternative Model'),
+      trailing: Text(val??'', style: UIs.text13Grey),
+      onTap: () {
+        Cfg.showPickModelDialog(
+          context,
+          initial: val,
+          onSelected: (model) {
+            final newCfg = cfg.copyWith(altrModel: model);
+            Cfg.setTo(cfg: newCfg);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildOpenAIWrkerModel() {
+    final cfg = Cfg.current;
+    final val = cfg.wrkrModel;
+    return ListTile(
+      leading: const Icon(Icons.chat),
+      title: Text('Tasker Worker Model'),
+      trailing: Text(val??'', style: UIs.text13Grey),
+      onTap: () {
+        Cfg.showPickModelDialog(
+          context,
+          initial: val,
+          onSelected: (model) {
+            final newCfg = cfg.copyWith(wrkrModel: model);
+            Cfg.setTo(cfg: newCfg);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildOpenAITranscribeModel() {
+    final cfg = Cfg.current;
+    final val = cfg.trnscrbModel;
+    return ListTile(
+      leading: const Icon(Icons.chat),
+      title: Text('Transcribe Model'),
+      trailing: Text(val??'', style: UIs.text13Grey),
+      onTap: () {
+        Cfg.showPickModelDialog(
+          context,
+          initial: val,
+          onSelected: (model) {
+            final newCfg = cfg.copyWith(trnscrbModel: model);
+            Cfg.setTo(cfg: newCfg);
+          },
+        );
+      },
+    );
+  }
+  Widget _buildOpenAIVoiceModel() {
+    final cfg = Cfg.current;
+    final val = cfg.audioModel;
+    return ListTile(
+      leading: const Icon(Icons.chat),
+      title: Text('Voice Model'),
+      trailing: Text(val??'', style: UIs.text13Grey),
+      onTap: () {
+        Cfg.showPickModelDialog(
+          context,
+          initial: val,
+          onSelected: (model) {
+            final newCfg = cfg.copyWith(audioModel: model);
             Cfg.setTo(cfg: newCfg);
           },
         );
@@ -368,34 +470,65 @@ final class _ProfilePageState extends State<ProfilePage>
   //     },
   //   );
   // }
-
+// profile.dart (snippet)
   Widget _buildPrompt(String val) {
-    return ListTile(
-      leading: const Icon(Icons.abc),
-      title: Text(l10n.promptsSettingsItem),
-      trailing: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 60),
-        child: Text(
-          val.isEmpty ? libL10n.empty : val,
-          style: UIs.textGrey,
-          textAlign: TextAlign.end,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      onTap: () async {
-        final ctrl = TextEditingController(text: val);
-        final result = await context.showRoundDialog<String>(
-          title: libL10n.edit,
-          child: Input(
-            controller: ctrl,
-            maxLines: 11,
-            autoFocus: true,
+    return Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.abc),
+          title: Text(l10n.promptsSettingsItem),
+          trailing: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 60, maxHeight: 100),
+            child: Text(
+              val.isEmpty ? libL10n.empty : val,
+              style: UIs.textGrey,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
-        );
-        if (result == null) return;
-        Cfg.setTo(cfg: Cfg.current.copyWith(prompt: result));
-      },
+          onTap: () async {
+            final ctrl = TextEditingController(text: val);
+            final result = await context.showRoundDialog<String>(
+              title: libL10n.edit,
+              child: Input(controller: ctrl, maxLines: 11, autoFocus: true),
+              actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
+            );
+            if (result == null) return;
+            Cfg.setTo(cfg: Cfg.current.copyWith(prompt: result));
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.auto_awesome),
+          title: Text(l10n.promptsSettingsItem),
+          trailing: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 60),
+            child: Text(
+              val.isEmpty ? libL10n.empty : val,
+              style: UIs.textGrey,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          onTap: () async {
+            final ctrl = TextEditingController(text: val);
+            final result = await showDialog<String>(
+              context: context,
+              builder: (ctx) => PromptGeneratorDialog(
+                onPromptGenerated: (gen) {
+                  if (gen.isEmpty) return;
+                  final cur = ctrl.text;
+                  inputCtrl.text = cur.isEmpty ? gen : '$cur\n$gen';
+                  inputCtrl.selection = TextSelection.fromPosition(
+                    TextPosition(offset: inputCtrl.text.length),
+                  );
+                },
+              ),
+            );
+            if (result == null) return;
+            Cfg.setTo(cfg: Cfg.current.copyWith(prompt: result));
+          },
+        ),
+      ],
     );
   }
 

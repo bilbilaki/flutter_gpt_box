@@ -148,7 +148,7 @@ enum ChatContentType {
 final class ChatContent with EquatableMixin {
   final ChatContentType type;
 
-  final String raw;
+  late final String raw;
   @Default('')
   final String id;
 

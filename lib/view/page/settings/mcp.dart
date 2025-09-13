@@ -48,6 +48,7 @@ final class _McpPageState extends State<McpPage>
         _buildSwitchTile(TfPdfManager.instance),
         _buildSwitchTile(TfFileManager.instance),
         _buildSwitchTile(TfZipManager.instance),
+        _buildSwitchTile(TfWebBuilder.instance),
         _buildMemory(),
       ],
     );

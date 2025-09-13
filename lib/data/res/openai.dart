@@ -13,20 +13,21 @@ import 'package:openai_dart/openai_dart.dart';
 import 'package:dio/dio.dart';
 
 abstract final class Cfg {
-  static var client = OpenAIClient(
-    apiKey: vn.value.key,
-    baseUrl: vn.value.url,
-  );
+  static var client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url);
   static final models = nvn<List<String>>();
 
   // ignore: deprecated_member_use_from_same_package
   static final vn = _init.vn;
 
   static ChatConfig get current => vn.value;
+  static ChatConfig get currentTasker => vn.value;
+
+  static ChatConfig get currentAlter => vn.value;
 
   static final _store = Stores.config;
-
   static final chatType = ChatType.text.vn;
+  static final voiceChatType = ChatType.voice.vn;
+  static final voiceInChatType = ChatType.voicejustin.vn;
 
   static Future<void> setTo({ChatConfig? cfg, String? id}) async {
     if (cfg == null) {
@@ -51,11 +52,34 @@ abstract final class Cfg {
   }
 
   static RegExp? _modelsUseMcpReExp;
-  static bool isMcpCompatible({String? model}) {
+  static RegExp? _alterModelsUseMcpReExp;
+  static RegExp? _taskerModelsUseMcpReExp;
+
+  static bool isMcpCompatible({String? model,String? modelAlter,String? taskerModel}) {
     model ??= current.model;
+    modelAlter ??= currentAlter.model;
+     taskerModel  ??= currentAlter.model;
+
     if (model.isEmpty) return false;
     return _modelsUseMcpReExp?.hasMatch(model) ?? false;
+    
   }
+  static bool isMcpCompatibleAlter({String? modelAlter}) {
+
+    modelAlter ??= currentAlter.model;
+
+    if (modelAlter.isEmpty) return false;
+    return _alterModelsUseMcpReExp?.hasMatch(modelAlter) ?? false;
+    
+  }
+static bool isMcpCompatibleTasker({String? taskerModel}) {
+     taskerModel  ??= currentAlter.model;
+
+    if (taskerModel.isEmpty) return false;
+    return _taskerModelsUseMcpReExp?.hasMatch(taskerModel) ?? false;
+    
+  }
+
 
   /// Update models list
   /// - [force] force update, ignore cache
@@ -82,10 +106,7 @@ abstract final class Cfg {
 
   /// Apply the current profile to the openai client.
   static void applyClient() {
-    client = OpenAIClient(
-      apiKey: vn.value.key,
-      baseUrl: vn.value.url,
-    );
+    client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url);
   }
 
   /// Show the dialog to pick the model.
@@ -108,6 +129,7 @@ abstract final class Cfg {
       );
       return;
     }
+
 
     final selected = await context.showPickSingleDialog(
       items: Cfg.models.value ?? [],
@@ -167,8 +189,9 @@ abstract final class Cfg {
     BuildContext context, {
     List<Widget>? actions,
   }) async {
-    final map =
-        Stores.config.getAllMapTyped<ChatConfig>(includeInternalKeys: false);
+    final map = Stores.config.getAllMapTyped<ChatConfig>(
+      includeInternalKeys: false,
+    );
     final vals = map.values.toList();
     final newCfg = await context.showPickSingleDialog(
       items: vals,
@@ -196,6 +219,9 @@ abstract final class Cfg {
     void setExp() {
       final val = prop.get();
       _modelsUseMcpReExp = RegExp(val);
+      _alterModelsUseMcpReExp = RegExp(val);
+            _taskerModelsUseMcpReExp = RegExp(val);
+
     }
 
     setExp();
@@ -230,16 +256,14 @@ abstract final class _ModelsCacher {
         'https://api.deepseek.com/v1/models',
       _ when endpoint.startsWith('https://models.inference.ai.azure.com') =>
         'https://models.inference.ai.azure.com/models',
-      
-     _ when endpoint.startsWith('https://api.avalai.org') =>
-     'https://api.avalai.org/v1/models',
-    _ => '$endpoint/models',
+
+      _ when endpoint.startsWith('https://api.avalai.org') =>
+        'https://api.avalai.org/v1/models',
+      _ => '$endpoint/models',
     };
     final val = await myDio.get(
       url,
-      options: Options(
-        headers: {'Authorization': 'Bearer ${Cfg.current.key}'},
-      ),
+      options: Options(headers: {'Authorization': 'Bearer ${Cfg.current.key}'}),
     );
     final strs = _decodeModels(val, endpoint);
     models[key] = strs;

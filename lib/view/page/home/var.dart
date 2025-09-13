@@ -26,11 +26,11 @@ final _locateHistoryBtn = false.vn;
 final _chatFabRN = RNode();
 final _homeBottomRN = RNode();
 
-var _allHistories = <String, ChatHistory>{};
+var allHistories = <String, ChatHistory>{};
 ChatHistory? _curChat;
 final _curChatId = 'fake-non-exist-id'.vn..addListener(_onCurChatIdChanged);
 void _onCurChatIdChanged() {
-  _curChat = _allHistories[_curChatId.value];
+  _curChat = allHistories[_curChatId.value];
   _chatRN.notify();
   _appbarTitleVN.value = _curChat?.name;
 }
