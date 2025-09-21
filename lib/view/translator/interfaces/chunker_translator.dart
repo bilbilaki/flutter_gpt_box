@@ -12,7 +12,6 @@ import 'package:gpt_box/view/translator/utils/colors.dart';
 import 'package:gpt_box/view/translator/widgets/language_picker.dart';
 import 'package:gpt_box/view/widget/chunker_interface.dart';
 import 'package:path/path.dart' as p;
-import 'package:pdfx/pdfx.dart' hide PdfDocument, PdfPage;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:tiktoken/tiktoken.dart' as tk;

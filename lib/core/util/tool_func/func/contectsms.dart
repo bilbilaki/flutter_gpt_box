@@ -13,7 +13,7 @@ final class TfSMSSender extends ToolFunc {
             'contact': {
               'type': 'string',
               'description':
-                  'before using this tool you most get contact name or mail or number and just put one of that here ',
+                  'before using this tool you most get contact name to add it here one contact each time ',
             },
             'message': {
               'type': 'string',
@@ -23,7 +23,7 @@ final class TfSMSSender extends ToolFunc {
             'simslot2': {
               'type': 'boolean',
               'description':
-                  'by default we send using sim1 if need using sim2 set true ',
+                  'by default we send using sim 1 if need using sim 2 set true ',
             },
           },
           'required': ['contact', 'message'],
@@ -125,7 +125,7 @@ Future<String> findContactNumber(String query) async {
 
   String tryReturnFirstPhone(Contact c) {
     if (c.phones.isNotEmpty) {
-      return (c.phones.first.number ?? '').trim();
+      return (c.phones.first.number).trim();
     }
     return '';
   }
@@ -134,7 +134,7 @@ Future<String> findContactNumber(String query) async {
     // 1) Email search
     if (isEmail) {
       for (final e in c.emails) {
-        final addr = (e.address ?? '').toLowerCase();
+        final addr = (e.address).toLowerCase();
         if (addr == qLower || addr.contains(qLower)) {
           final found = tryReturnFirstPhone(c);
           if (found.isNotEmpty) return found;
@@ -147,21 +147,21 @@ Future<String> findContactNumber(String query) async {
     // 2) Direct phone match
     if (isPhone) {
       for (final p in c.phones) {
-        final phoneDigits = (p.number ?? '').replaceAll(RegExp(r'\D'), '');
+        final phoneDigits = (p.number).replaceAll(RegExp(r'\D'), '');
         if (phoneDigits.isEmpty) continue;
         if (phoneDigits.contains(qDigits) ||
             qDigits.contains(phoneDigits) ||
             phoneDigits.endsWith(qDigits)) {
-          return (p.number ?? '').trim();
+          return (p.number).trim();
         }
       }
       continue;
     }
 
     // 3) Name/display search (safe null handling)
-    final display = (c.displayName ?? '').toLowerCase();
-    final first = (c.name?.first ?? '').toLowerCase();
-    final last = (c.name?.last ?? '').toLowerCase();
+    final display = (c.displayName).toLowerCase();
+    final first = (c.name.first).toLowerCase();
+    final last = (c.name.last).toLowerCase();
     final full = ('$first ${last}'.trim()).toLowerCase();
 
     if (display.contains(qLower) ||
@@ -175,5 +175,5 @@ Future<String> findContactNumber(String query) async {
   }
 
   // Return empty string when nothing found (never null)
-  return '';
+  return 'contact not found , tell to user or recheck and if need adjust contact name like Case Sensetive or symbols , if you find maybe with a little adjust can find contact retry using tool too finding that but just 2 more time , if failed tell user that';
 }

@@ -1,5 +1,6 @@
 part of '../page/home/home.dart';
 
+// ignore: must_be_immutable
 class AudioPlayerTile extends StatefulWidget {
    Uint8List bytes;
    bool autoPlay;

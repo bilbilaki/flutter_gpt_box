@@ -55,6 +55,9 @@ class InternalMcpServer {
           case 'webbuilder':
         onToolLog('[$serverName]  Useing Web Builder Tools please wait...');
         return await TfWebBuilder.instance.run(mockCall, arguments, onToolLog); 
+          case 'telegramManager':
+        onToolLog('[$serverName]  Useing Telegram Tools please wait...');
+        return await TfTelegramManager.instance.run(mockCall, arguments, onToolLog); 
       default:
         onToolLog('[$serverName] Unknown tool: $toolName');
         return null;

@@ -6,17 +6,20 @@ import 'package:dio/dio.dart';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Element;
-import 'package:gpt_box/core/providers/downlooad.dart';
+import 'package:gpt_box/core/providers/download_provider.dart';
+import 'package:gpt_box/core/services/download_manager_service.dart';
 import 'package:gpt_box/core/services/file_index.dart';
 import 'package:gpt_box/core/services/pdf_opration.dart';
 import 'package:gpt_box/core/services/terminal_sessin_manager.dart';
-import 'package:gpt_box/data/model/app/download_task.dart';
+import 'package:gpt_box/core/util/utils.dart';
 // import 'package:flutter_js/extensions/fetch.dart';
 // import 'package:flutter_js/flutter_js.dart';
 import 'package:gpt_box/data/model/chat/history/history.dart';
+import 'package:gpt_box/data/model/download.dart';
 import 'package:gpt_box/data/res/build_data.dart';
 import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/store/all.dart';
+import 'package:gpt_box/main.dart';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:mcp_dart/mcp_dart.dart';
 import 'package:path/path.dart' as p;
@@ -29,6 +32,8 @@ import 'package:sms_sender_background/sms_sender.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_static/shelf_static.dart';
+import 'package:telegram/telegram.dart';
+import '../../../env.dart';
 part 'type.dart';
 part 'func/iface.dart';
 part 'func/http.dart';
@@ -44,7 +49,7 @@ part 'func/ziptool.dart';
 part 'func/filemanager.dart';
 part 'func/pdftool.dart';
 part 'func/webbuilder.dart';
-
+part 'func/telegram.dart';
 abstract final class OpenAIFuncCalls {
   static const internalTools = [
     TfMemory.instance,
@@ -59,6 +64,7 @@ abstract final class OpenAIFuncCalls {
     TfPdfManager.instance,
     TfZipManager.instance,
     TfWebBuilder.instance,
+    TfTelegramManager.instance,
   ];
 
   static Future<Set<ChatCompletionTool>> get tools async {

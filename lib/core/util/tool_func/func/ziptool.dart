@@ -63,38 +63,38 @@ final class TfZipManager extends ToolFunc {
 A powerful tool to manage ZIP archives. It can create, extract, and modify zip files based on the specified 'action'.
 
 **Actions and Required Parameters:**
-1. **'compress'**: Creates a new ZIP file from a folder.
- - `sourcePath`: The folder to compress.
- - `zipPath`: The path for the output ZIP file to be created.
- - optional: `password`, `compressLevel`, `threadCount`, `showProgress` (bool)
-2. **'extractAll'**: Extracts the entire content of a ZIP file.
- - `zipPath`: The ZIP file to extract.
- - `destinationPath`: The folder where contents will be extracted.
- - optional: `password`, `threadCount`, `showProgress` (bool)
-3. **'addFiles'**: Adds files from the disk into an existing ZIP file.
- - `zipPath`: The target ZIP file.
- - `sourceFilePaths`: A list of file/folder paths on disk to add.
- - `destinationEntryDir` (optional): A folder inside the zip to place the new files.
- - optional: `password`, `compressLevel`, `skipTopLevel`, `threadCount`, `showProgress` (bool)
-4. **'extractFiles'**: Extracts specific files or folders from a ZIP file.
- - `zipPath`: The source ZIP file.
- - `entryPaths`: A list of one or more files/folders inside the zip to extract.
- - `destinationPath`: The folder on disk where files will be extracted.
- - optional: `password`, `threadCount`, `showProgress` (bool)
-5. **'renameEntry'**: Renames a single file or folder inside a ZIP file.
- - `zipPath`: The target ZIP file.
- - `entryPaths`: A list containing the single, full path of the entry to rename.
- - `newEntryName`: The new name for the entry.
+1.-compress'**: Creates a new ZIP file from a folder.
+ -   `sourcePath`: The folder to compress.
+ -   `zipPath`: The path for the output ZIP file to be created.
+ -   optional: `password`, `compressLevel`, `threadCount`, `showProgress` (bool)
+2.-extractAll'**: Extracts the entire content of a ZIP file.
+ -   `zipPath`: The ZIP file to extract.
+ -   `destinationPath`: The folder where contents will be extracted.
+ -   optional: `password`, `threadCount`, `showProgress` (bool)
+3.-addFiles'**: Adds files from the disk into an existing ZIP file.
+ -   `zipPath`: The target ZIP file.
+ -   `sourceFilePaths`: A list of file/folder paths on disk to add.
+ -   `destinationEntryDir` (optional): A folder inside the zip to place the new files.
+ -   optional: `password`, `compressLevel`, `skipTopLevel`, `threadCount`, `showProgress` (bool)
+4.-extractFiles'**: Extracts specific files or folders from a ZIP file.
+ -   `zipPath`: The source ZIP file.
+ -   `entryPaths`: A list of one or more files/folders inside the zip to extract.
+ -   `destinationPath`: The folder on disk where files will be extracted.
+ -    optional: `password`, `threadCount`, `showProgress` (bool)
+5.-renameEntry'**: Renames a single file or folder inside a ZIP file.
+ -   `zipPath`: The target ZIP file.
+ -   `entryPaths`: A list containing the single, full path of the entry to rename.
+ -   `newEntryName`: The new name for the entry.
  - optional: `password`
-6. **'moveEntries'**: Moves files or folders to a different directory inside the ZIP.
- - `zipPath`: The target ZIP file.
- - `entryPaths`: A list of entries to move.
- - `destinationEntryDir`: The target directory inside the zip.
- - optional: `password`
-7. **'removeEntries'**: Deletes files or folders from inside the ZIP file.
- - `zipPath`: The target ZIP file.
- - `entryPaths`: A list of entries to delete.
- - optional: `password`
+6.-moveEntries'**: Moves files or folders to a different directory inside the ZIP.
+ -   `zipPath`: The target ZIP file.
+ -   `entryPaths`: A list of entries to move.
+ -   `destinationEntryDir`: The target directory inside the zip.
+ -   `optional: `password`
+7.-removeEntries'**: Deletes files or folders from inside the ZIP file.
+ -   `zipPath`: The target ZIP file.
+ -   `entryPaths`: A list of entries to delete.
+ -   optional: `password`
 ''';
 
   @override

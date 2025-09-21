@@ -15,20 +15,14 @@ Widget _buildWebdav(BuildContext context) {
           title: Text(l10n.auto),
           trailing: StoreSwitch(
             prop: PrefProps.webdavSync,
-            validator: (p0) {
-              if (PrefProps.icloudSync.get() && p0) {
-                context.showSnackBar(l10n.syncConflict('iCloud', 'WebDAV'));
+            validator: (p0) async{
+              final res = await isNeedSignDrive();
+              if (res) {
+                context.showSnackBar(
+                  'You should first sign in with your google account',
+                );
                 return false;
               }
-              if (p0) {
-                if (PrefProps.webdavUrl.get() == null ||
-                    PrefProps.webdavUser.get() == null ||
-                    PrefProps.webdavPwd.get() == null) {
-                  context.showSnackBar(l10n.emptyFields(libL10n.setting));
-                  return false;
-                }
-              }
-              BakSync.instance.sync(rs: Webdav.shared);
               return true;
             },
           ),
@@ -65,17 +59,16 @@ Widget _buildWebdav(BuildContext context) {
 Future<void> _onTapWebdavDl(BuildContext context) async {
   _webdavLoading.value = true;
   try {
-    final files = await Webdav.shared.list();
-    if (files.isEmpty) return context.showSnackBar(libL10n.empty);
+    final files = await listAppDataFromDrive();
 
     final fileName = await context.showPickSingleDialog(
       title: libL10n.select,
-      items: files,
+      items: [files],
     );
-    if (fileName == null) return;
+    if (fileName?.first.id == null) return;
 
-    await Webdav.shared.download(relativePath: fileName);
-    final dlFile = await File('${Paths.doc}/$fileName').readAsString();
+   final file= await downloadAppDataFromDrive('${fileName?.first.id}','${fileName?.first.name}');
+    final dlFile = await File('${file?.path}').readAsString();
     final dlBak = await compute(Backup.fromJsonString, dlFile);
     await dlBak.merge(force: true);
     context.showSnackBar(libL10n.success);
@@ -93,7 +86,9 @@ Future<void> _onTapWebdavUp(BuildContext context) async {
   try {
     final content = await Backup.backup();
     await File(Paths.bak).writeAsString(content);
-    await Webdav.shared.upload(relativePath: Paths.bakName);
+  final  byte = File(Paths.bak).readAsBytesSync();
+    await uploadAppDataToDrive( Paths.bakName, byte);
+
     context.showSnackBar(libL10n.success);
   } catch (e, s) {
     context.showErrDialog(e, s, 'Upload webdav backup');

@@ -260,7 +260,7 @@ Future<void> _onCreateText(
         // Wait for db to store the chat
         await titleCompleter?.future;
         await Future.delayed(const Duration(milliseconds: 300));
-        BakSync.instance.sync();
+    //    BakSync.instance.sync();
       },
       onError: (e, s) {
         _onErr(e, s, chatId, 'Listen text stream');
@@ -1449,7 +1449,7 @@ Future<void> _onCreateTextTranslated(
         // Wait for db to store the chat
         await titleCompleter?.future;
         await Future.delayed(const Duration(milliseconds: 300));
-        BakSync.instance.sync();
+     //   BakSync.instance.sync();
       },
       onError: (e, s) {
         _onErr(e, s, chatId, 'Listen text stream');

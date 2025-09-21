@@ -427,66 +427,69 @@ class ChatSettingsAdapter extends TypeAdapter<ChatSettings> {
           typeId == other.typeId;
 }
 
-class DownloadTaskAdapter extends TypeAdapter<DownloadTask> {
+class DownloadItemAdapter extends TypeAdapter<DownloadItem> {
   @override
-  final typeId = 11;
+  final typeId = 20;
 
   @override
-  DownloadTask read(BinaryReader reader) {
+  DownloadItem read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return DownloadTask(
-      id: fields[0] == null ? '' : fields[0] as String,
+    return DownloadItem(
+      taskId: fields[0] as String,
       url: fields[1] as String,
-      urlQueryParameters: fields[2] == null
-          ? {}
-          : (fields[2] as Map).cast<String, String>(),
-      filename: fields[3] == null ? '' : fields[3] as String,
-      headers: fields[4] == null
-          ? {}
-          : (fields[4] as Map).cast<String, String>(),
-      directory: fields[5] == null ? '' : fields[5] as String,
-      updates: fields[6] == null
-          ? Updates.statusAndProgress
-          : fields[6] as Updates,
-      requiresWiFi: fields[7] == null ? false : fields[7] as bool,
-      retries: fields[8] == null ? 0 : (fields[8] as num).toInt(),
-      allowPause: fields[9] == null ? false : fields[9] as bool,
-      metaData: fields[10] as String?,
-      createdAt: fields[11] as DateTime?,
+      filename: fields[2] as String,
+      savedPath: fields[3] as String,
+      status: fields[4] as DownloadUiStatus,
+      progress: (fields[5] as num).toDouble(),
+      expectedFileSize: (fields[6] as num?)?.toInt(),
+      networkSpeedBytesPerSec: (fields[7] as num?)?.toDouble(),
+      timeRemainingSeconds: (fields[8] as num?)?.toInt(),
+      group: fields[9] as String,
+      openAfterComplete: fields[10] as bool,
+      createdAt: fields[11] as DateTime,
+      finishedAt: fields[12] as DateTime?,
+      displayName: fields[13] as String,
+      metaData: fields[14] as String,
     );
   }
 
   @override
-  void write(BinaryWriter writer, DownloadTask obj) {
+  void write(BinaryWriter writer, DownloadItem obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(15)
       ..writeByte(0)
-      ..write(obj.id)
+      ..write(obj.taskId)
       ..writeByte(1)
       ..write(obj.url)
       ..writeByte(2)
-      ..write(obj.urlQueryParameters)
-      ..writeByte(3)
       ..write(obj.filename)
+      ..writeByte(3)
+      ..write(obj.savedPath)
       ..writeByte(4)
-      ..write(obj.headers)
+      ..write(obj.status)
       ..writeByte(5)
-      ..write(obj.directory)
+      ..write(obj.progress)
       ..writeByte(6)
-      ..write(obj.updates)
+      ..write(obj.expectedFileSize)
       ..writeByte(7)
-      ..write(obj.requiresWiFi)
+      ..write(obj.networkSpeedBytesPerSec)
       ..writeByte(8)
-      ..write(obj.retries)
+      ..write(obj.timeRemainingSeconds)
       ..writeByte(9)
-      ..write(obj.allowPause)
+      ..write(obj.group)
       ..writeByte(10)
-      ..write(obj.metaData)
+      ..write(obj.openAfterComplete)
       ..writeByte(11)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(12)
+      ..write(obj.finishedAt)
+      ..writeByte(13)
+      ..write(obj.displayName)
+      ..writeByte(14)
+      ..write(obj.metaData);
   }
 
   @override
@@ -495,101 +498,7 @@ class DownloadTaskAdapter extends TypeAdapter<DownloadTask> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is DownloadTaskAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-class UpdatesAdapter extends TypeAdapter<Updates> {
-  @override
-  final typeId = 12;
-
-  @override
-  Updates read(BinaryReader reader) {
-    switch (reader.readByte()) {
-      case 0:
-        return Updates.none;
-      case 1:
-        return Updates.status;
-      case 2:
-        return Updates.statusAndProgress;
-      default:
-        return Updates.none;
-    }
-  }
-
-  @override
-  void write(BinaryWriter writer, Updates obj) {
-    switch (obj) {
-      case Updates.none:
-        writer.writeByte(0);
-      case Updates.status:
-        writer.writeByte(1);
-      case Updates.statusAndProgress:
-        writer.writeByte(2);
-    }
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is UpdatesAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-class TaskStatusAdapter extends TypeAdapter<TaskStatus> {
-  @override
-  final typeId = 13;
-
-  @override
-  TaskStatus read(BinaryReader reader) {
-    switch (reader.readByte()) {
-      case 0:
-        return TaskStatus.queued;
-      case 1:
-        return TaskStatus.running;
-      case 2:
-        return TaskStatus.paused;
-      case 3:
-        return TaskStatus.complete;
-      case 4:
-        return TaskStatus.canceled;
-      case 5:
-        return TaskStatus.failed;
-      default:
-        return TaskStatus.queued;
-    }
-  }
-
-  @override
-  void write(BinaryWriter writer, TaskStatus obj) {
-    switch (obj) {
-      case TaskStatus.queued:
-        writer.writeByte(0);
-      case TaskStatus.running:
-        writer.writeByte(1);
-      case TaskStatus.paused:
-        writer.writeByte(2);
-      case TaskStatus.complete:
-        writer.writeByte(3);
-      case TaskStatus.canceled:
-        writer.writeByte(4);
-      case TaskStatus.failed:
-        writer.writeByte(5);
-    }
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is TaskStatusAdapter &&
+      other is DownloadItemAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

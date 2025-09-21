@@ -71,7 +71,12 @@ A tool to generate and preview web apps locally:
 - finishBuild: start a local HTTP server to preview, export sources to Downloads, create a zip, and open the browser.
 - toggleServer: stop (or start) the server.
 - resetWorkspace: wipe and recreate an empty workspace.
-Return values always include "workspaceRoot".''';
+Return values always include "workspaceRoot".
+Important:
+- After building First concept or editing project by sending request for toggleserver you should open web to user see changes.
+- For user explain your unlimited abilities to can make any kind webpage then try to interseted user with yoour power of creation.
+- if user add access for you to can performing web search or webpages fetch you can mixing that with this tool and looking for resources if user request a website clone from you.
+- if you need you can retry tool calls , or performing more tool call instead of just once ''';
 
   @override
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
@@ -423,11 +428,10 @@ class _Export {
     Directory wsRoot, {
     required OnToolLog log,
   }) async {
-    final base = await _downloadsLikeDir();
+    final base = await getTargetDirectory(folderUnderApp: 'GptBoxWebApps');
     final out = Directory(
       p.join(
         base.path,
-        'GptBoxWebApps',
         'web_${DateTime.now().millisecondsSinceEpoch}',
       ),
     );
@@ -451,28 +455,28 @@ class _Export {
     }
   }
 
-  static Future<Directory> _downloadsLikeDir() async {
-    // Desktop platforms: path_provider getDownloadsDirectory is ok.
-    // Mobile: use external storage (Android) or Documents (iOS) as fallback.
-    try {
-      final d = await getDownloadsDirectory();
-      if (d != null) return d;
-    } catch (_) {}
-    if (Platform.isAndroid) {
-      final ext = await getExternalStorageDirectory();
-      if (ext != null) {
-        // try put under "Download" sibling
-        final parent = Directory(p.join(ext.parent.path, 'Download'));
-        if (parent.existsSync()) return parent;
-        return ext;
-      }
-    }
-    if (Platform.isIOS) {
-      return await getApplicationDocumentsDirectory();
-    }
-    // Fallback to temporary
-    return await Directory.systemTemp.createTemp('exports_');
-  }
+  // static Future<Directory> _downloadsLikeDir() async {
+  //   // Desktop platforms: path_provider getDownloadsDirectory is ok.
+  //   // Mobile: use external storage (Android) or Documents (iOS) as fallback.
+  //   try {
+  //     final d = await getDownloadsDirectory();
+  //     if (d != null) return d;
+  //   } catch (_) {}
+  //   if (Platform.isAndroid) {
+  //     final ext = await getExternalStorageDirectory();
+  //     if (ext != null) {
+  //       // try put under "Download" sibling
+  //       final parent = Directory(p.join(ext.parent.path, 'Download'));
+  //       if (parent.existsSync()) return parent;
+  //       return ext;
+  //     }
+  //   }
+  //   if (Platform.isIOS) {
+  //     return await getApplicationDocumentsDirectory();
+  //   }
+  //   // Fallback to temporary
+  //   return await Directory.systemTemp.createTemp('exports_');
+  // }
 
   static Future<void> _copyDir(Directory src, Directory dst) async {
     await for (final ent in src.list(recursive: true, followLinks: false)) {

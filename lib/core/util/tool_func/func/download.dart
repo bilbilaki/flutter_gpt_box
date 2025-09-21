@@ -73,147 +73,145 @@ The tool will return a task ID when a new download is started, which you can use
   @override
   String get l10nName => "Downloader";
 
+// ...existing code...
   @override
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
-    // Ensure the provider is started and tracking tasks
-    final downloader = DownloadProvider.instance;
-    downloader.start();
-    // This ensures the provider is listening to updates. It's safe to call multiple times.
-    downloader.trackTasks();
 
-    // --- Parse Arguments ---
-    final checkStatus = args['checkStatus'] as bool? ?? false;
-    final cancelTask = args['cancelTask'] as bool? ?? false;
-    final taskId = args['taskId'] as String?;
-    final url = args['url'] as String?;
-    final batchTasks = (args['batchTasks'] as List?)
-        ?.cast<Map<String, dynamic>>();
+   // Use the DownloadManagerService singleton directly (keeps tool in sync with provider changes)
+   final svc = DownloadManagerService.I;
+   await svc.init();
+ 
+     // --- Parse Arguments ---
+     final checkStatus = args['checkStatus'] as bool? ?? false;
+     final cancelTask = args['cancelTask'] as bool? ?? false;
+     final taskId = args['taskId'] as String?;
+     final url = args['url'] as String?;
+     final batchTasks = (args['batchTasks'] as List?)
+         ?.cast<Map<String, dynamic>>();
+ 
+     // --- Action Logic ---
+ 
+     // 1. Check Status
+     if (checkStatus) {
+       if (taskId != null) {
 
-    // --- Action Logic ---
+       log('Checking status for task: $taskId');
+       // Look for the task in active items first, then history
+       DownloadItem? findById(String id) {
+         for (final it in svc.activeItems()) {
+           if (it.taskId == id) return it;
+         }
+         for (final it in svc.history()) {
+           if (it.taskId == id) return it;
+         }
+         return null;
+       }
 
-    // 1. Check Status
-    if (checkStatus) {
-      if (taskId != null) {
-        log('Checking status for task: $taskId');
-        final record = downloader.snapshotRecordForId(taskId);
-        if (record == null) {
-          return [ChatContent.text('No download task found with ID: $taskId')];
-        }
-        return [ChatContent.text(_formatRecord(record))];
-      } else {
-        log('Listing status for all tasks');
-        final records = downloader.snapshotRecords();
-        if (records.isEmpty) {
-          return [
-            ChatContent.text('There are no active or recent download tasks.'),
-          ];
-        }
-        final statusList = records.map(_formatRecord).join('\n---\n');
-        return [ChatContent.text(statusList)];
-      }
-    }
+       final item = findById(taskId);
+       if (item == null) {
+         return [ChatContent.text('No download task found with ID: $taskId')];
+       }
+       return [ChatContent.text(_formatItem(item))];
+       } else {
+         log('Listing status for all tasks');
 
-    // 2. Cancel Task
-    if (cancelTask) {
-      if (taskId == null || taskId.isEmpty) {
-        return [
-          ChatContent.text('Error: A "taskId" is required to cancel a task.'),
-        ];
-      }
-      log('Attempting to cancel task: $taskId');
-      final success = downloader.cancel(taskId);
-      if (success) {
-        return [
-          ChatContent.text(
-            'Successfully signaled cancellation for task: $taskId',
-          ),
-        ];
-      } else {
-        return [
-          ChatContent.text(
-            'Failed to cancel task: $taskId. It may not exist or may have already completed.',
-          ),
-        ];
-      }
-    }
+       final records = <DownloadItem>[
+         ...svc.activeItems(),
+         ...svc.history(),
+       ];
+       if (records.isEmpty) {
+         return [
+           ChatContent.text('There are no active or recent download tasks.'),
+         ];
+       }
+       final statusList = records.map(_formatItem).join('\n---\n');
+       return [ChatContent.text(statusList)];
+       }
+     }
+ 
+     // 2. Cancel Task
+     if (cancelTask) {
+       if (taskId == null || taskId.isEmpty) {
+         return [
+           ChatContent.text('Error: A "taskId" is required to cancel a task.'),
+         ];
+       }
+       log('Attempting to cancel task: $taskId');
 
-    // 3. Add Batch Tasks
-    if (batchTasks != null && batchTasks.isNotEmpty) {
-      log('Enqueuing ${batchTasks.length} batch download tasks.');
-      final tasks = <DownloadTask>[];
-      final taskIds = <String>[];
 
-      for (final taskData in batchTasks) {
-        final taskUrl = taskData['url'] as String?;
-        if (taskUrl != null) {
-          final id = shortid.generate();
-          taskIds.add(id);
-          tasks.add(
-            DownloadTask(
-              id: id,
-              url: taskUrl,
-              filename: taskData['filename'] as String? ?? '',
-              createdAt: DateTime.now(),
-            ),
-          );
-        }
-      }
+     final success = await svc.cancel(taskId);
+     if (success) {
+       return [
+         ChatContent.text('Successfully signaled cancellation for task: $taskId'),
+       ];
+     } else {
+       return [
+         ChatContent.text(
+           'Failed to cancel task: $taskId. It may not exist or may have already completed.',
+         ),
+       ];
+     }
+     }
+ 
+     // 3. Add Batch Tasks
+     if (batchTasks != null && batchTasks.isNotEmpty) {
+       log('Enqueuing ${batchTasks.length} batch download tasks.');
 
-      await downloader.enqueueAll(tasks);
-      return [
-        ChatContent.text(
-          'Successfully enqueued ${tasks.length} download tasks. Task IDs: ${taskIds.join(', ')}',
-        ),
-      ];
-    }
-    // 4. Add Single Task
-    if (url != null && url.isNotEmpty) {
-      final tasks = <DownloadTask>[];
-      final taskIds = <String>[];
-      final id = shortid.generate();
-      taskIds.add(id);
-      tasks.add(
-        DownloadTask(
-          id: id,
-          url: url,
-          filename: args['filename'] as String? ?? '',
-          createdAt: DateTime.now(),
-          directory: args['subdir']??'', 
-        ),
-      );
-      log('Enqueuing single download: $url. Task ID: ${taskIds.first}');
-      await downloader.enqueue(tasks.first);
-      return [
-        ChatContent.text(
-          'Download task successfully added. Your Task ID is: ${taskIds.first}',
-        ),
-      ];
-    }
+     final taskIds = <String>[];
+     for (final taskData in batchTasks) {
+       final taskUrl = taskData['url'] as String?;
+       if (taskUrl == null) continue;
+       final req = DownloadRequest(
+         url: taskUrl,
+         filename: taskData['filename'] as String? ?? '',
+         userSubdir: taskData['subdir'] as String? ?? '',
+       );
+       final id = await svc.enqueueSingle(req);
+       if (id != null) taskIds.add(id);
+     }
+     return [
+       ChatContent.text(
+         'Successfully enqueued ${taskIds.length} download tasks. Task IDs: ${taskIds.join(', ')}',
+       ),
+     ];
+     }
+     // 4. Add Single Task
+     if (url != null && url.isNotEmpty) {
 
-    // Fallback: If no valid action was specified
-    return [
-      ChatContent.text(
-        'Invalid downloader arguments. Please specify a valid action (add, check status, or cancel a task).',
-      ),
-    ];
-  }
+     final req = DownloadRequest(
+       url: url,
+       filename: args['filename'] as String? ?? '',
+       userSubdir: args['subdir'] as String? ?? '',
+     );
+     final id = await svc.enqueueSingle(req);
+     log('Enqueuing single download: $url. Task ID: $id');
+     return [
+       ChatContent.text(
+         'Download task successfully added. Your Task ID is: ${id ?? 'unknown'}',
+       ),
+     ];
+     }
+ 
+     // Fallback: If no valid action was specified
+     return [
+       ChatContent.text(
+         'Invalid downloader arguments. Please specify a valid action (add, check status, or cancel a task).',
+       ),
+     ];
+   }
+ 
 
-  String _formatRecord(DownloadRecord record) {
-    final progressPercent = (record.progress * 100).toStringAsFixed(1);
-    final status = record.status.toString().split('.').last;
-    final filename = record.task?.filename.isNotEmpty == true
-        ? record.task!.filename
-        : 'N/A';
-    var result = 'ID: ${record.taskId}\n';
-    result += 'Status: $status\n';
-    result += 'Filename: $filename\n';
-    result += 'Progress: $progressPercent%';
-    if (record.status == TaskStatus.complete && record.subDirPath != null) {
-      result += '\nFile Path: ${record.subDirPath}';
-    }
-    if (record.status == TaskStatus.failed && record.error != null) {
-      result += '\nError: ${record.error}';
-    }
-    return result;
-  }
+ String _formatItem(DownloadItem item) {
+   final progressPercent = (item.progress! * 100).toStringAsFixed(1);
+   final status = item.status!.name;
+   final filename = item.filename!.isNotEmpty ? item.filename : 'N/A';
+   var result = 'ID: ${item.taskId}\n';
+   result += 'Status: $status\n';
+   result += 'Filename: $filename\n';
+   result += 'Progress: $progressPercent%';
+   if (item.savedPath!.isNotEmpty) {
+     result += '\nFile Path: ${item.savedPath}';
+   }
+   return result;
+ }
 }

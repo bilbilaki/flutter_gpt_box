@@ -1,5 +1,7 @@
 import 'package:fl_lib/fl_lib.dart';
 import 'package:gpt_box/data/model/chat/config.dart';
+import 'package:gpt_box/data/model/download.dart';
+import 'package:hive_ce/hive.dart';
 
 final class ConfigStore extends HiveStore {
   ConfigStore._() : super('config');

@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+// ignore: must_be_immutable
 class Base64ImageDisplay extends StatelessWidget {
   /// The Base64 string representing the image data.
   final String base64String;
@@ -70,7 +71,7 @@ class Base64ImageDisplay extends StatelessWidget {
           );
     }
 
-    if (imageBytes == null || imageBytes.isEmpty) {
+    if (imageBytes.isEmpty) {
       // Handle cases where the decoded bytes are empty (e.g., empty base64 string)
       return noImageWidget ??
           _buildDefaultErrorWidget(
@@ -111,7 +112,7 @@ class Base64ImageDisplay extends StatelessWidget {
         );
       },
       child: Image.memory(
-        imageBytes!, // `imageBytes` is guaranteed non-null here
+        imageBytes, // `imageBytes` is guaranteed non-null here
         fit: fit,
         width: width,
         height: height,

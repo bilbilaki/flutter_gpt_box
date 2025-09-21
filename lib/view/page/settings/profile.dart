@@ -532,27 +532,6 @@ _buildOpenAIWrkerModel(),
     );
   }
 
-  Widget _buildGenTitlePrompt(String? val) {
-    return ListTile(
-      leading: const Icon(Icons.title),
-      title: Text('${l10n.promptsSettingsItem}(${l10n.genTitle})'),
-      trailing: Text(val ?? libL10n.empty, style: UIs.textGrey),
-      onTap: () async {
-        final ctrl = TextEditingController(text: val);
-        final result = await context.showRoundDialog<String>(
-          title: libL10n.edit,
-          child: Input(
-            controller: ctrl,
-            maxLines: 11,
-            autoFocus: true,
-          ),
-          actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
-        );
-        if (result == null) return;
-        Cfg.setTo(cfg: Cfg.current.copyWith(genTitlePrompt: result));
-      },
-    );
-  }
 
   Widget _buildHistoryLength(int val) {
     return ListTile(

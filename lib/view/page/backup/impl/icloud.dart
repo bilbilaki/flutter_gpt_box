@@ -6,13 +6,13 @@ Widget _buildIcloud(BuildContext context) {
       leading: const Icon(Icons.cloud),
       title: const Text('iCloud'),
       trailing: StoreSwitch(
-        prop: PrefProps.icloudSync,
-        validator: (p0) {
-          if (PrefProps.webdavSync.get() && p0) {
-            context.showSnackBar(l10n.syncConflict('iCloud', 'WebDAV'));
+        prop: PrefProps.webdavSync,
+        validator: (p0) async{
+        final res= await isNeedSignDrive();
+          if (res) {
+            context.showSnackBar('You should first sign in with your google account');
             return false;
           }
-          BakSync.instance.sync(rs: icloud);
           return true;
         },
       ),

@@ -18,14 +18,14 @@ final  client = await getClient();
   await gmailApi.users.messages.send(message, 'me');
 }
 
-class _AuthenticatedClient extends http.BaseClient {
-  final Map<String, String> _headers;
-  final http.Client _client;
+// class _AuthenticatedClient extends http.BaseClient {
+//   final Map<String, String> _headers;
+//   final http.Client _client;
 
-  _AuthenticatedClient(this._client, this._headers);
+//   _AuthenticatedClient(this._client, this._headers);
 
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) {
-    return _client.send(request..headers.addAll(_headers));
-  }
-}
+//   @override
+//   Future<http.StreamedResponse> send(http.BaseRequest request) {
+//     return _client.send(request..headers.addAll(_headers));
+//   }
+// }

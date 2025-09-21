@@ -1,8 +1,4 @@
-import 'package:fl_lib/fl_lib.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:gpt_box/data/store/all.dart';
-import 'package:gpt_box/data/store/setting.dart';
+part of 'home.dart';
 
 class AiSettingsDrawerHive extends StatefulWidget {
   const AiSettingsDrawerHive({super.key});
@@ -20,11 +16,6 @@ class _AiSettingsDrawerHiveState extends State<AiSettingsDrawerHive> {
       'alloy', 'ash', 'echo', 'ballad', 'sage', 'coral', 'shimmer',
     ];
 UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
-    final themeMode = switch (Stores.setting.themeMode.get()) {
-      1 => ThemeMode.light,
-      2 => ThemeMode.dark,
-      _ => ThemeMode.system,
-    };
     return Drawer(
       width: 320,
       backgroundColor: UIs.colorSeed,
@@ -429,11 +420,6 @@ class _Expansion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
-    final themeMode = switch (Stores.setting.themeMode.get()) {
-      1 => ThemeMode.light,
-      2 => ThemeMode.dark,
-      _ => ThemeMode.system,
-    };
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: UIs.colorSeed),
       child: ExpansionTile(

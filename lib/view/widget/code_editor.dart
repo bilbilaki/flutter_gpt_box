@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_code_crafter/code_crafter.dart';
@@ -92,7 +91,6 @@ class _CodeEditorAppState extends State<CodeEditorApp> {
   bool _lspEnabled = false;
 
   // Cached last-known LSP filePath for CodeCrafter
-  String? _lspFilePath;
 
   @override
   void initState() {
@@ -112,7 +110,6 @@ class _CodeEditorAppState extends State<CodeEditorApp> {
     // LSP
     _lspEnabled = sp.getBool(_kLspEnabled) ?? false;
     _lspFuture = _prepareLspFromPrefs(sp);
-    _lspFilePath = sp.getString(_kLspFilePath);
 
     setState(() {});
   }
@@ -123,44 +120,6 @@ class _CodeEditorAppState extends State<CodeEditorApp> {
     super.dispose();
   }
 
-  String get _fileName {
-    switch (_currentLanguage) {
-      case 'Dart':
-        return 'main.dart';
-      case 'Python':
-        return 'main.py';
-      case 'JavaScript':
-        return 'index.js';
-      case 'Java':
-        return 'Main.java';
-      case 'C':
-        return 'main.c';
-      case 'C++':
-        return 'main.cpp';
-      case 'Kotlin':
-        return 'Main.kt';
-      case 'Go':
-        return 'main.go';
-      case 'Rust':
-        return 'main.rs';
-      case 'Swift':
-        return 'main.swift';
-      case 'JSON':
-        return 'data.json';
-      case 'YAML':
-        return 'config.yaml';
-      case 'XML':
-        return 'layout.xml';
-      case 'HTML':
-        return 'index.html';
-      case 'CSS':
-        return 'styles.css';
-      case 'Bash':
-        return 'script.sh';
-      default:
-        return 'untitled.txt';
-    }
-  }
 
   String _starterText(String lang) {
     switch (lang) {
@@ -817,10 +776,6 @@ done
       final exe = sp.getString(_kLspExecutable);
       if (exe == null || exe.isEmpty) return null;
 
-      final argsRaw = sp.getString(_kLspArgs) ?? '';
-      final args = argsRaw.trim().isEmpty
-          ? const <String>[]
-          : argsRaw.split(RegExp(r'\s+'));
 
       return null;
     }
@@ -986,9 +941,6 @@ done
                     setState(() {
                       _lspEnabled = enabled;
                       _lspFuture = fut;
-                      _lspFilePath = filePathCtrl.text.trim().isEmpty
-                          ? null
-                          : filePathCtrl.text.trim();
                     });
 
                     if (mounted) Navigator.pop(ctx);

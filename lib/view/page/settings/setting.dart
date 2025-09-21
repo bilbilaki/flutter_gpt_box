@@ -192,10 +192,6 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   //   );
   // }
 
-  void _onSaveColor(Color c) {
-    _setStore.themeColorSeed.put(c.value255);
-    RNodes.app.notify(delay: true);
-  }
 
   Widget _buildLocale() {
     return ValueListenableBuilder(
@@ -249,43 +245,6 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     );
   }
 
-  Widget _buildFontSize() {
-    return ValueListenableBuilder(
-      valueListenable: ss.fontSize.listenable(),
-      builder: (_, val, __) => ListTile(
-        leading: const Icon(Icons.text_fields),
-        title: Text(l10n.fontSize),
-        trailing: Text(
-          val.toString(),
-          style: UIs.text13Grey,
-        ),
-        subtitle: Text(l10n.fontSizeSettingTip, style: UIs.text13Grey),
-        onTap: () async {
-          final ctrl = TextEditingController(text: val.toString());
-          final result = await context.showRoundDialog<String>(
-            title: l10n.fontSize,
-            child: Input(
-              icon: Icons.text_fields,
-              controller: ctrl,
-              hint: '12',
-              type: const TextInputType.numberWithOptions(decimal: true),
-            ),
-            actions: Btn.ok(onTap: () {
-                _onSaveColor(Colors.green);
-                context.pop();
-              }).toList,
-          );
-          if (result == null) return;
-          final newVal = double.tryParse(result);
-          if (newVal == null) {
-            context.showSnackBar('Invalid number: $result');
-            return;
-          }
-          ss.fontSize.put(newVal);
-        },
-      ),
-    );
-  }
 
   Widget _buildGenTitle() {
     return ListTile(
@@ -337,13 +296,6 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   //   );
   // }
 
-  Widget _buildReplay() {
-    return ListTile(
-      leading: const Icon(Icons.replay),
-      title: Text(l10n.replay),
-      trailing: StoreSwitch(prop: ss.replay),
-    );
-  }
 
   Widget _buildAppMore() {
     return ExpandTile(

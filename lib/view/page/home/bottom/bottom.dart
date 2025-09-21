@@ -547,18 +547,18 @@ Widget _buildBottomFnsTwoRows() {
 
   Widget _buildRight() {
     return _curPage.listenVal((val) {
-      return val == HomePageEnum.chat ? _buildChatMeta() : _buildSyncChats();
+      return val == HomePageEnum.chat ? _buildChatMeta() : _buildChatMeta();
     });
   }
 
-  Widget _buildSyncChats() {
-    final rs = BakSync.instance.remoteStorage;
-    if (rs == null) return UIs.placeholder;
-    return IconButton(
-      onPressed: _onTapSyncChats,
-      icon: const Icon(Icons.sync, size: 19),
-    );
-  }
+  // Widget _buildSyncChats() {
+  //   final rs = BakSync.instance.remoteStorage;
+  //   if (rs == null) return UIs.placeholder;
+  //   return IconButton(
+  //     onPressed: _onTapSyncChats,
+  //     icon: const Icon(Icons.sync, size: 19),
+  //   );
+  // }
 
   Widget _buildChatMeta() {
     if (BuildMode.isRelease) return UIs.placeholder;
@@ -590,7 +590,7 @@ $jsonRaw
   }
 
   void _onTapSyncChats() async {
-    await BakSync.instance.sync();
+    
   }
 }
 
