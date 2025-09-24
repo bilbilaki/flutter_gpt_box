@@ -1,0 +1,1525 @@
+--- Selected Files Export ---
+Export Date: 2025-09-24T11:45:44.035025
+
+### File: lib.go (/home/nss/Documents/WC/gofalow/bridge/lib.go)
+```go
+package bridge
+
+/*
+#include "stdint.h"
+#include "dart_api/dart_api_dl.h"
+#include "dart_api/dart_api_dl.c"
+#include "dart_api/dart_native_api.h"
+// Go does not allow calling C function pointers directly.
+// we mock a function to call Dart_PostCObject_DL
+bool GoDart_PostCObject(Dart_Port_DL port, Dart_CObject* obj) {
+  return Dart_PostCObject_DL(port, obj);
+}
+*/
+import "C"
+import (
+	"encoding/json"
+	"fmt"
+	"unsafe"
+)
+
+type DartResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    string `json:"data"`
+}
+
+func InitDartApi(api unsafe.Pointer) {
+	if C.Dart_InitializeApiDL(api) != 0 {
+		panic("failed to create dart bridge")
+	} else {
+		fmt.Println("Dart Api DL is initialized")
+	}
+}
+
+func SendResponseToPort(port int64, response *DartResponse) {
+	var obj C.Dart_CObject
+	obj._type = C.Dart_CObject_kString
+	responseJson, _ := json.Marshal(response)
+	msg_obj := C.CString(string(responseJson)) // go string -> char*s
+	// union type, we do a force convertion
+	ptr := unsafe.Pointer(&obj.value[0])
+	*(**C.char)(ptr) = msg_obj
+	ret := C.GoDart_PostCObject(C.Dart_Port_DL(port), &obj)
+	if !ret {
+		fmt.Println("ERROR: post to port ", port, " failed", responseJson)
+	}
+}
+
+func SendStringToPort(port int64, msg string) {
+	var obj C.Dart_CObject
+	obj._type = C.Dart_CObject_kString
+	msg_obj := C.CString(msg) // go string -> char*s
+	// union type, we do a force convertion
+	ptr := unsafe.Pointer(&obj.value[0])
+	*(**C.char)(ptr) = msg_obj
+	ret := C.GoDart_PostCObject(C.Dart_Port_DL(port), &obj)
+	if !ret {
+		fmt.Println("ERROR: post to port ", port, " failed", msg)
+	}
+}
+
+```
+
+--- End File: lib.go ---
+
+### File: main.go (/home/nss/Documents/WC/gofalow/cmd/main.go)
+```go
+package main
+
+import "C"
+import (
+	"bufio"
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"unsafe"
+
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/pmezard/go-difflib/difflib"
+	bridge "hiddify.com/hiddify/bridge"
+)
+
+const (
+	maxScannerBuf = 16 * 1024 * 1024
+	defaultTopN   = 50
+)
+
+// ========= Data Model (Hunks) =========
+
+type DiffLine struct {
+	Type    byte   // ' ', '+', '-'
+	Text    string // content without prefix
+	OldLine int
+	NewLine int
+}
+
+type Hunk struct {
+	Header     string
+	OldStart   int
+	OldCount   int
+	NewStart   int
+	NewCount   int
+	OldFile    string
+	NewFile    string
+	Lines      []DiffLine
+	FirstMatch *MatchInfo // cached during search (mostly for original searchHunks)
+}
+
+type MatchInfo struct {
+	Type       byte
+	NewFile    string
+	OldFile    string
+	LineNumber int // new for '+', old for '-'
+	MatchPos   int
+}
+
+// ========= Search Abstraction (Unified for Diff and File Search) =========
+
+// SearchResult represents a single match from any search source (diff or file content).
+type SearchResult struct {
+	File       string
+	LineNumber int    // For diffs: NewLine for '+', OldLine for '-'; for plain files: actual line number
+	LineText   string // The full line of text containing the match
+	MatchPos   int    // The start column index of the match within LineText (for highlighting)
+	Score      int    // Calculated score for ranking results
+
+	// Fields specific to diff results, nil/zero if from file content search
+	DiffLine *DiffLine // Pointer to the original DiffLine if this is a diff result
+	Hunk     *Hunk     // Pointer to the original Hunk if this is a diff result
+}
+
+// SearchProvider interface that can provide a list of search results.
+type SearchProvider interface {
+	// GetInitialResults provides an initial, unfiltered list of all potential results.
+	// The query and caseSensitive parameters are used by providers that perform their
+	// own initial filtering (e.g., RipgrepProvider). For others (like HunkSearchProvider),
+	// they might be ignored as filtering happens in the TUI model.
+	GetInitialResults(query string, caseSensitive bool) ([]SearchResult, error)
+	Name() string
+	IsDiffProvider() bool // To know how to display results (e.g., hunk preview vs line context)
+}
+
+// ========= Diff Provider Abstraction (internal for HunkSearchProvider) =========
+
+type DiffProvider interface {
+	Name() string
+	Diff() ([]byte, error) // unified diff
+}
+
+type GitProvider struct {
+	Args []string
+}
+var (
+	runningSearches = make(map[string]context.CancelFunc)
+	searchesMutex   sync.Mutex
+)
+
+// SearchConfig represents the search parameters
+type SearchConfig struct {
+	Query         string `json:"query"`
+	CaseSensitive bool   `json:"caseSensitive"`
+	TopN          int    `json:"topN"`
+	FromFile      string `json:"fromFile"`
+	ToFile        string `json:"toFile"`
+	Staged        bool   `json:"staged"`
+	FindPath      string `json:"findPath"`
+	Mode          string `json:"mode"` // "diff" or "find"
+	SearchID      string `json:"searchId"` // Unique identifier for this search
+}
+
+// SearchResultResponse for returning search results
+type SearchResultResponse struct {
+	File       string `json:"file"`
+	LineNumber int    `json:"lineNumber"`
+	LineText   string `json:"lineText"`
+	MatchPos   int    `json:"matchPos"`
+	Type       string `json:"type"` // "+", "-", " " for diffs
+	Score      int    `json:"score"`
+	SearchID   string `json:"searchId"`
+}
+
+//export InitDartApi
+func InitDartApi(api unsafe.Pointer) {
+	bridge.InitDartApi(api)
+}
+
+//export StartSearch
+func StartSearch(port C.longlong, configJson *C.char) {
+	goConfigJson := C.GoString(configJson)
+	
+	var config SearchConfig
+	err := json.Unmarshal([]byte(goConfigJson), &config)
+	if err != nil {
+		bridge.SendStringToPort(int64(port), "Error: Invalid config JSON - "+err.Error())
+		return
+	}
+
+	// Use SearchID as the unique identifier
+	searchID := config.SearchID
+	if searchID == "" {
+		bridge.SendStringToPort(int64(port), "Error: config must have a 'searchId'")
+		return
+	}
+
+	searchesMutex.Lock()
+	if _, exists := runningSearches[searchID]; exists {
+		searchesMutex.Unlock()
+		bridge.SendStringToPort(int64(port), "Error: A search with ID "+searchID+" is already running")
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	runningSearches[searchID] = cancel
+	searchesMutex.Unlock()
+
+	go func() {
+		defer func() {
+			// Clean up when done
+			searchesMutex.Lock()
+			delete(runningSearches, searchID)
+			searchesMutex.Unlock()
+		}()
+
+		// Run the search
+		results, err := runSearchLogic(ctx, &config, int64(port))
+		
+		if err != nil {
+			if err != context.Canceled {
+				bridge.SendStringToPort(int64(port), "Search error for "+searchID+": "+err.Error())
+			}
+			return
+		}
+
+		// Send results back
+		response := &bridge.DartResponse{
+			Success: true,
+			Message: "Search completed",
+		}
+		
+		data, err := json.Marshal(results)
+		if err != nil {
+			response.Success = false
+			response.Message = "Failed to marshal results: " + err.Error()
+		} else {
+			response.Data = string(data)
+		}
+
+		bridge.SendResponseToPort(int64(port), response)
+	}()
+}
+
+//export StopSearch
+func StopSearch(searchID_ *C.char) {
+	searchID := C.GoString(searchID_)
+
+	searchesMutex.Lock()
+	defer searchesMutex.Unlock()
+
+	if cancel, exists := runningSearches[searchID]; exists {
+		cancel()
+		delete(runningSearches, searchID)
+	}
+}
+
+// runSearchLogic encapsulates your existing search functionality
+func runSearchLogic(ctx context.Context, config *SearchConfig, port int64) ([]SearchResultResponse, error) {
+	var searchProvider SearchProvider
+	var err error
+
+	// Check if context is cancelled
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	// Send progress update
+	bridge.SendStringToPort(port, "Starting search for ID: "+config.SearchID)
+
+	if config.Mode == "find" {
+		// Ripgrep mode
+		bridge.SendStringToPort(port, "Using ripgrep mode with path: "+config.FindPath)
+		rp := RipgrepProvider{
+			Query:         config.Query,
+			Path:          config.FindPath,
+			CaseSensitive: config.CaseSensitive,
+		}
+		searchProvider = rp
+	} else {
+		// Diff mode
+		var diffProvider DiffProvider
+		
+		if config.FromFile != "" && config.ToFile != "" {
+			bridge.SendStringToPort(port, "Using file-to-file diff mode")
+			diffProvider = FilesProvider{FromPath: config.FromFile, ToPath: config.ToFile}
+		} else if config.ToFile != "" {
+			bridge.SendStringToPort(port, "Using single file mode")
+			diffProvider = FilesProvider{ToPath: config.ToFile}
+		} else {
+			// Git mode
+			bridge.SendStringToPort(port, "Using git diff mode")
+			gitArgs := []string{}
+			if config.Staged {
+				gitArgs = append(gitArgs, "--staged")
+			}
+			diffProvider = GitProvider{Args: gitArgs}
+		}
+		
+		diffBytes, diffErr := diffProvider.Diff()
+		if diffErr != nil {
+			return nil, diffErr
+		}
+		
+		hunks, hunkErr := parseUnifiedDiffToHunks(diffBytes)
+		if hunkErr != nil {
+			return nil, hunkErr
+		}
+		
+		searchProvider = HunkSearchProvider{Hunks: hunks}
+	}
+
+	// Get initial results
+	bridge.SendStringToPort(port, "Getting initial results...")
+	allResults, err := searchProvider.GetInitialResults(config.Query, config.CaseSensitive)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check context again
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	// Filter and score results
+	bridge.SendStringToPort(port, fmt.Sprintf("Filtering %d results...", len(allResults)))
+	
+	var filteredResults []SearchResult
+	q := config.Query
+	if !config.CaseSensitive {
+		q = strings.ToLower(config.Query)
+	}
+	
+	for _, sr := range allResults {
+		// Check context periodically
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		var textToSearch string
+		if config.CaseSensitive {
+			textToSearch = sr.LineText
+		} else {
+			textToSearch = strings.ToLower(sr.LineText)
+		}
+		
+		if pos := strings.Index(textToSearch, q); pos >= 0 || config.Query == "" {
+			sr.MatchPos = pos
+			sr.Score = calculateScore(sr, q, pos)
+			filteredResults = append(filteredResults, sr)
+		}
+	}
+	
+	// Sort and limit results
+	bridge.SendStringToPort(port, fmt.Sprintf("Sorting %d filtered results...", len(filteredResults)))
+	
+	sort.Slice(filteredResults, func(i, j int) bool {
+		if filteredResults[i].Score != filteredResults[j].Score {
+			return filteredResults[i].Score > filteredResults[j].Score
+		}
+		if filteredResults[i].File != filteredResults[j].File {
+			return filteredResults[i].File < filteredResults[j].File
+		}
+		return filteredResults[i].LineNumber < filteredResults[j].LineNumber
+	})
+	
+	if len(filteredResults) > config.TopN {
+		filteredResults = filteredResults[:config.TopN]
+	}
+
+	// Convert to response format
+	var responseResults []SearchResultResponse
+	for _, result := range filteredResults {
+		typeChar := " "
+		if result.DiffLine != nil {
+			typeChar = string(result.DiffLine.Type)
+		}
+		
+		responseResults = append(responseResults, SearchResultResponse{
+			File:       result.File,
+			LineNumber: result.LineNumber,
+			LineText:   result.LineText,
+			MatchPos:   result.MatchPos,
+			Type:       typeChar,
+			Score:      result.Score,
+			SearchID:   config.SearchID,
+		})
+	}
+
+	bridge.SendStringToPort(port, fmt.Sprintf("Search completed. Found %d results.", len(responseResults)))
+	return responseResults, nil
+}
+func (g GitProvider) Name() string { return "git" }
+func (g GitProvider) Diff() ([]byte, error) {
+	if _, err := exec.LookPath("git"); err != nil {
+		return nil, errors.New("git not found in PATH")
+	}
+	cmd := exec.Command("git", append([]string{"diff", "--no-color"}, g.Args...)...)
+	var out, errb bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errb
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("git diff failed: %v\n%s", err, errb.String())
+	}
+	return out.Bytes(), nil
+}
+
+type FilesProvider struct {
+	FromPath string // optional; if empty, treat as empty file
+	ToPath   string // required in pair mode; or in single file mode if FromPath empty
+}
+
+func (p FilesProvider) Name() string { return "files" }
+func (p FilesProvider) Diff() ([]byte, error) {
+	// Two modes:
+	// 1) from-to: produce unified diff from files (pure Go)
+	// 2) single file: treat all lines as "+", generate pseudo-diff
+	if p.FromPath != "" && p.ToPath != "" {
+		from, err := os.ReadFile(p.FromPath)
+		if err != nil {
+			return nil, err
+		}
+		to, err := os.ReadFile(p.ToPath)
+		if err != nil {
+			return nil, err
+		}
+		fromLines := splitKeepNL(string(from))
+		toLines := splitKeepNL(string(to))
+		ud := difflib.UnifiedDiff{
+			A:        fromLines,
+			B:        toLines,
+			FromFile: "a/" + filepath.ToSlash(p.FromPath),
+			ToFile:   "b/" + filepath.ToSlash(p.ToPath),
+			Context:  3,
+		}
+		var buf bytes.Buffer
+		if err := difflib.WriteUnifiedDiff(&buf, ud); err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+	}
+
+	// Single-file mode: index all lines as "+" against an empty old file
+	if p.ToPath != "" {
+		file, err := os.Open(p.ToPath)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+		return createPseudoDiff(file, p.ToPath)
+	}
+
+	return nil, errors.New("invalid files provider usage")
+}
+
+type StdinProvider struct {
+	AsDiff bool   // if true, stdin is unified diff; else plain text to index as '+'
+	NameId string // "stdin"
+}
+
+func (p StdinProvider) Name() string { return p.NameId }
+func (p StdinProvider) Diff() ([]byte, error) {
+	data, err := ioReadAllLimit(os.Stdin, 256*1024*1024)
+	if err != nil {
+		return nil, err
+	}
+	if p.AsDiff {
+		return data, nil
+	}
+	// Plain text: create pseudo-diff with added lines
+	return createPseudoDiff(bytes.NewReader(data), p.NameId)
+}
+
+// ========= Ripgrep Search Provider =========
+
+// RipgrepProvider implements SearchProvider using the 'rg' command.
+type RipgrepProvider struct {
+	Query         string // Initial query, but TUI will re-filter
+	Path          string
+	CaseSensitive bool
+}
+
+func (p RipgrepProvider) Name() string         { return "ripgrep" }
+func (p RipgrepProvider) IsDiffProvider() bool { return false }
+
+func (p RipgrepProvider) GetInitialResults(query string, caseSensitive bool) ([]SearchResult, error) {
+	if _, err := exec.LookPath("rg"); err != nil {
+		return nil, errors.New("ripgrep (rg) not found in PATH")
+	}
+
+	args := []string{
+		"--json", // CRITICAL: This gives us parseable output!
+		"--line-number",
+	}
+	if caseSensitive {
+		args = append(args, "--case-sensitive")
+	} else {
+		args = append(args, "--ignore-case")
+	}
+	args = append(args, query)
+	args = append(args, p.Path) // Search path
+
+	cmd := exec.Command("rg", args...)
+	var stdoutBuf, stderrBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	err := cmd.Run() // Using Run() waits for completion and captures all output
+	if err != nil {
+		// rg returns non-zero exit code if no matches found, but still prints JSON.
+		// We only consider it a hard error if there's no stdout, or stderr has content.
+		if _, ok := err.(*exec.ExitError); ok && stdoutBuf.Len() > 0 && stderrBuf.Len() == 0 {
+			// Non-zero exit with matches means no actual error. Continue to parse stdout.
+		} else {
+			return nil, fmt.Errorf("ripgrep command failed: %v\n%s", err, stderrBuf.String())
+		}
+	}
+
+	var results []SearchResult
+	decoder := json.NewDecoder(&stdoutBuf)
+	for decoder.More() {
+		var rgMatch struct {
+			Type string `json:"type"`
+			Data struct {
+				Path struct {
+					Text string `json:"text"`
+				} `json:"path"`
+				LineNumber uint64 `json:"line_number"`
+				Lines      struct {
+					Text string `json:"text"`
+				} `json:"lines"`
+				Submatches []struct {
+					Start uint64 `json:"start"`
+				} `json:"submatches"` // For match position
+			} `json:"data"`
+		}
+		if err := decoder.Decode(&rgMatch); err != nil {
+			// Malformed JSON or other decoding error, skip and try next
+			continue
+		}
+
+		if rgMatch.Type == "match" {
+			matchPos := 0
+			if len(rgMatch.Data.Submatches) > 0 {
+				matchPos = int(rgMatch.Data.Submatches[0].Start)
+			}
+			results = append(results, SearchResult{
+				File:       rgMatch.Data.Path.Text,
+				LineNumber: int(rgMatch.Data.LineNumber),
+				LineText:   strings.TrimRight(rgMatch.Data.Lines.Text, "\n"), // Remove trailing newline
+				MatchPos:   matchPos,
+			})
+		}
+	}
+	return results, nil
+}
+
+// ========= Hunk Search Provider (adapts DiffProvider for SearchProvider interface) =========
+
+// HunkSearchProvider wraps DiffProvider results into SearchResults.
+type HunkSearchProvider struct {
+	Hunks []Hunk
+}
+
+func (p HunkSearchProvider) Name() string         { return "diff" }
+func (p HunkSearchProvider) IsDiffProvider() bool { return true }
+
+func (p HunkSearchProvider) GetInitialResults(query string, caseSensitive bool) ([]SearchResult, error) {
+	// For diffs, we generate all possible 'lines' in hunks as SearchResults.
+	// The actual filtering by `query` will happen in the TUI model.
+	var allResults []SearchResult
+	for i := range p.Hunks {
+		h := &p.Hunks[i]
+		for j := range h.Lines {
+			dl := &h.Lines[j]
+
+			// Determine line number for the result
+			var lineNumber int
+			var file string
+			if dl.Type == '+' {
+				lineNumber = dl.NewLine
+				file = h.NewFile
+			} else if dl.Type == '-' {
+				lineNumber = dl.OldLine
+				file = h.OldFile
+			} else { // context line
+				lineNumber = dl.NewLine // or dl.OldLine, they are the same
+				file = h.NewFile        // arbitrary, could be OldFile
+			}
+
+			allResults = append(allResults, SearchResult{
+				File:       file,
+				LineNumber: lineNumber,
+				LineText:   dl.Text,
+				DiffLine:   dl,
+				Hunk:       h,
+			})
+		}
+	}
+	return allResults, nil
+}
+
+// ========= Diff Parsing to Hunks =========
+
+var hunkHeaderRe = regexp.MustCompile(`^@@\s+-([0-9]+)(?:,([0-9]+))?\s+\+([0-9]+)(?:,([0-9]+))?\s+@@`)
+
+type parseState struct {
+	OldFile string
+	NewFile string
+	InHunk  bool
+	OldLine int
+	NewLine int
+}
+
+func parseUnifiedDiffToHunks(diffData []byte) ([]Hunk, error) {
+	sc := bufio.NewScanner(bytes.NewReader(diffData))
+	buf := make([]byte, 64*1024)
+	sc.Buffer(buf, maxScannerBuf)
+
+	var hunks []Hunk
+	st := parseState{}
+	var cur *Hunk
+
+	for sc.Scan() {
+		line := sc.Text()
+
+		if strings.HasPrefix(line, "diff --git ") {
+			st.InHunk = false
+			fields := strings.Fields(line)
+			if len(fields) >= 4 {
+				af, bf := fields[len(fields)-2], fields[len(fields)-1]
+				st.OldFile = stripPrefixPath(af, "a/")
+				st.NewFile = stripPrefixPath(bf, "b/")
+			}
+			continue
+		}
+		if strings.HasPrefix(line, "--- ") {
+			st.OldFile = stripPrefixPath(strings.TrimPrefix(line, "--- "), "a/")
+			continue
+		}
+		if strings.HasPrefix(line, "+++ ") {
+			st.NewFile = stripPrefixPath(strings.TrimPrefix(line, "+++ "), "b/")
+			continue
+		}
+		if strings.HasPrefix(line, "@@ ") {
+			m := hunkHeaderRe.FindStringSubmatch(line)
+			if len(m) >= 5 {
+				oldStart := atoi(m[1])
+				oldCount := atoiDefault(m[2], 1)
+				newStart := atoi(m[3])
+				newCount := atoiDefault(m[4], 1)
+				st.OldLine = oldStart
+				st.NewLine = newStart
+				st.InHunk = true
+				h := Hunk{
+					Header:   line,
+					OldStart: oldStart, OldCount: oldCount,
+					NewStart: newStart, NewCount: newCount,
+					OldFile: st.OldFile,
+					NewFile: st.NewFile,
+					Lines:   make([]DiffLine, 0, oldCount+newCount),
+				}
+				hunks = append(hunks, h)
+				cur = &hunks[len(hunks)-1]
+			} else {
+				st.InHunk = false
+			}
+			continue
+		}
+		if !st.InHunk || cur == nil {
+			continue
+		}
+		if len(line) == 0 {
+			continue
+		}
+		switch line[0] {
+		case ' ':
+			cur.Lines = append(cur.Lines, DiffLine{Type: ' ', Text: line[1:], OldLine: st.OldLine, NewLine: st.NewLine})
+			st.OldLine++
+			st.NewLine++
+		case '+':
+			cur.Lines = append(cur.Lines, DiffLine{Type: '+', Text: line[1:], OldLine: 0, NewLine: st.NewLine})
+			st.NewLine++
+		case '-':
+			cur.Lines = append(cur.Lines, DiffLine{Type: '-', Text: line[1:], OldLine: st.OldLine, NewLine: 0})
+			st.OldLine++
+		case '\\':
+			// "\ No newline at end of file" -> ignore
+		default:
+			// ignore
+		}
+	}
+	if err := sc.Err(); err != nil {
+		return nil, err
+	}
+	return hunks, nil
+}
+
+func stripPrefixPath(s, wantPrefix string) string {
+	s = strings.TrimSpace(s)
+	s = strings.Trim(s, `"`)
+	if s == "/dev/null" {
+		return ""
+	}
+	if strings.HasPrefix(s, wantPrefix) {
+		return s[len(wantPrefix):]
+	}
+	if strings.HasPrefix(s, "a/") || strings.HasPrefix(s, "b/") {
+		return s[2:]
+	}
+	return s
+}
+
+func atoi(s string) int {
+	n, _ := strconv.Atoi(s)
+	return n
+}
+func atoiDefault(s string, def int) int {
+	if s == "" {
+		return def
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return def
+	}
+	return n
+}
+
+// ========= TUI =========
+
+type model struct {
+	input         textinput.Model
+	caseSensitive bool
+	topN          int
+
+	allSearchResults     []SearchResult // All potential search results from the provider
+	currentQuery         string         // The last query that generated displaySearchResults
+	displaySearchResults []SearchResult // The currently filtered and ranked results
+	sel                  int            // Current selection index in displaySearchResults
+	provider             SearchProvider
+	status               string
+	err                  error
+
+	isDiffMode         bool   // True if the source was a diff, false for file content search
+	sourceProviderName string // Name of the underlying provider (git, files, ripgrep)
+}
+type searchResultsMsg struct {
+	results []SearchResult
+	err     error
+}
+
+func performSearch(p SearchProvider, query string, caseSensitive bool) tea.Cmd {
+	return func() tea.Msg {
+		res, err := p.GetInitialResults(query, caseSensitive)
+		return searchResultsMsg{results: res, err: err}
+	}
+}
+func initialModel(allResults []SearchResult, caseSensitive bool, topN int, isDiffMode bool, providerName string) model {
+	ti := textinput.New()
+	ti.Placeholder = "Type to search in added/removed/context lines..."
+	if !isDiffMode {
+		ti.Placeholder = "Type to search in file content..."
+	}
+	ti.Focus()
+	ti.CharLimit = 256
+	ti.Width = 60
+
+	m := model{
+		input:              ti,
+		caseSensitive:      caseSensitive,
+		topN:               topN,
+		allSearchResults:   allResults,
+		sel:                0,
+		isDiffMode:         isDiffMode,
+		sourceProviderName: providerName,
+	}
+	// Perform initial search with an empty query to populate displaySearchResults
+	m.runSearch(ti.Value())
+	return m
+}
+
+func (m model) Init() tea.Cmd {
+	return textinput.Blink
+}
+
+func (m *model) runSearch(query string) {
+	start := time.Now()
+	if query == "" {
+		// If query is empty, display all initial results (up to topN if specified)
+		// For diff mode, this means all lines in all hunks. For ripgrep, it's all matches.
+		filtered := make([]SearchResult, 0, min(len(m.allSearchResults), m.topN))
+		for _, sr := range m.allSearchResults {
+			// For empty query, we set a default score to enable sorting, but it's less relevant.
+			// Ripgrep mode results already have their MatchPos from rg.
+			// Diff results won't have a MatchPos set by default if there's no query.
+			sr.Score = 0 // Default score
+			filtered = append(filtered, sr)
+		}
+
+		// Sort even with empty query to provide a consistent order
+		sort.Slice(filtered, func(i, j int) bool {
+			// Tie-break by file then line
+			if filtered[i].File != filtered[j].File {
+				return filtered[i].File < filtered[j].File
+			}
+			return filtered[i].LineNumber < filtered[j].LineNumber
+		})
+
+		if len(filtered) > m.topN {
+			filtered = filtered[:m.topN]
+		}
+		m.displaySearchResults = filtered
+		m.status = fmt.Sprintf("Indexed %d total results. Showing %d for empty query.", len(m.allSearchResults), len(m.displaySearchResults))
+
+	} else {
+		q := query
+		if !m.caseSensitive {
+			q = strings.ToLower(query)
+		}
+
+		var filteredResults []SearchResult
+		for _, sr := range m.allSearchResults {
+			var textToSearch string
+			if m.caseSensitive {
+				textToSearch = sr.LineText
+			} else {
+				textToSearch = strings.ToLower(sr.LineText)
+			}
+			if pos := strings.Index(textToSearch, q); pos >= 0 {
+				sr.MatchPos = pos                     // Update MatchPos for highlighting/preview
+				sr.Score = calculateScore(sr, q, pos) // Calculate score based on original logic
+				filteredResults = append(filteredResults, sr)
+			}
+		}
+
+		sort.Slice(filteredResults, func(i, j int) bool {
+			if filteredResults[i].Score != filteredResults[j].Score {
+				return filteredResults[i].Score > filteredResults[j].Score
+			}
+			// Tie-break by file then line
+			if filteredResults[i].File != filteredResults[j].File {
+				return filteredResults[i].File < filteredResults[j].File
+			}
+			return filteredResults[i].LineNumber < filteredResults[j].LineNumber
+		})
+
+		if len(filteredResults) > m.topN {
+			filteredResults = filteredResults[:m.topN]
+		}
+		m.displaySearchResults = filteredResults
+		m.status = fmt.Sprintf("Query: %q | %d result(s) in %.1f ms", query, len(m.displaySearchResults), float64(time.Since(start).Microseconds())/1000.0)
+	}
+	m.sel = 0 // Reset selection when search changes
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "esc":
+			return m, tea.Quit
+		case "up":
+			if m.sel > 0 {
+				m.sel--
+			}
+			return m, nil
+		case "down":
+			if m.sel+1 < len(m.displaySearchResults) {
+				m.sel++
+			}
+			return m, nil
+		case "enter":
+			if len(m.displaySearchResults) == 0 {
+				return m, nil
+			}
+			cur := m.displaySearchResults[m.sel]
+			if err := openInEditor(cur.File, cur.LineNumber); err != nil {
+				m.status = "Failed to open editor: " + err.Error()
+			}
+			return m, nil
+		}
+		var cmd tea.Cmd
+		m.input, cmd = m.input.Update(msg)
+		currentInputValue := m.input.Value()
+		// Only re-run search if query has changed
+		if currentInputValue != m.currentQuery {
+			m.currentQuery = currentInputValue
+			return m, performSearch(m.provider, m.currentQuery, m.caseSensitive)
+
+		}
+		return m, cmd
+	case searchResultsMsg:
+		if msg.err != nil {
+			m.status = "Error: " + msg.err.Error()
+			return m, nil
+		}
+		// This is now your main search logic, replacing runSearch
+		m.allSearchResults = msg.results // Update the model's data source
+		// Now filter/sort these new results for display
+		m.filterAndSortResults() // A new function to handle display logic
+		return m, nil
+	default:
+		return m, nil
+	}
+}
+
+func (m model) filterAndSortResults() {
+	statusLine := m.status
+	if len(m.displaySearchResults) > 0 {
+		statusLine = fmt.Sprintf("Result %d / %d | %s", m.sel+1, len(m.displaySearchResults), m.status)
+	}
+	
+	fmt.Fprintf(bufio.ReadWriter{}, "%s\n\n", statusLine)}
+
+func (m model) View() string {
+	var b strings.Builder
+	modeInfo := "interactive search"
+	if m.isDiffMode {
+		modeInfo = "interactive diff search"
+	}
+	fmt.Fprintf(&b, "git-idiff: %s (%s) from %s\n", modeInfo, goOSArch(), m.sourceProviderName)
+	fmt.Fprintf(&b, "%s\n\n", m.status)
+	fmt.Fprintf(&b, "Search: %s\n\n", m.input.View())
+
+	if len(m.displaySearchResults) == 0 {
+		b.WriteString("No matches.\n")
+		return b.String()
+	}
+	b.WriteString("Results (Up/Down to select, Enter to open in editor):\n")
+	for i, r := range m.displaySearchResults {
+		prefix := "  "
+		if i == m.sel {
+			prefix = "> "
+		}
+
+		// Highlight the matched part of the line
+	
+		highlightedLine := r.LineText
+		if r.MatchPos >= 0 && m.currentQuery != "" && r.MatchPos < len(r.LineText) { // Only highlight if there's a query and a valid match pos
+			q := m.currentQuery
+			if !m.caseSensitive {
+				q = strings.ToLower(q)
+				qlen := len(q) 
+				endPos := r.MatchPos + qlen
+			if endPos > len(r.LineText) { // <-- ADD THIS CHECK
+				endPos = len(r.LineText)
+			}
+			highlightedLine = r.LineText[:r.MatchPos] + ansiFg(208) + r.LineText[r.MatchPos:endPos] + ansiReset + r.LineText[endPos:]
+			} else{
+		//	qlen := len(q) // Length of the (case-normalized) query
+
+			qlen := len(m.currentQuery) // Use the raw query length for display
+			endPos := r.MatchPos + qlen
+			if endPos > len(r.LineText) { // <-- ADD THIS CHECK
+				endPos = len(r.LineText)
+			}
+			highlightedLine = r.LineText[:r.MatchPos] + ansiFg(208) + r.LineText[r.MatchPos:endPos] + ansiReset + r.LineText[endPos:]
+						if r.MatchPos+qlen <= len(r.LineText) { // Ensure substring is within bounds
+				highlightedLine = r.LineText[:r.MatchPos] + ansiFg(208) + r.LineText[r.MatchPos:r.MatchPos+qlen] + ansiReset + r.LineText[r.MatchPos+qlen:]
+			}
+		}}
+
+		// Diff type prefix for diff results
+		diffTypeChar := ' '
+		if r.DiffLine != nil {
+			diffTypeChar = rune(r.DiffLine.Type)
+		}
+
+		fmt.Fprintf(&b, "%s%2d. %s:%d  [%c]  %s\n", prefix, i+1, r.File, r.LineNumber, diffTypeChar, truncate(highlightedLine, 120))
+	}
+
+	// Render hunk/context preview
+	if len(m.displaySearchResults) > 0 {
+		selectedResult := m.displaySearchResults[m.sel]
+		if m.isDiffMode && selectedResult.Hunk != nil {
+			b.WriteString("\nSelected hunk:\n")
+			b.WriteString(renderHunkColored(selectedResult.Hunk))
+		} else { // For file content search, show just the line with context
+			b.WriteString(fmt.Sprintf("\nSelected line from %s:\n", selectedResult.File))
+			b.WriteString(fmt.Sprintf("%d: %s\n", selectedResult.LineNumber, selectedResult.LineText))
+		}
+	}
+	return b.String()
+}
+
+// New scoring helper (adapted from original searchHunks logic)
+func calculateScore(sr SearchResult, q string, matchPos int) int {
+	score := 10000
+	if sr.Hunk != nil && sr.DiffLine != nil { // Diff-specific scoring
+		switch sr.DiffLine.Type {
+		case '+':
+			score += 150
+		case '-':
+			score += 100
+		}
+	}
+	score += 500 - min(matchPos, 500)
+	score += 300 - min(len(sr.LineText), 300)
+	return score
+}
+
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "…"
+}
+
+func renderHunkColored(h *Hunk) string {
+	var b strings.Builder
+	// colors via ANSI
+	header := colorize(h.Header, ansiFg(245)) // gray
+	b.WriteString(header)
+	b.WriteByte('\n')
+	for _, dl := range h.Lines {
+		switch dl.Type {
+		case '+':
+			b.WriteString(ansiGreen)
+			b.WriteByte('+')
+			b.WriteString(dl.Text)
+			b.WriteString(ansiReset)
+			b.WriteByte('\n')
+		case '-':
+			b.WriteString(ansiRed)
+			b.WriteByte('-')
+			b.WriteString(dl.Text)
+			b.WriteString(ansiReset)
+			b.WriteByte('\n')
+		default:
+			// context
+			b.WriteByte(' ')
+			b.WriteString(dl.Text)
+			b.WriteByte('\n')
+		}
+	}
+	return b.String()
+}
+
+// ========= Editor Launcher =========
+
+func openInEditor(file string, line int) error {
+	
+	if file == "" {
+		return errors.New("no filename for selection")
+	}
+	// prefer VISUAL then EDITOR
+	editor := os.Getenv("VISUAL")
+	if editor == "" {
+		editor = os.Getenv("EDITOR")
+	}
+
+	// If editor looks like VS Code or Codium
+	if looksLike(editor, "code", "codium", "code-insiders") || hasInPath("code") {
+		cmd := "code"
+		if looksLike(editor, "codium") {
+			cmd = "codium"
+		} else if looksLike(editor, "code-insiders") {
+			cmd = "code-insiders"
+		}
+		return exec.Command(cmd, "-g", fmt.Sprintf("%s:%d", file, max1(line))).Run()
+	}
+
+	// Vim/Nvim
+	if looksLike(editor, "nvim", "vim") || hasInPath("nvim") || hasInPath("vim") {
+		ev := editor
+		if ev == "" {
+			if hasInPath("nvim") {
+				ev = "nvim"
+			} else {
+				ev = "vim"
+			}
+		}
+		return exec.Command(ev, fmt.Sprintf("+%d", max1(line)), file).Run()
+	}
+
+	// Nano
+	if looksLike(editor, "nano") || hasInPath("nano") {
+		ev := editor
+		if ev == "" {
+			ev = "nano"
+		}
+		// nano +line file opens at line
+		return exec.Command(ev, fmt.Sprintf("+%d", max1(line)), file).Run()
+	}
+
+
+	
+	if runtime.GOOS == "windows" && (looksLike(editor, "notepad", "notepad.exe") || hasInPath("notepad.exe")) {
+		return exec.Command("cmd", "/C", editor, file).Run()
+	}
+
+	// Fallback: just run editor if set, else open less
+	if editor != "" {
+		// It's safer to parse editor string if it can contain flags (e.g., "emacs -nw")
+		// But for simple cases, this works. For complex cases, sh -c is safer but platform-dependent.
+		parts := strings.Fields(editor)
+		if len(parts) > 0 {
+			return exec.Command(parts[0], append(parts[1:], file)...).Run()
+		}
+	}
+	if hasInPath("less") {
+		return exec.Command("less", fmt.Sprintf("+%d", max1(line)), file).Run()
+	}
+	
+	// last resort: print path
+	fmt.Println("Open this file at line", line, ":", file)
+	return nil
+}
+
+func looksLike(s string, names ...string) bool {
+	s = strings.ToLower(strings.TrimSpace(s))
+	for _, n := range names {
+		if s == n || strings.Contains(s, n) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasInPath(bin string) bool {
+	_, err := exec.LookPath(bin)
+	return err == nil
+}
+
+func max1(n int) int {
+	if n < 1 {
+		return 1
+	}
+	return n
+}
+
+func runSelfTest() error {
+	diff := sampleUnifiedDiff()
+	hunks, err := parseUnifiedDiffToHunks([]byte(diff))
+	if err != nil {
+		return fmt.Errorf("parseUnifiedDiffToHunks error: %v", err)
+	}
+	if len(hunks) != 1 {
+		return fmt.Errorf("expected 1 hunk, got %d", len(hunks))
+	}
+	h := hunks[0]
+	if h.NewFile != "sample.go" || h.OldFile != "sample.go" {
+		return fmt.Errorf("expected filename 'sample.go', got old=%q new=%q", h.OldFile, h.NewFile)
+	}
+	if len(h.Lines) != 4 {
+		return fmt.Errorf("expected 4 lines in hunk, got %d", len(h.Lines))
+	}
+	// Validate line types and numbering
+	var sawMinus, sawPlus bool
+	for _, dl := range h.Lines {
+		switch dl.Type {
+		case ' ':
+			if dl.OldLine == 0 || dl.NewLine == 0 {
+				return fmt.Errorf("context line missing line numbers: %+v", dl)
+			}
+		case '-':
+			sawMinus = true
+			if dl.OldLine != 2 || dl.NewLine != 0 {
+				return fmt.Errorf("expected '-' line at old=2, got old=%d new=%d", dl.OldLine, dl.NewLine)
+			}
+		case '+':
+			sawPlus = true
+			if dl.NewLine != 2 || dl.OldLine != 0 {
+				return fmt.Errorf("expected '+' line at new=2, got new=%d old=%d", dl.NewLine, dl.OldLine)
+			}
+		}
+	}
+	if !sawMinus || !sawPlus {
+		return fmt.Errorf("expected both '-' and '+' lines in hunk")
+	}
+
+	// Search test using the new SearchProvider/SearchResult model
+	hunkProvider := HunkSearchProvider{Hunks: hunks}
+	allResults, err := hunkProvider.GetInitialResults("newName", false)
+	if err != nil {
+		return fmt.Errorf("HunkSearchProvider GetInitialResults error: %v", err)
+	}
+
+	// Manual filtering and scoring for test (simulating TUI's runSearch)
+	var filteredResults []SearchResult
+	query := "newName"
+	lowerQuery := strings.ToLower(query)
+	for _, sr := range allResults {
+		lowerText := strings.ToLower(sr.LineText)
+		if pos := strings.Index(lowerText, lowerQuery); pos >= 0 {
+			sr.MatchPos = pos
+			sr.Score = calculateScore(sr, query, pos)
+			filteredResults = append(filteredResults, sr)
+		}
+	}
+
+	if len(filteredResults) != 1 {
+		return fmt.Errorf("expected 1 search result, got %d", len(filteredResults))
+	}
+	if filteredResults[0].DiffLine.Type != '+' || filteredResults[0].LineNumber != 2 {
+		return fmt.Errorf("unexpected result info: %+v", filteredResults[0])
+	}
+
+	// Render test (should include green color and '+newName := 2')
+	rendered := renderHunkColored(&hunks[0])
+	if !strings.Contains(rendered, ansiGreen) || !strings.Contains(rendered, "+newName := 2") {
+		return fmt.Errorf("rendered hunk missing expected content/color")
+	}
+
+	return nil
+}
+
+func sampleUnifiedDiff() string {
+	return `diff --git a/sample.go b/sample.go
+--- a/sample.go
++++ b/sample.go
+@@ -1,3 +1,3 @@
+ package main
+-oldName := 1
++newName := 2
+ fmt.Println("x")
+`
+}
+
+// ========= Util =========
+
+// createPseudoDiff generates a unified-style diff for a single file/stream
+// treating all its lines as additions.
+func createPseudoDiff(r io.Reader, name string) ([]byte, error) {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "diff --git a/%s b/%s\n", filepath.ToSlash(name), filepath.ToSlash(name))
+	fmt.Fprintf(&b, "--- /dev/null\n")
+	fmt.Fprintf(&b, "+++ b/%s\n", filepath.ToSlash(name))
+
+	var lines []string
+	scanner := bufio.NewScanner(r)
+	// Set buffer for scanner to handle large inputs
+	buf := make([]byte, 64*1024)       // Initial buffer size
+	scanner.Buffer(buf, maxScannerBuf) // Max buffer size
+
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	fmt.Fprintf(&b, "@@ -0,0 +1,%d @@\n", len(lines))
+	for _, ln := range lines {
+		fmt.Fprintf(&b, "+%s\n", ln)
+	}
+
+	return b.Bytes(), nil
+}
+
+func splitKeepNL(s string) []string {
+	// difflib expects lines including trailing newline
+	lines := strings.SplitAfter(s, "\n")
+	if len(lines) == 0 || !strings.HasSuffix(s, "\n") {
+		// difflib requires a terminal newline for proper hunks; still works without though
+	}
+	return lines
+}
+
+type ioLimited struct {
+	r      io.Reader
+	remain int64
+}
+
+func (l *ioLimited) Read(p []byte) (int, error) {
+	if l.remain <= 0 {
+		return 0, errors.New("input too large")
+	}
+	if int64(len(p)) > l.remain {
+		p = p[:l.remain]
+	}
+	n, err := l.r.Read(p)
+	l.remain -= int64(n)
+	if l.remain < 0 {
+		l.remain = 0
+	}
+	return n, err
+}
+
+func ioReadAllLimit(r io.Reader, max int64) ([]byte, error) {
+	limitedReader := &ioLimited{r: r, remain: max}
+	data, err := io.ReadAll(limitedReader)
+	if err != nil && err != io.EOF { // io.ReadAll might return EOF as a natural end
+		return nil, err
+	}
+	return data, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+func ternary[T any](cond bool, a, b T) T {
+	if cond {
+		return a
+	}
+	return b
+}
+
+func goOSArch() string {
+	return fmt.Sprintf("%s/%s • Go %s", runtime.GOOS, runtime.GOARCH, runtime.Version())
+}
+
+// ========= Main =========
+
+func main() {
+	// Flags
+	topN := flag.Int("n", defaultTopN, "number of top results to display")
+	caseSensitive := flag.Bool("case-sensitive", false, "case-sensitive search (default false)")
+	selfTest := flag.Bool("self-test", false, "run internal parser/search/render tests and exit")
+	// Diff modes (Git)
+	staged := flag.Bool("staged", false, "diff staged changes vs HEAD")
+	// File/StdIn modes
+	fromFile := flag.String("from-file", "", "from file (for file-to-file diff)")
+	toFile := flag.String("to-file", "", "to file (for file-to-file diff or single file indexing)")
+	file := flag.String("file", "", "alias for --to-file (for single file indexing)")
+	stdin := flag.Bool("stdin", false, "read plain text from stdin and index as added lines")
+	stdinDiff := flag.Bool("stdin-diff", false, "read unified diff from stdin")
+	// Ripgrep search mode
+	findQuery := flag.String("find", "", "search for a pattern in files (ripgrep mode)")
+	findPath := flag.String("path", ".", "path to search in --find mode")
+
+	flag.Parse()
+	args := flag.Args()
+
+	if *selfTest {
+		if err := runSelfTest(); err != nil {
+			fmt.Fprintln(os.Stderr, "SELF-TEST FAILED:", err)
+			os.Exit(1)
+		}
+		fmt.Println("SELF-TEST PASSED")
+		return
+	}
+
+	var searchProvider SearchProvider // Unified provider interface
+	var err error
+
+	if *findQuery != "" { // Ripgrep mode takes priority
+		if *findPath == "" {
+			*findPath = "." // Default search path for ripgrep
+		}
+		rp := RipgrepProvider{
+			Query:         *findQuery,
+			Path:          *findPath,
+			CaseSensitive: *caseSensitive,
+		}
+		searchProvider = rp
+	} else { // Diff mode (existing logic, wrapped in HunkSearchProvider)
+		var diffProvider DiffProvider
+		toFilePath := *toFile
+		if *file != "" { // Prioritize the alias if used
+			toFilePath = *file
+		}
+
+		// Choose DiffProvider by priority:
+		// 1) stdin-diff
+		// 2) stdin
+		// 3) file-to-file
+		// 4) single file
+		// 5) git (modes: staged, commit(s))
+		if *stdinDiff {
+			diffProvider = StdinProvider{AsDiff: true, NameId: "stdin-diff"}
+		} else if *stdin {
+			diffProvider = StdinProvider{AsDiff: false, NameId: "stdin"}
+		} else if *fromFile != "" && toFilePath != "" {
+			diffProvider = FilesProvider{FromPath: *fromFile, ToPath: toFilePath}
+		} else if toFilePath != "" {
+			diffProvider = FilesProvider{ToPath: toFilePath}
+		} else {
+			// Git modes
+			if _, err := exec.LookPath("git"); err == nil {
+				var gitArgs []string
+				if *staged {
+					gitArgs = append(gitArgs, "--staged")
+				}
+				switch len(args) {
+				case 0:
+					// working tree vs HEAD
+				case 1:
+					// commit vs HEAD
+					gitArgs = append(gitArgs, args[0], "HEAD")
+				default:
+					// two commits
+					gitArgs = append(gitArgs, args[0], args[1])
+				}
+				diffProvider = GitProvider{Args: gitArgs}
+			}
+		}
+
+		if diffProvider == nil {
+			// No diff provider selected and no find query
+			fmt.Fprintln(os.Stderr, "No input source selected. Try one of:")
+			fmt.Fprintln(os.Stderr, "  git-idiff                   # working tree vs HEAD")
+			fmt.Fprintln(os.Stderr, "  git-idiff --staged          # staged vs HEAD")
+			fmt.Fprintln(os.Stderr, "  git-idiff <commit>          # commit vs HEAD")
+			fmt.Fprintln(os.Stderr, "  git-idiff <c1> <c2>         # commit range")
+			fmt.Fprintln(os.Stderr, "  git-idiff --from-file A --to-file B")
+			fmt.Fprintln(os.Stderr, "  git-idiff --file FILE       # alias: --to-file FILE")
+			fmt.Fprintln(os.Stderr, "  cat file | git-idiff --stdin")
+			fmt.Fprintln(os.Stderr, "  cat diff.patch | git-idiff --stdin-diff")
+			fmt.Fprintln(os.Stderr, "  git-idiff --find <pattern> [--path <dir>] # Ripgrep-style search")
+			os.Exit(2)
+		}
+
+		diffBytes, diffErr := diffProvider.Diff()
+		if diffErr != nil {
+			fmt.Fprintln(os.Stderr, "Error from provider", diffProvider.Name()+":", diffErr)
+			if diffProvider.Name() == "git" {
+				fmt.Fprintln(os.Stderr, "Tip: use --from-file/--to-file, --file, --stdin, --stdin-diff, or --find")
+			}
+			os.Exit(1)
+		}
+		if len(diffBytes) == 0 {
+			fmt.Println("No changes found in", diffProvider.Name()+". Nothing to search.")
+			return
+		}
+
+		hunks, hunkErr := parseUnifiedDiffToHunks(diffBytes)
+		if hunkErr != nil {
+			fmt.Fprintln(os.Stderr, "Failed to parse diff:", hunkErr)
+			os.Exit(1)
+		}
+		if len(hunks) == 0 {
+			fmt.Println("No hunks parsed. Nothing to search.")
+			return
+		}
+		searchProvider = HunkSearchProvider{Hunks: hunks}
+	} // end of provider selection
+
+	// Get initial results from the chosen searchProvider
+	// For ripgrep, this runs rg. For diff, it converts hunks to SearchResults.
+	// The query here is the initial query from the --find flag, which ripgrep uses.
+	// HunkSearchProvider will ignore it and generate all lines, for TUI to filter later.
+	allResults, err := searchProvider.GetInitialResults(*findQuery, *caseSensitive)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Failed to get initial results from", searchProvider.Name()+":", err)
+		os.Exit(1)
+	}
+	if len(allResults) == 0 {
+		fmt.Println("No results found by", searchProvider.Name()+". Nothing to search.")
+		return
+	}
+
+	p := tea.NewProgram(initialModel(allResults, *caseSensitive, *topN, searchProvider.IsDiffProvider(), searchProvider.Name()))
+	if _, err := p.Run(); err != nil {
+		fmt.Fprintln(os.Stderr, "TUI error:", err)
+		os.Exit(1)
+	}
+}
+
+// ANSI helpers
+const (
+	ansiReset = "\x1b[0m"
+	ansiRed   = "\x1b[31m"
+	ansiGreen = "\x1b[32m"
+)
+
+func ansiFg(n int) string { return fmt.Sprintf("\x1b[38;5;%dm", n) }
+func colorize(s, color string) string {
+	return color + s + ansiReset
+}
+
+```
+
+--- End File: main.go ---
+
+### File: lib.go (/home/nss/Documents/WC/gofalow/cmd/lib.go)
+```go
+package main
+
+/*
+#include "stdint.h"
+*/
+import "C"
+import (
+
+	"unsafe"
+	bridge "hiddify.com/hiddify/bridge"
+)
+
+
+//export initNativeDartBridge
+func initNativeDartBridge(api unsafe.Pointer) {
+	bridge.InitDartApi(api)
+}
+
+```
+
+--- End File: lib.go ---
+
