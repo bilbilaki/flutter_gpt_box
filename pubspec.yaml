@@ -1,0 +1,41 @@
+name: hsats
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  debounce_throttle: ^2.0.0
+  ffi: ^2.1.4
+  file_picker: ^10.3.3
+  flutter:
+    sdk: flutter
+  path: ^1.9.1
+  provider: ^6.1.5+1
+  responsive_framework: ^1.5.1
+  worker_manager: ^7.2.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  ffigen: ^19.0.0
+
+ffigen:
+  # Name of the generated class
+  name: libgofalow
+  # Description for the generated file
+  description: Bindings for the gofalow native library.
+  # Output file for the generated bindings
+  output: 'lib/generated_bindings.dart'
+  # The C header file to parse
+  headers:
+    entry-points:
+      - 'native/libgofalow.h'
+  # Optional: Add a preamble to the generated file to ignore lint warnings
+  preamble: |
+    // ignore_for_file: unused_element, unused_field
+flutter:
+  uses-material-design: true
