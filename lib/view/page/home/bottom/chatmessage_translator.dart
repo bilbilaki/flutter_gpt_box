@@ -88,7 +88,7 @@ class TranslationService {
     apiKey: apiKey,
     baseUrl: baseUrl,
   );
-
+final PrefStore pref= PrefStore();
   final _mem = _Lru<String, Map<String, dynamic>>(2000);
   final _inFlight = <String, Future<String>>{};
 
@@ -109,9 +109,9 @@ class TranslationService {
       final ts = DateTime.parse(mem['ts'] as String);
       if (now.difference(ts) < cacheTtl) return mem['t'] as String;
     }
-    final s = prefs.getString(k);
+    final s = pref.get(k);
     if (s != null) {
-      final obj = json.decode(s) as Map<String, dynamic>;
+      final obj = s as Map<String, dynamic>;
       final ts = DateTime.tryParse(obj['ts'] as String? ?? '');
       if (ts != null && DateTime.now().difference(ts) < cacheTtl) {
         _mem.set(k, obj);
@@ -125,7 +125,7 @@ class TranslationService {
     final k = _key(text, lang);
     final obj = {'t': t, 'ts': DateTime.now().toIso8601String()};
     _mem.set(k, obj);
-    await prefs.setString(k, json.encode(obj));
+    await pref.set(k, json.encode(obj));
   }
 
   // Sync-first: returns cached value (or original) immediately. Fetches fresh in background.

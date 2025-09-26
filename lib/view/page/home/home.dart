@@ -9,6 +9,7 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:googleapis/realtimebidding/v1.dart' hide Image;
 import 'package:gpt_box/core/audio/audio_utils.dart';
 import 'package:gpt_box/core/audio/transcription_service.dart';
 import 'package:gpt_box/core/audio/tts_service.dart';
@@ -289,6 +290,7 @@ final class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const history = _HistoryPage();
+    const drawer= AiSettingsDrawerHive();
     const chat = _ChatPage();
     inputCtrl.addListener(aiSettings.onTextChangedForTokens);
 
@@ -301,6 +303,7 @@ final class _Body extends StatelessWidget {
               children: [
                 SizedBox(width: w, height: cons.maxHeight, child: history),
                 const Expanded(child: chat),
+                SizedBox(width:w, height: cons.maxHeight, child:drawer )
               ],
             );
           },
