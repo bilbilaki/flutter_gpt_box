@@ -272,8 +272,69 @@ Future<void> _onTapFilePick(BuildContext context) async {
   if (files == null || files.isEmpty) return;
   _filesPicked.value.addAll(files.map((e) => e.path).whereType<String>());
   _filesPicked.notify();
+
+    final bool? isModelUsingFilePathConfirmed = await _showFilePathUsageConfirmationDialog(context);
+
+  if (isModelUsingFilePathConfirmed == true) {
+    // User pressed 'Yes'
+    print('User confirmed: Model *will* use file paths for tools.');
+    // You can now proceed with logic that utilizes the file paths
+    // for tool integration (e.g., passing paths to a backend service,
+    // or a local tool execution).
+    // Access the paths from _filesPicked.value
+    for (String path in _filesPicked.value) {
+      print('Path for tool usage: $path');
+    }
+  } else if (isModelUsingFilePathConfirmed == false) {
+    // User pressed 'No'
+    print('User denied: Model *will not* use file paths for tools. Perhaps only content is needed.');
+    // You might decide to clear the paths, or process the files differently
+    // (e.g., load file content directly without using their paths externally).
+  } else {
+    // Dialog was dismissed without explicit 'Yes' or 'No' (unlikely with barrierDismissible: false)
+    print('Confirmation dialog was dismissed without a clear choice.');
+  }
 }
 
+
+
+
+
+Future<bool?> _showFilePathUsageConfirmationDialog(BuildContext context) async {
+  return showDialog<bool?>(
+    context: context,
+    // Set barrierDismissible to false to force the user to make a choice
+    barrierDismissible: false,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Confirm File Path Usage'),
+        content: const Text(
+          'Is the model intended to use the *file path* (not content) of these files for tool integration?',
+          // Added clarity to the question
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              // User pressed 'No'
+              // Pop the dialog and return false
+              Navigator.of(dialogContext).pop(false);
+            },
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () {
+              modelUseFilePath=true;
+              // User pressed 'Yes'
+              // Pop the dialog and return true
+              Navigator.of(dialogContext).pop(true);
+            },
+            child: const Text('Yes'),
+          ),
+        ],
+      );
+    },
+  );
+}
 // Set<String> _findAllDuplicateIds(Map<String, ChatHistory> allHistories) {
 //   final existTitles = <String, Set<String>>{}; // {"title": ["id"]}
 //   for (final item in allHistories.values) {

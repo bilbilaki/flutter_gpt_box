@@ -79,44 +79,46 @@ types:
         index: 6
   ChatConfig:
     typeId: 6
-    nextIndex: 25
+    nextIndex: 44
     fields:
       prompt:
-        index: 0
+        index: 25
       url:
-        index: 1
+        index: 26
       key:
-        index: 2
+        index: 27
       model:
-        index: 3
+        index: 28
       historyLen:
-        index: 7
+        index: 29
       id:
-        index: 8
+        index: 30
       name:
-        index: 9
+        index: 31
       genTitlePrompt:
-        index: 14
+        index: 32
       genTitleModel:
-        index: 15
+        index: 33
       imgModel:
-        index: 16
-      file:
-        index: 17
-      image:
-        index: 18
-      audio:
-        index: 19
+        index: 34
       audioModel:
-        index: 20
+        index: 35
       tskrModel:
-        index: 21
+        index: 36
       altrModel:
-        index: 22
+        index: 37
       wrkrModel:
-        index: 23
+        index: 38
       trnscrbModel:
-        index: 24
+        index: 39
+      defaultTranslateLanguage:
+        index: 40
+      file:
+        index: 41
+      image:
+        index: 42
+      audio:
+        index: 43
   ChatType:
     typeId: 7
     nextIndex: 6

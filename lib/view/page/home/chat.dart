@@ -9,6 +9,23 @@ class _ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<_ChatPage>
     with AutomaticKeepAliveClientMixin {
+
+final Map<int, String?> _translatedOverviews = {};
+  final Map<int, bool> _isTranslatingMap = {};
+  final _translator = MovieTvTranslator();
+Future<void> _translateOverviewForEpisode(int key, String original) async {
+    setState(() => _isTranslatingMap[key] = true);
+    try {
+      final translated = await _translator.translateTextForMoviesAndTV(
+        original,
+      );
+      setState(() => _translatedOverviews[key] = translated);
+    } finally {
+      setState(() => _isTranslatingMap[key] = false);
+    }
+  }
+///TODO  most change All name of code functioons and class I take them from other projects 
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -215,8 +232,9 @@ class _ChatPageState extends State<_ChatPage>
   // Treat both file paths and data URLs as audio
   bool looksLikeAudioDataUrl(String s) {
     final v = s.trim().toLowerCase();
-    return (v.contains('data:audio/') == true ||
-            v.contains('data:image/') == true)
+    return (v.contains('data:audio/') == true 
+//    ||            v.contains('data:image/') == true
+            )
         ? true
         : false;
   }
@@ -365,6 +383,10 @@ class _ChatPageState extends State<_ChatPage>
     List<ChatHistoryItem> chatItems,
     ChatHistoryItem chatItem,
   ) {
+        final int key = chatItems.index(chatItem);
+    final bool isTranslating = _isTranslatingMap[key] == true;
+    final String? translated = _translatedOverviews[key];
+
     final replayEnabled = chatItem.role.isUser;
     const size = 18.0;
     final color = context.theme.iconTheme.color?.withValues(alpha: 0.8);
@@ -374,6 +396,30 @@ class _ChatPageState extends State<_ChatPage>
         onTap: () {
           context.pop();
           _MarkdownCopyPage.route.go(context, chatItem);
+        },
+        text: l10n.freeCopy,
+        icon: Icon(BoxIcons.bxs_crop, size: size, color: color),
+      ),
+       Btn.icon(
+        onTap: () async {
+          context.pop();
+        final tbase= await _MarkdownCopyPage.route.go(context, chatItem);
+    if (translated != null) {
+      setState(() => _translatedOverviews.remove(key));
+      return;
+    }
+    await _translateOverviewForEpisode(key, tbase);
+    if (_translatedOverviews[key] != null) {
+    chatItem.content.clear();
+    chatItem.content.add(ChatContent.text(translated!=''?translated!:'a problem exist in translation process that return translated text as ""'));
+    _storeChat(_curChatId.value);
+    _chatRN.notify();
+    context.pop();
+  ///TODO  creating functions too can with one click switch between original message and translated one 
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Chat Message translated'), duration: Duration(seconds:1)));
+    }
+
         },
         text: l10n.freeCopy,
         icon: Icon(BoxIcons.bxs_crop, size: size, color: color),

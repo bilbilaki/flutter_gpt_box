@@ -9,6 +9,25 @@ final class ProfilePage extends StatefulWidget {
 
 final class _ProfilePageState extends State<ProfilePage>
     with AutomaticKeepAliveClientMixin {
+
+        final _topicController = TextEditingController();
+  String _generatedPrompt = '';
+  bool _isLoading = false;
+
+  Future<void> _generate() async {
+    final topic = _topicController.text.trim();
+    if (topic.isEmpty) return;
+    setState(() => _isLoading = true);
+    try {
+      final prompt = await generatePromptFromTopic(topic);
+      setState(() => _generatedPrompt = prompt);
+    } catch (e) {
+      setState(() => _generatedPrompt = "Error generating prompt: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -472,7 +491,10 @@ _buildOpenAIWrkerModel(),
   // }
 // profile.dart (snippet)
   Widget _buildPrompt(String val) {
-    return Column(
+    return AlertDialog(
+      title: const Text('Generate Prompt'),
+      content: SingleChildScrollView(
+        child: Column(
       children: [
         ListTile(
           leading: const Icon(Icons.abc),
@@ -497,6 +519,7 @@ _buildOpenAIWrkerModel(),
             Cfg.setTo(cfg: Cfg.current.copyWith(prompt: result));
           },
         ),
+        SizedBox(height: 10,),
         ListTile(
           leading: const Icon(Icons.auto_awesome),
           title: Text(l10n.promptsSettingsItem),
@@ -511,22 +534,61 @@ _buildOpenAIWrkerModel(),
           ),
           onTap: () async {
             final ctrl = TextEditingController(text: val);
-            final result = await showDialog<String>(
-              context: context,
-              builder: (ctx) => PromptGeneratorDialog(
-                onPromptGenerated: (gen) {
-                  if (gen.isEmpty) return;
-                  final cur = ctrl.text;
-                  inputCtrl.text = cur.isEmpty ? gen : '$cur\n$gen';
-                  inputCtrl.selection = TextSelection.fromPosition(
-                    TextPosition(offset: inputCtrl.text.length),
-                  );
-                },
+            final result =  Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _topicController,
+              decoration: const InputDecoration(
+                labelText: 'Enter a topic or idea',
+                border: OutlineInputBorder(),
               ),
-            );
-            if (result == null) return;
-            Cfg.setTo(cfg: Cfg.current.copyWith(prompt: result));
-          },
+              onSubmitted: (_) => _generate(),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : _generate,
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 20, height: 20, child: CircularProgressIndicator())
+                  : const Icon(Icons.auto_awesome),
+              label: const Text('Generate'),
+            ),
+            if (_generatedPrompt.isNotEmpty) ...[
+              const Divider(height: 32),
+              Text('Generated Prompt:',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(_generatedPrompt),
+              ),
+            ]
+          ],
+        );
+    }  ),
+        if (_generatedPrompt.isNotEmpty && !_generatedPrompt.startsWith('Error'))
+          TextButton(
+            onPressed: () {
+            Cfg.setTo(cfg: Cfg.current.copyWith(prompt: _generatedPrompt));
+
+              Navigator.of(context).pop();
+            },
+            child: const Text('Use This Prompt'),
+          ),
+                
+      ],
+        )
+  
+    ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
         ),
       ],
     );

@@ -29,6 +29,7 @@ abstract class ChatConfig with _$ChatConfig {
     String? altrModel,
     String? wrkrModel,
         String? trnscrbModel,
+        String? defaultTranslateLanguage,
 
     // Newly added nullable fields
     String? file,
@@ -54,6 +55,7 @@ extension ChatConfigX on ChatConfig {
     static const defaulttaskrModel = 'gemini-2.5-flash';
     static const defaultaltrModel = 'gemini-2.5-flash-lite';
         static const defaultwrkrModel = 'gpt-4.1-mini';
+        static const defaultTranslateLanguage= 'English';
 
 
   static const defaultOne = ChatConfig(
@@ -65,6 +67,7 @@ extension ChatConfigX on ChatConfig {
     historyLen: defaultHistoryLen,
     name: '',
     imgModel: defaultImgModel,
+    defaultTranslateLanguage: 'English'
     // audioModel: defaultaudioModel,
     // trnscrbModel: defaulttrnscrbModel,
     // tskrModel: defaulttaskrModel,
@@ -122,6 +125,7 @@ extension ChatConfigX on ChatConfig {
 
       wrkrModel: params_['TaskerModel']??defaultwrkrModel,
             trnscrbModel: params_['TaskerModel']??defaulttrnscrbModel,
+            defaultTranslateLanguage: params_['defaultTranslateLanguage']??defaultTranslateLanguage
 
 
 

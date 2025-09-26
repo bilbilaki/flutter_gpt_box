@@ -49,7 +49,9 @@ dependencies:
       url: https://github.com/leehack/mcp_dart
       ref: main
   fl_lib:
-    path: fl_lib/
+    git:
+      url: https://github.com/lppcg/fl_lib
+      ref: v1.0.327
      # ref: v1.0.327
   audioplayers: ^6.5.0
   siri_wave: ^2.3.0
@@ -104,8 +106,7 @@ dependencies:
   background_downloader: ^9.2.4
   collection: ^1.19.1
   flutter_local_notifications: ^19.4.2
-  telegram: 
-     path: /home/nss/Documents/WC/flutter/pub/telegram/
+  telegram: ^1.0.0
   flutter_secure_storage: ^9.2.4
   universal_html: ^2.2.4
 

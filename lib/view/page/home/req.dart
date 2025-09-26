@@ -108,9 +108,17 @@ Future<void> _onCreateText(
 
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
+  if (!modelUseFilePath){
+  
     // Ensure images are sent as base64 data URL
     final content = await contentFromPath(file);
     questionContents.add(content);
+  }else if (modelUseFilePath){
+final content = <ChatContent>[ChatContent.text('For Using Tools with file operation use this File Path: $file')];
+questionContents.addAll(content);
+modelUseFilePath=false;
+
+  }
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,
@@ -658,7 +666,7 @@ Future<openai.ChatCompletionAudioVoice> getCurrentVoice() async {
   return vv;
 }
 
-Future<String> _imagePathToDataUrl(String path) async {
+Future<String> _pathToDataUrl(String path) async {
   final mime = _mimeFromExt(path);
   final b64 = await _fileToBase64(path);
   return 'data:$mime;base64,$b64';
@@ -701,13 +709,29 @@ List<ChatContent> splitDataUrisToChatContents(String s) {
 }
 
 Future<ChatContent> contentFromPath(String path) async {
-  if (_isImagePath(path)) {
-    final dataUrl = await _imagePathToDataUrl(path);
+  if (getAppFileType(path)==AppFileType.image) {
+    final dataUrl = await _pathToDataUrl(path);
     return ChatContent.image(dataUrl);
   }
-  return ChatContent.file(path);
+  else if (getAppFileType(path)==AppFileType.audio){
+  final dataUrl = await _pathToDataUrl(path);
+  return ChatContent.audio(dataUrl);
+  }
+ else if (getAppFileType(path)==AppFileType.directdoc){
+  final dataUrl = await _pathToDataUrl(path);
+  return ChatContent.file(dataUrl);
 }
-
+ else if (getAppFileType(path)==AppFileType.undirectdoc){
+        final content = await File(path).readAsString();
+if (content.isNotEmpty&&content!=''){
+Directory tmp = await getTemporaryDirectory();
+final newf= p.join(tmp.path,'${Uuid().v4()}.txt');
+final ffile = await File(newf).writeAsString(newf);
+  final dataUrl = await _pathToDataUrl(ffile.path);
+  return ChatContent.file(dataUrl);}
+}
+return ChatContent.file('app cant process sending file , tell this to user and if this helpful this is file path : $path');
+}
 Future<String> _saveBase64ToFile(
   String base64Data, {
   String ext = '.wav',
@@ -781,9 +805,19 @@ Future<void> _onAudioModel(
 
   // Prepare user question (text + optionally images/files already attached)
   final questionContents = <ChatContent>[ChatContent.text(input)];
-  for (final f in files) {
-    final content = await contentFromPath(f);
+  for (final file in files) {
+   if (!modelUseFilePath){
+  
+    // Ensure images are sent as base64 data URL
+    final content = await contentFromPath(file);
     questionContents.add(content);
+  }else if (modelUseFilePath){
+final content = <ChatContent>[ChatContent.text('For Using Tools with file operation use this File Path: $file')];
+questionContents.addAll(content);
+modelUseFilePath=false;
+
+  }
+
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,
@@ -924,9 +958,19 @@ Future<void> _onTtsModel(
 
   // Prepare user question (text + optionally images/files already attached)
   final questionContents = <ChatContent>[ChatContent.text(input)];
-  for (final f in files) {
-    final content = await contentFromPath(f);
+  for (final file in files) {
+  if (!modelUseFilePath){
+  
+    // Ensure images are sent as base64 data URL
+    final content = await contentFromPath(file);
     questionContents.add(content);
+  }else if (modelUseFilePath){
+final content = <ChatContent>[ChatContent.text('For Using Tools with file operation use this File Path: $file')];
+questionContents.addAll(content);
+modelUseFilePath=false;
+
+  }
+
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,
@@ -1301,9 +1345,18 @@ Future<void> _onCreateTextTranslated(
   }
   final questionContents = <ChatContent>[ChatContent.text(translated)];
   for (final file in files) {
+     if (!modelUseFilePath){
+  
     // Ensure images are sent as base64 data URL
     final content = await contentFromPath(file);
     questionContents.add(content);
+  }else if (modelUseFilePath){
+final content = <ChatContent>[ChatContent.text('For Using Tools with file operation use this File Path: $file')];
+questionContents.addAll(content);
+modelUseFilePath=false;
+
+  }
+
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,

@@ -6,6 +6,7 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_box/app.dart';
 import 'package:gpt_box/core/util/sync.dart';
+import 'package:gpt_box/data/model/app/cache_translate.dart';
 import 'package:gpt_box/data/model/chat/history/hive_adapter.dart';
 import 'package:gpt_box/data/res/build_data.dart';
 import 'package:gpt_box/data/res/openai.dart';
@@ -15,12 +16,19 @@ import 'package:gpt_box/hive/hive_registrar.g.dart';
 import 'package:gpt_box/view/translator/configuration/translator_config.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:telegram/telegram.dart';
 
 late TranslatorConfig translatorConfig;
 Telegram telegram= Telegram();
+late SharedPreferences prefs;
+final persistentCache = PersistentTranslationCache(ttl: Duration(days: 365), maxEntries: 5000);
+
 Future<void> main() async {
   Telegram.setBotToken(telBotToken);
+  
+prefs = await SharedPreferences.getInstance();
+
   _runInZone(() async {
     await _initApp();
     runApp(const MyApp());

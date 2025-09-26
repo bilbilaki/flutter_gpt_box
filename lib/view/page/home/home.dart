@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -17,6 +18,7 @@ import 'package:gpt_box/core/responses/web_search_helpers.dart';
 import 'package:gpt_box/core/responses/codex_local_shell.dart';
 import 'package:gpt_box/core/responses/responses_service.dart' as respsvc;
 import 'package:gpt_box/core/responses/responses_models.dart' as respmod;
+import 'package:gpt_box/core/util/file_type.dart';
 import 'package:gpt_box/core/util/sync.dart';
 import 'package:gpt_box/core/util/url.dart';
 import 'package:gpt_box/data/model/canvas_result.dart';
@@ -35,6 +37,7 @@ import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/data/store/dummy.dart';
 import 'package:gpt_box/data/store/setting.dart';
+import 'package:gpt_box/main.dart' show persistentCache, prefs;
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
 import 'package:gpt_box/view/translator/interfaces/chunker_translator.dart';
@@ -44,6 +47,7 @@ import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:openai_dart/openai_dart.dart' as openai;
+import 'package:path_provider/path_provider.dart';
 import 'package:siri_wave/siri_wave.dart';
 // import 'package:image_picker/image_picker.dart';
 import 'package:openai_dart/openai_dart.dart' hide Image;
@@ -67,9 +71,11 @@ part 'req.dart';
 part 'md_copy.dart';
 part 'trash.dart';
 part 'settings_drawer.dart';
+part 'bottom/chatmessage_translator.dart';
 //part '../../widget/v1.dart';
 final aiSettings = AiSettings();
 
+bool modelUseFilePath=false;
 const int kTtsSampleRate =
     24000; // OpenAI TTS default for pcm16. Adjust if your API returns a different rate.
 SettingStore get ss => SettingStore.instance;
@@ -187,7 +193,6 @@ class _HomePageState extends State<HomePage>
     super.didChangeDependencies();
     _homeBottomRN.notify();
   }
-
   @override
   Widget build(BuildContext context) {
     return ExitConfirm(

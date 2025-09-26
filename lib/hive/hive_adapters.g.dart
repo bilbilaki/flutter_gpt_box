@@ -258,69 +258,72 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ChatConfig(
-      prompt: fields[0] == null ? '' : fields[0] as String,
-      url: fields[1] == null
+      prompt: fields[25] == null ? '' : fields[25] as String,
+      url: fields[26] == null
           ? 'https://api.openai.com/v1'
-          : fields[1] as String,
-      key: fields[2] == null ? '' : fields[2] as String,
-      model: fields[3] == null ? '' : fields[3] as String,
-      historyLen: fields[7] == null ? 7 : (fields[7] as num).toInt(),
-      id: fields[8] == null ? 'defaultId' : fields[8] as String,
-      name: fields[9] == null ? '' : fields[9] as String,
-      genTitlePrompt: fields[14] as String?,
-      genTitleModel: fields[15] as String?,
-      imgModel: fields[16] as String?,
-      audioModel: fields[20] as String?,
-      tskrModel: fields[21] as String?,
-      altrModel: fields[22] as String?,
-      wrkrModel: fields[23] as String?,
-      trnscrbModel: fields[24] as String?,
-      file: fields[17] as String?,
-      image: fields[18] as String?,
-      audio: fields[19] as String?,
+          : fields[26] as String,
+      key: fields[27] == null ? '' : fields[27] as String,
+      model: fields[28] == null ? '' : fields[28] as String,
+      historyLen: fields[29] == null ? 7 : (fields[29] as num).toInt(),
+      id: fields[30] == null ? 'defaultId' : fields[30] as String,
+      name: fields[31] == null ? '' : fields[31] as String,
+      genTitlePrompt: fields[32] as String?,
+      genTitleModel: fields[33] as String?,
+      imgModel: fields[34] as String?,
+      audioModel: fields[35] as String?,
+      tskrModel: fields[36] as String?,
+      altrModel: fields[37] as String?,
+      wrkrModel: fields[38] as String?,
+      trnscrbModel: fields[39] as String?,
+      defaultTranslateLanguage: fields[40] as String?,
+      file: fields[41] as String?,
+      image: fields[42] as String?,
+      audio: fields[43] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(18)
-      ..writeByte(0)
-      ..write(obj.prompt)
-      ..writeByte(1)
-      ..write(obj.url)
-      ..writeByte(2)
-      ..write(obj.key)
-      ..writeByte(3)
-      ..write(obj.model)
-      ..writeByte(7)
-      ..write(obj.historyLen)
-      ..writeByte(8)
-      ..write(obj.id)
-      ..writeByte(9)
-      ..write(obj.name)
-      ..writeByte(14)
-      ..write(obj.genTitlePrompt)
-      ..writeByte(15)
-      ..write(obj.genTitleModel)
-      ..writeByte(16)
-      ..write(obj.imgModel)
-      ..writeByte(17)
-      ..write(obj.file)
-      ..writeByte(18)
-      ..write(obj.image)
       ..writeByte(19)
-      ..write(obj.audio)
-      ..writeByte(20)
+      ..writeByte(25)
+      ..write(obj.prompt)
+      ..writeByte(26)
+      ..write(obj.url)
+      ..writeByte(27)
+      ..write(obj.key)
+      ..writeByte(28)
+      ..write(obj.model)
+      ..writeByte(29)
+      ..write(obj.historyLen)
+      ..writeByte(30)
+      ..write(obj.id)
+      ..writeByte(31)
+      ..write(obj.name)
+      ..writeByte(32)
+      ..write(obj.genTitlePrompt)
+      ..writeByte(33)
+      ..write(obj.genTitleModel)
+      ..writeByte(34)
+      ..write(obj.imgModel)
+      ..writeByte(35)
       ..write(obj.audioModel)
-      ..writeByte(21)
+      ..writeByte(36)
       ..write(obj.tskrModel)
-      ..writeByte(22)
+      ..writeByte(37)
       ..write(obj.altrModel)
-      ..writeByte(23)
+      ..writeByte(38)
       ..write(obj.wrkrModel)
-      ..writeByte(24)
-      ..write(obj.trnscrbModel);
+      ..writeByte(39)
+      ..write(obj.trnscrbModel)
+      ..writeByte(40)
+      ..write(obj.defaultTranslateLanguage)
+      ..writeByte(41)
+      ..write(obj.file)
+      ..writeByte(42)
+      ..write(obj.image)
+      ..writeByte(43)
+      ..write(obj.audio);
   }
 
   @override
@@ -439,20 +442,20 @@ class DownloadItemAdapter extends TypeAdapter<DownloadItem> {
     };
     return DownloadItem(
       taskId: fields[0] as String,
-      url: fields[1] as String,
-      filename: fields[2] as String,
-      savedPath: fields[3] as String,
-      status: fields[4] as DownloadUiStatus,
-      progress: (fields[5] as num).toDouble(),
+      url: fields[1] as String?,
+      filename: fields[2] as String?,
+      savedPath: fields[3] as String?,
+      status: fields[4] as DownloadUiStatus?,
+      progress: (fields[5] as num?)?.toDouble(),
       expectedFileSize: (fields[6] as num?)?.toInt(),
       networkSpeedBytesPerSec: (fields[7] as num?)?.toDouble(),
       timeRemainingSeconds: (fields[8] as num?)?.toInt(),
-      group: fields[9] as String,
-      openAfterComplete: fields[10] as bool,
-      createdAt: fields[11] as DateTime,
+      group: fields[9] as String?,
+      openAfterComplete: fields[10] as bool?,
+      createdAt: fields[11] as DateTime?,
       finishedAt: fields[12] as DateTime?,
-      displayName: fields[13] as String,
-      metaData: fields[14] as String,
+      displayName: fields[13] as String?,
+      metaData: fields[14] as String?,
     );
   }
 

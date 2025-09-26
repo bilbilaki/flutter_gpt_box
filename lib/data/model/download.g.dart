@@ -18,20 +18,20 @@ class DownloadItemAdapter extends TypeAdapter<DownloadItem> {
     };
     return DownloadItem(
       taskId: fields[0] as String,
-      url: fields[1] as String,
-      filename: fields[2] as String,
-      savedPath: fields[3] as String,
-      status: fields[4] as DownloadUiStatus,
-      progress: (fields[5] as num).toDouble(),
+      url: fields[1] as String?,
+      filename: fields[2] as String?,
+      savedPath: fields[3] as String?,
+      status: fields[4] as DownloadUiStatus?,
+      progress: (fields[5] as num?)?.toDouble(),
       expectedFileSize: (fields[6] as num?)?.toInt(),
       networkSpeedBytesPerSec: (fields[7] as num?)?.toDouble(),
       timeRemainingSeconds: (fields[8] as num?)?.toInt(),
-      group: fields[9] as String,
-      openAfterComplete: fields[10] as bool,
-      createdAt: fields[11] as DateTime,
+      group: fields[9] as String?,
+      openAfterComplete: fields[10] as bool?,
+      createdAt: fields[11] as DateTime?,
       finishedAt: fields[12] as DateTime?,
-      displayName: fields[13] as String,
-      metaData: fields[14] as String,
+      displayName: fields[13] as String?,
+      metaData: fields[14] as String?,
     );
   }
 
