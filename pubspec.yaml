@@ -27,6 +27,7 @@ dependencies:
   json_annotation: ^4.9.0
   freezed_annotation: ^3.0.0
   responsive_framework: ^1.5.1
+  openai_core: ^0.10.0
   # flutter_riverpod: ^2.6.1
   # riverpod_annotation: ^2.6.1
   # dart_openai: #^5.1.0
@@ -109,6 +110,9 @@ dependencies:
   telegram: ^1.0.0
   flutter_secure_storage: ^9.2.4
   universal_html: ^2.2.4
+  debounce_throttle: ^2.0.0
+  worker_manager: ^7.2.6
+  ffi: ^2.1.4
 
 dependency_overrides:
   # fl_lib:
@@ -135,6 +139,7 @@ dev_dependencies:
   hive_ce_generator: ^1.9.2
   flutter_native_splash: ^2.3.9
   json_serializable: ^6.8.0
+  ffigen: any
   # riverpod_generator: ^2.6.1
   # riverpod_lint: ^2.6.1
     # path: ../fl_build
@@ -154,6 +159,20 @@ flutter_launcher_icons:
   image_path: "assets/app_icon.png"
 
 
+ffigen:
+  # Name of the generated class
+  name: Libgoolib
+  # Description for the generated file
+  description: Bindings for the golib native library.
+  # Output file for the generated bindings
+  output: 'lib/bridges/generated_bindings_golib.dart'
+  # The C header file to parse
+  headers:
+    entry-points:
+      - 'native/libgolib-linux-amd64.h'
+  # Optional: Add a preamble to the generated file to ignore lint warnings
+  preamble: |
+    // ignore_for_file: unused_element, unused_field
 
 # ...Your existing configuration...
 hooks:

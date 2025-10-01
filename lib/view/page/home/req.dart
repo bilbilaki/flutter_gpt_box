@@ -79,12 +79,13 @@ void _onCreateRequest(BuildContext context, String chatId) async {
   _autoHideCtrl.autoHideEnabled = false;
 
   final func = switch ((chatType, _filesPicked.value)) {
-    (ChatType.text, _) => _onCreateText,
+    (ChatType.text, _) =>
+      ss.response == true ? _onCreateResponse : _onCreateText,
     (ChatType.img, _) => _onCreateImg,
-    (ChatType.audio, _) => _onAudioModel, // audio generation (TTS-like) streaming
+    (ChatType.audio, _) =>
+      _onAudioModel, // audio generation (TTS-like) streaming
     (ChatType.voice, _) => _onTtsModel, // voice in + voice out
-    (ChatType.voicejustin, _) =>
-      _onCreateText, // voice in + text out (stream)
+    (ChatType.voicejustin, _) => _onCreateText, // voice in + text out (stream)
     (ChatType.autoenglishtrans, _) => _onCreateTextTranslated,
   };
 
@@ -108,17 +109,19 @@ Future<void> _onCreateText(
 
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
-  if (!modelUseFilePath){
-  
-    // Ensure images are sent as base64 data URL
-    final content = await contentFromPath(file);
-    questionContents.add(content);
-  }else if (modelUseFilePath){
-final content = <ChatContent>[ChatContent.text('For Using Tools with file operation use this File Path: $file')];
-questionContents.addAll(content);
-modelUseFilePath=false;
-
-  }
+    if (!modelUseFilePath) {
+      // Ensure images are sent as base64 data URL
+      final content = await contentFromPath(file);
+      questionContents.add(content);
+    } else if (modelUseFilePath) {
+      final content = <ChatContent>[
+        ChatContent.text(
+          'For Using Tools with file operation use this File Path: $file',
+        ),
+      ];
+      questionContents.addAll(content);
+      modelUseFilePath = false;
+    }
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,
@@ -268,7 +271,7 @@ modelUseFilePath=false;
         // Wait for db to store the chat
         await titleCompleter?.future;
         await Future.delayed(const Duration(milliseconds: 300));
-    //    BakSync.instance.sync();
+        //    BakSync.instance.sync();
       },
       onError: (e, s) {
         _onErr(e, s, chatId, 'Listen text stream');
@@ -709,29 +712,30 @@ List<ChatContent> splitDataUrisToChatContents(String s) {
 }
 
 Future<ChatContent> contentFromPath(String path) async {
-  if (getAppFileType(path)==AppFileType.image) {
+  if (getAppFileType(path) == AppFileType.image) {
     final dataUrl = await _pathToDataUrl(path);
     return ChatContent.image(dataUrl);
+  } else if (getAppFileType(path) == AppFileType.audio) {
+    final dataUrl = await _pathToDataUrl(path);
+    return ChatContent.audio(dataUrl);
+  } else if (getAppFileType(path) == AppFileType.directdoc) {
+    final dataUrl = await _pathToDataUrl(path);
+    return ChatContent.file(dataUrl);
+  } else if (getAppFileType(path) == AppFileType.undirectdoc) {
+    final content = await File(path).readAsString();
+    if (content.isNotEmpty && content != '') {
+      Directory tmp = await getTemporaryDirectory();
+      final newf = p.join(tmp.path, '${Uuid().v4()}.txt');
+      final ffile = await File(newf).writeAsString(newf);
+      final dataUrl = await _pathToDataUrl(ffile.path);
+      return ChatContent.file(dataUrl);
+    }
   }
-  else if (getAppFileType(path)==AppFileType.audio){
-  final dataUrl = await _pathToDataUrl(path);
-  return ChatContent.audio(dataUrl);
-  }
- else if (getAppFileType(path)==AppFileType.directdoc){
-  final dataUrl = await _pathToDataUrl(path);
-  return ChatContent.file(dataUrl);
+  return ChatContent.file(
+    'app cant process sending file , tell this to user and if this helpful this is file path : $path',
+  );
 }
- else if (getAppFileType(path)==AppFileType.undirectdoc){
-        final content = await File(path).readAsString();
-if (content.isNotEmpty&&content!=''){
-Directory tmp = await getTemporaryDirectory();
-final newf= p.join(tmp.path,'${Uuid().v4()}.txt');
-final ffile = await File(newf).writeAsString(newf);
-  final dataUrl = await _pathToDataUrl(ffile.path);
-  return ChatContent.file(dataUrl);}
-}
-return ChatContent.file('app cant process sending file , tell this to user and if this helpful this is file path : $path');
-}
+
 Future<String> _saveBase64ToFile(
   String base64Data, {
   String ext = '.wav',
@@ -756,14 +760,12 @@ Future<String?> _ensureAudioInputPath(List<String> files) async {
   return await _quickRecordWav();
 }
 
-
 Future<String?> deppReSearch(
   BuildContext context,
   String chatId,
   String input,
   List<String> files,
-)async{
-
+) async {
   final svc = ResponsesService();
   final req = DeepResearchRequest(
     model: 'o4-mini-deep-research',
@@ -772,22 +774,20 @@ Future<String?> deppReSearch(
     reasoning: {'summary': 'auto'},
   );
   await for (final chunk in svc.stream(req)) {
-    try{
-    if (chunk.deltaText != null && chunk.deltaText!.isNotEmpty) {
-      stdout.write(chunk.deltaText);
-      return chunk.deltaText!;
+    try {
+      if (chunk.deltaText != null && chunk.deltaText!.isNotEmpty) {
+        stdout.write(chunk.deltaText);
+        return chunk.deltaText!;
+      }
+    } catch (e) {
+      return e.toString();
     }
-
-  }catch (e){
-    return e.toString();
-
-  }
-   // print('\n[stream failed end]');
-
+    // print('\n[stream failed end]');
   }
   // If stream ended without producing deltaText, return null
   return null;
 }
+
 Future<void> _onAudioModel(
   BuildContext context,
   String chatId,
@@ -806,18 +806,19 @@ Future<void> _onAudioModel(
   // Prepare user question (text + optionally images/files already attached)
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
-   if (!modelUseFilePath){
-  
-    // Ensure images are sent as base64 data URL
-    final content = await contentFromPath(file);
-    questionContents.add(content);
-  }else if (modelUseFilePath){
-final content = <ChatContent>[ChatContent.text('For Using Tools with file operation use this File Path: $file')];
-questionContents.addAll(content);
-modelUseFilePath=false;
-
-  }
-
+    if (!modelUseFilePath) {
+      // Ensure images are sent as base64 data URL
+      final content = await contentFromPath(file);
+      questionContents.add(content);
+    } else if (modelUseFilePath) {
+      final content = <ChatContent>[
+        ChatContent.text(
+          'For Using Tools with file operation use this File Path: $file',
+        ),
+      ];
+      questionContents.addAll(content);
+      modelUseFilePath = false;
+    }
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,
@@ -848,7 +849,8 @@ modelUseFilePath=false;
   try {
     final stream = Cfg.client.createChatCompletionStream(
       request: CreateChatCompletionRequest(
-        model: ChatCompletionModel.modelId(Cfg.current.audioModel?? 'gpt-4o-mini-audio-preview',
+        model: ChatCompletionModel.modelId(
+          Cfg.current.audioModel ?? 'gpt-4o-mini-audio-preview',
         ),
         messages: msgs,
         modalities: [ChatCompletionModality.audio, ChatCompletionModality.text],
@@ -856,7 +858,7 @@ modelUseFilePath=false;
           voice: await getCurrentVoice(),
           format: ChatCompletionAudioFormat.pcm16,
         ),
-      temperature: aiSettings.temperature
+        temperature: aiSettings.temperature,
       ),
     );
 
@@ -941,6 +943,7 @@ modelUseFilePath=false;
     _onErr(e, s, chatId, 'Catch audio stream');
   }
 }
+
 Future<void> _onTtsModel(
   BuildContext context,
   String chatId,
@@ -959,18 +962,19 @@ Future<void> _onTtsModel(
   // Prepare user question (text + optionally images/files already attached)
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
-  if (!modelUseFilePath){
-  
-    // Ensure images are sent as base64 data URL
-    final content = await contentFromPath(file);
-    questionContents.add(content);
-  }else if (modelUseFilePath){
-final content = <ChatContent>[ChatContent.text('For Using Tools with file operation use this File Path: $file')];
-questionContents.addAll(content);
-modelUseFilePath=false;
-
-  }
-
+    if (!modelUseFilePath) {
+      // Ensure images are sent as base64 data URL
+      final content = await contentFromPath(file);
+      questionContents.add(content);
+    } else if (modelUseFilePath) {
+      final content = <ChatContent>[
+        ChatContent.text(
+          'For Using Tools with file operation use this File Path: $file',
+        ),
+      ];
+      questionContents.addAll(content);
+      modelUseFilePath = false;
+    }
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,
@@ -1123,7 +1127,10 @@ modelUseFilePath=false;
 
           // Replace streaming placeholder with final assist reply that will hold transcript + audio
           // Keep existing transcript text if any
-          final finalAssist = ChatHistoryItem.gen(role: ChatRole.assist, content: []);
+          final finalAssist = ChatHistoryItem.gen(
+            role: ChatRole.assist,
+            content: [],
+          );
           if (finalText.isNotEmpty) {
             finalAssist.content.add(ChatContent.text(finalText));
           }
@@ -1143,11 +1150,15 @@ modelUseFilePath=false;
               content: [ChatContent.text(finalText)],
               role: ChatRole.user,
             );
-            final con = (await _historyCarried(ChatHistory(items: [ttsMsg], id: Uuid().v4()))).toList();
+            final con = (await _historyCarried(
+              ChatHistory(items: [ttsMsg], id: Uuid().v4()),
+            )).toList();
 
             final ttsStream = Cfg.client.createChatCompletionStream(
               request: CreateChatCompletionRequest(
-                model: ChatCompletionModel.modelId(Cfg.current.audioModel ?? 'gpt-4o-mini-tts'),
+                model: ChatCompletionModel.modelId(
+                  Cfg.current.audioModel ?? 'gpt-4o-mini-tts',
+                ),
                 messages: con,
                 modalities: [ChatCompletionModality.audio],
                 audio: ChatCompletionAudioOptions(
@@ -1177,7 +1188,10 @@ modelUseFilePath=false;
               onDone: () async {
                 try {
                   if (ttsAudioBuffer.isNotEmpty) {
-                    final path = await _saveBase64ToFile(ttsAudioBuffer.toString(), ext: '.wav');
+                    final path = await _saveBase64ToFile(
+                      ttsAudioBuffer.toString(),
+                      ext: '.wav',
+                    );
                     ss.voicePlayedUntilNow.set(false);
                     // Attach audio to finalAssist: if it already has text, add file; otherwise set file
                     if (finalAssist.content.isEmpty) {
@@ -1345,18 +1359,19 @@ Future<void> _onCreateTextTranslated(
   }
   final questionContents = <ChatContent>[ChatContent.text(translated)];
   for (final file in files) {
-     if (!modelUseFilePath){
-  
-    // Ensure images are sent as base64 data URL
-    final content = await contentFromPath(file);
-    questionContents.add(content);
-  }else if (modelUseFilePath){
-final content = <ChatContent>[ChatContent.text('For Using Tools with file operation use this File Path: $file')];
-questionContents.addAll(content);
-modelUseFilePath=false;
-
-  }
-
+    if (!modelUseFilePath) {
+      // Ensure images are sent as base64 data URL
+      final content = await contentFromPath(file);
+      questionContents.add(content);
+    } else if (modelUseFilePath) {
+      final content = <ChatContent>[
+        ChatContent.text(
+          'For Using Tools with file operation use this File Path: $file',
+        ),
+      ];
+      questionContents.addAll(content);
+      modelUseFilePath = false;
+    }
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,
@@ -1502,7 +1517,7 @@ modelUseFilePath=false;
         // Wait for db to store the chat
         await titleCompleter?.future;
         await Future.delayed(const Duration(milliseconds: 300));
-     //   BakSync.instance.sync();
+        //   BakSync.instance.sync();
       },
       onError: (e, s) {
         _onErr(e, s, chatId, 'Listen text stream');
@@ -1514,4 +1529,747 @@ modelUseFilePath=false;
     _loadingChatIds.notify();
     _onErr(e, s, chatId, 'Catch text stream');
   }
+}
+
+Future<void> _onCreateResponse(
+  BuildContext context,
+  String chatId,
+  String input,
+  List<String> files,
+) async {
+  final workingChat = allHistories[chatId];
+  if (workingChat == null) {
+    final msg = 'Chat($chatId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
+  final config = Cfg.current;
+
+  final questionContents = <ChatContent>[ChatContent.text(input)];
+  for (final file in files) {
+    if (!modelUseFilePath) {
+      // Ensure images are sent as base64 data URL
+      final content = await contentFromPath(file);
+      questionContents.add(content);
+    } else if (modelUseFilePath) {
+      final content = <ChatContent>[
+        ChatContent.text(
+          'For Using Tools with file operation use this File Path: $file',
+        ),
+      ];
+      questionContents.addAll(content);
+      modelUseFilePath = false;
+    }
+  }
+  final question = ChatHistoryItem.gen(
+    content: questionContents,
+    role: ChatRole.user,
+  );
+  final msgs = (await _historyCarried(workingChat)).toList();
+  msgs.add(await question.toOpenAI());
+
+  workingChat.items.add(question);
+  inputCtrl.clear();
+  _chatRN.notify();
+  _autoScroll(chatId);
+  final titleCompleter = await genChatTitle(context, chatId, config);
+
+  final mcpCompatible = Cfg.isMcpCompatible();
+
+  // #104
+  final chatScopeUseMcp = workingChat.settings?.useTools != false;
+
+  // #111
+  final availableMcp = await OpenAIFuncCalls.tools;
+  final isMcpEmpty = availableMcp.isEmpty;
+
+  if (mcpCompatible && chatScopeUseMcp && !isMcpEmpty) {
+    // Used for logging mcp call resp
+    final mcpReply = ChatHistoryItem.single(role: ChatRole.tool, raw: '');
+    workingChat.items.add(mcpReply);
+    _chatRN.notify();
+    _autoScroll(chatId);
+
+    CreateChatCompletionResponse? resp;
+    try {
+      resp = await Cfg.client.createChatCompletion(
+        request: CreateChatCompletionRequest(
+          messages: msgs,
+          model: ChatCompletionModel.modelId(config.model),
+          tools: availableMcp.toList(),
+        ),
+      );
+    } catch (e, s) {
+      _onErr(e, s, chatId, 'MCP');
+      return;
+    }
+
+    final firstMcpReply = resp.choices.firstOrNull;
+    final mcpCalls = firstMcpReply?.message.toolCalls;
+    if (mcpCalls != null && mcpCalls.isNotEmpty) {
+      final assistReply = ChatHistoryItem.gen(
+        role: ChatRole.assist,
+        content: [],
+        toolCalls: mcpCalls,
+      );
+      workingChat.items.add(assistReply);
+      msgs.add(await assistReply.toOpenAI());
+      void onMcpLog(String log) {
+        final content = ChatContent.text(log);
+        if (mcpReply.content.isEmpty) {
+          mcpReply.content.add(content);
+        } else {
+          mcpReply.content[0] = content;
+        }
+        _chatItemRNMap[mcpReply.id]?.notify();
+      }
+
+      for (final mcpCall in mcpCalls) {
+        final contents = <ChatContent>[];
+        try {
+          final msg = await OpenAIFuncCalls.handle(
+            mcpCall,
+            (e, s) => _askMcpConfirm(context, e, s),
+            onMcpLog,
+          );
+          if (msg != null) contents.addAll(msg);
+        } catch (e, s) {
+          _onErr(e, s, chatId, 'MCP call');
+        }
+        if (contents.isNotEmpty && contents.every((e) => e.raw.isNotEmpty)) {
+          final historyItem = ChatHistoryItem.gen(
+            role: ChatRole.tool,
+            content: contents,
+            toolCallId: mcpCall.id,
+          );
+          workingChat.items.add(historyItem);
+          msgs.add(await historyItem.toOpenAI());
+        }
+      }
+    }
+
+    _chatItemRNMap[mcpReply.id]?.notify();
+    workingChat.items.remove(mcpReply);
+    _chatRN.notify();
+    _chatItemRNMap.remove(mcpReply.id)?.dispose();
+
+    final chatStream = await Cfg.clientoc.streamResponse(
+      model: oc.ChatModel.fromJson(Cfg.current.model),
+      input: oc.ResponseInputText(msgs.join()),
+      text: const oc.TextFormatText(),
+    );
+    final assistReply = ChatHistoryItem.single(role: ChatRole.assist);
+    workingChat.items.add(assistReply);
+    _chatRN.notify();
+    _filesPicked.value = [];
+
+    await for (final eve in chatStream.events) {
+      if (eve is oc.ResponseOutputTextDelta) {
+        stdout.write(eve.delta);
+        final content = eve.delta;
+        final prev = assistReply.content.isEmpty
+            ? ''
+            : assistReply.content.map((e) => e.raw).join();
+        final merged = '$prev$content';
+        // Try to split into text/image parts; if decoding fails,
+        // fallback to a single text content so partial base64 isn't rendered as image.
+        final parts = splitDataUrisToChatContents(merged);
+        assistReply.content
+          ..clear()
+          ..addAll(parts);
+        _chatItemRNMap[assistReply.id]?.notify();
+
+        final deltaResoningContent = null;
+        if (deltaResoningContent != null) {
+          final originReasoning = assistReply.reasoning ?? '';
+          final newReasoning = '$originReasoning$deltaResoningContent';
+          assistReply.reasoning = newReasoning;
+          _chatItemRNMap[assistReply.id]?.notify();
+        }
+
+        _autoScroll(chatId);
+      }
+      if (eve is oc.ResponseOutputTextDone) stdout.writeln();
+      if (eve is oc.ResponseCompleted) break;
+    }
+
+    await chatStream.close();
+
+    Cfg.clientoc.close();
+  }
+}
+
+extension AudioAPI on oc.OpenAIClient {
+  /// Generates TTS audio from text (`/audio/speech`).
+  ///
+  /// ```dart
+  /// final bytes = await client.createSpeech(
+  ///   input: 'Hello world',
+  ///   model: 'gpt-4o-mini-tts',
+  ///   voice: 'nova',
+  ///   responseFormat: 'mp3',
+  /// );
+  /// await File('hello.mp3').writeAsBytes(bytes);
+  /// ```
+  ///
+  /// Throws [OpenAIRequestException] on HTTP ≠ 200.
+  Future<Uint8List> createSpeech({
+    /// The text to convert (≤ 4096 chars).
+    required String input,
+
+    /// TTS model: `tts-1`, `tts-1-hd`, `gpt-4o-mini-tts`, …
+    required oc.SpeechModel model,
+
+    /// Voice name: alloy, ash, ballad, coral, echo, fable, onyx,
+    /// nova, sage, shimmer, verse.
+    required oc.SpeechVoice voice,
+
+    /// Extra voice instructions (ignored by tts-1 / tts-1-hd).
+    String? instructions,
+
+    /// Audio container: mp3 (default), opus, aac, flac, wav, pcm.
+    oc.SpeechResponseFormat? responseFormat,
+
+    /// Playback speed 0.25 – 4.0 (default = 1.0).
+    num? speed,
+
+    /// Streaming container: audio (default) or sse.
+    /// **Note:** `sse` is *not* supported by tts-1 / tts-1-hd.
+    String? streamFormat,
+  }) async {
+    final resp = await postJson('/audio/speech', {
+      'input': input,
+      'model': model.toJson(),
+      'voice': voice.toJson(),
+      if (instructions != null) 'instructions': instructions,
+      if (responseFormat != null) 'response_format': responseFormat.toJson(),
+      if (speed != null) 'speed': speed,
+      if (streamFormat != null) 'stream_format': streamFormat,
+    });
+
+    if (resp.statusCode == 200) {
+      // The endpoint returns audio bytes with a Content-Type like audio/mpeg.
+      return resp.bodyBytes;
+    } else {
+      // Let your existing error helper turn the HTTP response
+      // into a typed OpenAIRequestException.
+      throw oc.OpenAIRequestException.fromHttpResponse(resp);
+    }
+  }
+
+  /// Create TTS *and* stream it back chunk-by-chunk as SSE.
+  ///
+  /// ```dart
+  /// final stream = await client.streamSpeech(
+  ///   input: 'Hello there!',
+  ///   model: 'gpt-4o-mini-tts',
+  ///   voice: 'nova',
+  ///   responseFormat: 'mp3',
+  /// );
+  ///
+  /// await for (final ev in stream.events) {
+  ///   switch (ev) {
+  ///     case SpeechAudioDelta():
+  ///       audioSink.add(ev.audioBytes);                // play or save
+  ///     case SpeechAudioDone():
+  ///       print('done: ${ev.usage}');
+  ///   }
+  /// }
+  /// ```
+  Future<oc.SpeechStream> streamSpeechEvents({
+    required String input,
+    required oc.SpeechModel model,
+    required oc.SpeechVoice voice,
+    String? instructions,
+    oc.SpeechResponseFormat?
+    responseFormat, // mp3 (default), opus, aac, flac, wav, pcm
+    num? speed, // 0.25 – 4.0   (default 1.0)
+    /// Leave as `"sse"` (the default here) unless you want raw audio frames.
+    String streamFormat = 'sse',
+
+    /// To receive `transcript.*` events include `"logprobs"` here.
+    List<String>? include,
+  }) async {
+    final sse = streamJson('/audio/speech', {
+      'stream': true, // tells the endpoint we want SSE
+      'input': input,
+      'model': model.toJson(),
+      'voice': voice.toJson(),
+      if (instructions != null) 'instructions': instructions,
+      if (responseFormat != null) 'response_format': responseFormat.toJson(),
+      if (speed != null) 'speed': speed,
+      'stream_format': streamFormat, // default here = "sse"
+      if (include != null) 'include': include,
+    });
+
+    return oc.SpeechStream(sse);
+  }
+
+  Future<Stream<List<int>>> streamSpeechData({
+    required String input,
+    required oc.SpeechModel model,
+    required oc.SpeechVoice voice,
+    String? instructions,
+    oc.SpeechResponseFormat?
+    responseFormat, // mp3 (default), opus, aac, flac, wav, pcm
+    num? speed, // 0.25 – 4.0   (default 1.0)
+    /// Leave as `"sse"` (the default here) unless you want raw audio frames.
+    String streamFormat = 'sse',
+
+    /// To receive `transcript.*` events include `"logprobs"` here.
+    List<String>? include,
+  }) async {
+    return await streamJsonData('/audio/speech', {
+      'stream': true, // tells the endpoint we want SSE
+      'input': input,
+      'model': model.toJson(),
+      'voice': voice.toJson(),
+      if (instructions != null) 'instructions': instructions,
+      if (responseFormat != null) 'response_format': responseFormat.toJson(),
+      if (speed != null) 'speed': speed,
+      'stream_format': "audio", // default here = "sse"
+      if (include != null) 'include': include,
+    });
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*   /audio/transcriptions  –  Sync + Streaming helpers                      */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+extension TranscriptionAPI on oc.OpenAIClient {
+  /* ── Non-streaming helper ─────────────────────────────────────────────── */
+
+  /// Transcribe an audio file (blocking).
+  ///
+  /// ```dart
+  /// final result = await client.createTranscription(
+  ///   fileBytes: await File('speech.mp3').readAsBytes(),
+  ///   filename: 'speech.mp3',
+  ///   model: 'gpt-4o-mini-transcribe',
+  ///   language: 'en',
+  /// );
+  ///
+  /// print(result.text);                 // full transcript
+  /// ```
+  Future<oc.TranscriptionResult> createTranscription({
+    required Uint8List fileBytes,
+    required String filename,
+    required oc.AudioModel model, // whisper-1, gpt-4o-transcribe…
+    String? chunkingStrategy, // 'auto' | JSON string
+    List<String>? include, // e.g. ['logprobs']
+    String? language, // ISO-639-1
+    String? prompt,
+    oc.AudioResponseFormat responseFormat =
+        oc.AudioResponseFormat.json, // json, text, srt, vtt, …
+    num? temperature,
+    List<String>? timestampGranularities, // ['word', 'segment']
+  }) async {
+    final url = baseUrl.resolve('audio/transcriptions');
+
+    final req = http.MultipartRequest('POST', url)
+      ..headers.addAll(getHeaders({}) ?? {})
+      // – core fields –
+      ..fields['model'] = model.toJson()
+      ..fields['response_format'] = responseFormat.toJson()
+      // – optional –
+      .._maybeField('chunking_strategy', chunkingStrategy)
+      .._maybeField('language', language)
+      .._maybeField('prompt', prompt)
+      .._maybeField('temperature', temperature?.toString())
+      .._maybeJsonField('timestamp_granularities[]', timestampGranularities)
+      .._maybeJsonField('include[]', include)
+      // – audio file –
+      ..files.add(
+        http.MultipartFile.fromBytes('file', fileBytes, filename: filename),
+      );
+
+    final streamed = await req.send();
+    final resp = await http.Response.fromStream(streamed);
+
+    if (resp.statusCode == 200) {
+      return oc.TranscriptionResult.fromResponseBody(
+        resp.body,
+        responseFormat.toJson(),
+      );
+    }
+    throw oc.OpenAIRequestException.fromHttpResponse(resp);
+  }
+
+  /* ── Streaming helper (SSE) ───────────────────────────────────────────── */
+
+  /// Transcribe an audio file and **stream** text deltas as SSE.
+  ///
+  /// Only supported by *gpt-4o-transcribe* and *gpt-4o-mini-transcribe* models.
+  Future<oc.TranscriptionStream> streamTranscription({
+    required Uint8List fileBytes,
+    required String filename,
+    required oc.AudioModel model,
+    String? chunkingStrategy,
+    List<String>? include,
+    String? language,
+    String? prompt,
+    // Response format must be json for streaming models.
+    oc.AudioResponseFormat responseFormat = oc.AudioResponseFormat.json,
+    num? temperature,
+    List<String>? timestampGranularities,
+  }) async {
+    final boundary =
+        '----dart-openai-${DateTime.now().microsecondsSinceEpoch.toRadixString(16)}';
+
+    // Build the multipart/form-data body manually so we can feed it to SseClient.
+    final body = _buildMultipartBody(
+      boundary: boundary,
+      fileField: 'file',
+      filename: filename,
+      fileBytes: fileBytes,
+      fields: {
+        'model': model.toJson(),
+        'stream': 'true',
+        'response_format': responseFormat.toJson(),
+        if (chunkingStrategy != null) 'chunking_strategy': chunkingStrategy,
+        if (language != null) 'language': language,
+        if (prompt != null) 'prompt': prompt,
+        if (temperature != null) 'temperature': temperature.toString(),
+        if (include != null)
+          for (final i in include) 'include[]': i,
+        if (timestampGranularities != null)
+          for (final t in timestampGranularities)
+            'timestamp_granularities[]': t,
+      },
+    );
+
+    final sse = oc.SseClient(
+      baseUrl.resolve('audio/transcriptions'),
+      headers: getHeaders({
+        'Content-Type': 'multipart/form-data; boundary=$boundary',
+      }),
+      httpClient: httpClient,
+      body: body,
+    );
+
+    return oc.TranscriptionStream(sse);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Result wrapper (non-streaming)                                           */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+class TranscriptionResult {
+  const TranscriptionResult._({this.text, this.json});
+
+  factory TranscriptionResult.fromResponseBody(
+    String body,
+    String responseFormat,
+  ) {
+    switch (responseFormat) {
+      case 'json':
+      case 'verbose_json':
+        return TranscriptionResult._(
+          json: jsonDecode(body) as Map<String, dynamic>,
+        );
+      default: // text, srt, vtt …
+        return TranscriptionResult._(text: body);
+    }
+  }
+
+  /// Present when `response_format` was *text, srt, vtt* …
+  final String? text;
+
+  /// Present when `response_format` was *json* or *verbose_json*.
+  final Map<String, dynamic>? json;
+
+  @override
+  String toString() => text ?? jsonEncode(json);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Streaming wrapper                                                        */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Minor helpers                                                            */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+extension _MultipartFieldHelpers on http.MultipartRequest {
+  void _maybeField(String name, String? value) {
+    if (value != null) fields[name] = value;
+  }
+
+  // Encodes arrays as multiple fields with the trailing [] convention.
+  void _maybeJsonField(String name, List<String>? values) {
+    if (values == null) return;
+    for (final v in values) fields[name] = v;
+  }
+}
+
+/// Build a simple multipart/form-data body as bytes.
+///
+/// We do it by hand so we can feed the result to `SseClient`.
+Uint8List _buildMultipartBody({
+  required String boundary,
+  required String fileField,
+  required String filename,
+  required Uint8List fileBytes,
+  required Map<String, String> fields,
+}) {
+  final crlf = '\r\n';
+  final buffer = BytesBuilder();
+
+  // Regular fields
+  fields.forEach((name, value) {
+    buffer
+      ..add(utf8.encode('--$boundary$crlf'))
+      ..add(
+        utf8.encode(
+          'Content-Disposition: form-data; name="$name"$crlf$crlf$value$crlf',
+        ),
+      );
+  });
+
+  // The audio file
+  buffer
+    ..add(utf8.encode('--$boundary$crlf'))
+    ..add(
+      utf8.encode(
+        'Content-Disposition: form-data; name="$fileField"; filename="$filename"$crlf',
+      ),
+    )
+    ..add(utf8.encode('Content-Type: application/octet-stream$crlf$crlf'))
+    ..add(fileBytes)
+    ..add(utf8.encode(crlf));
+
+  // Closing boundary
+  buffer.add(utf8.encode('--$boundary--$crlf'));
+
+  return buffer.toBytes();
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Streaming wrapper                                                        */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Event model                                                              */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+abstract class SpeechEvent {
+   SpeechEvent(this.type);
+  final String type;
+
+  Map<String, dynamic> toJson();
+
+ final j= (Map<String, dynamic> j) {
+    switch (j['type']) {
+      case 'speech.audio.delta':
+        return oc.SpeechAudioDelta.fromJson(j);
+      case 'speech.audio.done':
+        return oc.SpeechAudioDone.fromJson(j);
+      default:
+        throw ArgumentError('Unknown speech event type "${j['type']}"');
+    }
+  };
+}
+
+abstract class TranscriptEvent {
+   TranscriptEvent(this.type);
+  final String type;
+
+  Map<String, dynamic> toJson();
+
+  final j= (Map<String, dynamic> j) {
+    switch (j['type']) {
+      case 'transcript.text.delta':
+        return oc.TranscriptTextDelta.fromJson(j);
+      case 'transcript.text.done':
+        return oc.TranscriptTextDone.fromJson(j);
+      default:
+        throw ArgumentError('Unknown speech event type "${j['type']}"');
+    }
+  };}
+
+/* ── Audio events ───────────────────────────────────────────────────────── */
+
+class SpeechAudioDelta extends oc.SpeechEvent {
+  SpeechAudioDelta(this.audioB64)
+    : audioBytes = base64Decode(audioB64),
+      super('speech.audio.delta');
+
+  factory SpeechAudioDelta.fromJson(Map<String, dynamic> j) =>
+      SpeechAudioDelta(j['audio'] as String);
+
+  /// Raw base-64 (if you want to forward it unchanged).
+  final String audioB64;
+
+  /// Decoded audio bytes — ready for playback or saving.
+  final Uint8List audioBytes;
+
+  @override
+  Map<String, dynamic> toJson() => {'type': type, 'audio': audioB64};
+}
+
+class SpeechAudioDone extends oc.SpeechEvent {
+  SpeechAudioDone({this.usage}) : super('speech.audio.done');
+
+  factory SpeechAudioDone.fromJson(Map<String, dynamic> j) => SpeechAudioDone(
+    usage: j['usage'] == null
+        ? null
+        : oc.Usage.fromJson(j['usage'] as Map<String, dynamic>),
+  );
+
+  final oc.Usage? usage;
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    if (usage != null) 'usage': usage!.toJson(),
+  };
+}
+
+/* ── Transcription events (optional) ────────────────────────────────────── */
+
+class TranscriptTextDelta extends oc.TranscriptEvent {
+  TranscriptTextDelta({required this.delta, this.logprobs})
+    : super('transcript.text.delta');
+
+  factory TranscriptTextDelta.fromJson(Map<String, dynamic> j) =>
+      TranscriptTextDelta(
+        delta: j['delta'] as String,
+        logprobs: j['logprobs'] == null
+            ? null
+            : (j['logprobs'] as List?)
+                  ?.cast<Map<String, dynamic>>()
+                  .map(oc.LogProb.fromJson)
+                  .toList(),
+      );
+
+  final String delta;
+  final List<oc.LogProb>? logprobs;
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'delta': delta,
+    if (logprobs != null) 'logprobs': logprobs!.map((p) => p.toJson()).toList(),
+  };
+}
+
+class TranscriptTextDone extends oc.TranscriptEvent {
+  TranscriptTextDone({required this.text, this.logprobs, this.usage})
+    : super('transcript.text.done');
+
+  factory TranscriptTextDone.fromJson(Map<String, dynamic> j) =>
+      TranscriptTextDone(
+        text: j['text'] as String,
+        logprobs: (j['logprobs'] as List?)
+            ?.cast<Map<String, dynamic>>()
+            .map(oc.LogProb.fromJson)
+            .toList(),
+        usage: j['usage'] == null
+            ? null
+            : oc.Usage.fromJson(j['usage'] as Map<String, dynamic>),
+      );
+
+  final String text;
+  final List<oc.LogProb>? logprobs;
+  final oc.Usage? usage;
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'text': text,
+    if (logprobs != null) 'logprobs': logprobs!.map((p) => p.toJson()).toList(),
+    if (usage != null) 'usage': usage!.toJson(),
+  };
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Audio transcription                                                       */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+class AudioModel extends oc.JsonEnum {
+  static const whisper1 = oc.AudioModel('whisper-1');
+  static const gpt4oTranscribe = oc.AudioModel('gpt-4o-transcribe');
+  static const gpt4oMiniTranscribe = oc.AudioModel('gpt-4o-mini-transcribe');
+
+  const AudioModel(super.value);
+
+  static oc.AudioModel fromJson(String raw) => oc.AudioModel(raw);
+}
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  AudioResponseFormat enum                                                 */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+class AudioResponseFormat extends oc.JsonEnum {
+  static const json = oc.AudioResponseFormat('json');
+  static const text = oc.AudioResponseFormat('text');
+  static const srt = oc.AudioResponseFormat('srt');
+  static const verboseJson = oc.AudioResponseFormat('verbose_json');
+  static const vtt = oc.AudioResponseFormat('vtt');
+
+  const AudioResponseFormat(super.value);
+
+  static oc.AudioResponseFormat fromJson(String raw) => oc.AudioResponseFormat(raw);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Speech (TTS) models                                                      */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+class SpeechModel extends oc.JsonEnum {
+  static const tts1 = SpeechModel('tts-1');
+  static const tts1Hd = SpeechModel('tts-1-hd');
+  static const gpt4oMiniTts = SpeechModel('gpt-4o-mini-tts');
+
+  const SpeechModel(super.value);
+
+  static oc.SpeechModel fromJson(String raw) => oc.SpeechModel(raw);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  TTS voices & response-format enums                                       */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+/// Built-in voice presets (TTS).
+///
+/// If OpenAI introduces additional voices later, callers can still pass a
+/// plain `String` in the `voice:` parameter, but these enum values give you
+/// compile-time safety for the known set.
+class SpeechVoice extends oc.JsonEnum {
+  static const alloy = oc.SpeechVoice('alloy');
+  static const ash = oc.SpeechVoice('ash');
+  static const ballad = oc.SpeechVoice('ballad');
+  static const coral = oc.SpeechVoice('coral');
+  static const echo = oc.SpeechVoice('echo');
+  static const fable = oc.SpeechVoice('fable');
+  static const onyx = oc.SpeechVoice('onyx');
+  static const nova = oc.SpeechVoice('nova');
+  static const sage = oc.SpeechVoice('sage');
+  static const shimmer = oc.SpeechVoice('shimmer');
+  static const verse = oc.SpeechVoice('verse');
+
+  const SpeechVoice(super.value);
+
+  static oc.SpeechVoice fromJson(String raw) => oc.SpeechVoice(raw);
+}
+
+/// Audio container for TTS output.
+///
+/// *Note:* `pcm` is typically a raw 16-bit mono stream; all others are
+/// self-contained files.
+class SpeechResponseFormat extends oc.JsonEnum {
+  static const mp3 = oc.SpeechResponseFormat('mp3');
+  static const opus = oc.SpeechResponseFormat('opus');
+  static const aac = oc.SpeechResponseFormat('aac');
+  static const flac = oc.SpeechResponseFormat('flac');
+  static const wav = oc.SpeechResponseFormat('wav');
+  static const pcm = oc.SpeechResponseFormat('pcm');
+
+  const SpeechResponseFormat(super.value);
+
+  static oc.SpeechResponseFormat fromJson(String raw) => oc.SpeechResponseFormat(raw);
 }

@@ -14,8 +14,9 @@ enum SettingsTab {
   app,
   profile,
   tool,
-  bak,
   res,
+  bak,
+  
   about,
   ;
 
@@ -23,8 +24,9 @@ enum SettingsTab {
         app => libL10n.app,
         profile => l10n.profile,
         tool => l10n.tool,
-        bak => libL10n.backup,
         res => l10n.res,
+        bak => libL10n.backup,
+        
         about => libL10n.about,
       };
 
@@ -32,8 +34,9 @@ enum SettingsTab {
         app => const AppSettingsPage(),
         profile => const ProfilePage(),
         tool => const McpPage(),
-        bak => const BackupPage(),
         res => const ResPage(),
+        bak => const BackupPage(),
+        
         about => const AboutPage(),
       };
 

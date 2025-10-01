@@ -9,25 +9,6 @@ final class ProfilePage extends StatefulWidget {
 
 final class _ProfilePageState extends State<ProfilePage>
     with AutomaticKeepAliveClientMixin {
-
-        final _topicController = TextEditingController();
-  String _generatedPrompt = '';
-  bool _isLoading = false;
-
-  Future<void> _generate() async {
-    final topic = _topicController.text.trim();
-    if (topic.isEmpty) return;
-    setState(() => _isLoading = true);
-    try {
-      final prompt = await generatePromptFromTopic(topic);
-      setState(() => _generatedPrompt = prompt);
-    } catch (e) {
-      setState(() => _generatedPrompt = "Error generating prompt: $e");
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -51,46 +32,40 @@ final class _ProfilePageState extends State<ProfilePage>
   );
 
   Widget _buildBalance() {
-    return ApiBalance.balance.listenVal(
-      (val) {
-        return ListTile(
-          leading: const Icon(Icons.account_balance_wallet),
-          title: Text(l10n.balance),
-          subtitle: Text(val.state ?? l10n.unsupported, style: UIs.text13Grey),
-          trailing: val.loading ? CircularProgressIndicator() : refreshIcon,
-        );
-      },
-    );
+    return ApiBalance.balance.listenVal((val) {
+      return ListTile(
+        leading: const Icon(Icons.account_balance_wallet),
+        title: Text(l10n.balance),
+        subtitle: Text(val.state ?? l10n.unsupported, style: UIs.text13Grey),
+        trailing: val.loading ? CircularProgressIndicator() : refreshIcon,
+      );
+    });
   }
 
   Widget _buildChat() {
-    return Cfg.vn.listenVal(
-      (cfg) {
-        final children = [
-          _buildSwitchCfg(cfg),
-          _buildBalance(),
-          _buildOpenAIKey(cfg.key),
-          _buildOpenAIUrl(cfg.url),
-          _buildOpenAIModels(cfg),
-        ];
-        return Column(children: children.map((e) => e.cardx).toList());
-      },
-    );
+    return Cfg.vn.listenVal((cfg) {
+      final children = [
+        _buildSwitchCfg(cfg),
+        _buildBalance(),
+        _buildOpenAIKey(cfg.key),
+        _buildOpenAIUrl(cfg.url),
+        _buildOpenAIModels(cfg),
+      ];
+      return Column(children: children.map((e) => e.cardx).toList());
+    });
   }
 
   Widget _buildMore() {
-    return Cfg.vn.listenVal(
-      (cfg) {
-        final children = [
-          _buildQuickShare(),
-          _buildPrompt(cfg.prompt),
-          _buildHistoryLength(cfg.historyLen),
+    return Cfg.vn.listenVal((cfg) {
+      final children = [
+        _buildQuickShare(),
+        _buildPrompt(cfg.prompt),
+        _buildHistoryLength(cfg.historyLen),
         //  _buildGenTitlePrompt(cfg.genTitlePrompt),
-          //_buildFollowChatModel(),
-        ];
-        return Column(children: children.map((e) => e.cardx).toList());
-      },
-    );
+        //_buildFollowChatModel(),
+      ];
+      return Column(children: children.map((e) => e.cardx).toList());
+    });
   }
 
   Widget _buildSwitchCfg(ChatConfig cfg) {
@@ -221,41 +196,41 @@ final class _ProfilePageState extends State<ProfilePage>
       },
     );
   }
-// Widget _buildOpenAISpeechModel() {
-//     final cfg = Cfg.current;
-//     final val = cfg.speechModel;
-//     return ListTile(
-//       leading: const Icon(Icons.speaker),
-//       title: Text(l10n.tts),
-//       trailing: const Icon(Icons.keyboard_arrow_right),
-//       subtitle: Text(val, style: UIs.text13Grey),
-//       onTap: () async {
-//         final model = await _showPickModelDialog(l10n.model, val);
-//         if (model != null) {
-//           Cfg.setTo(Cfg.current.copyWith(speechModel: model));
-//           _cfgRN.notify();
-//         }
-//       },
-//     );
-//   }
+  // Widget _buildOpenAISpeechModel() {
+  //     final cfg = Cfg.current;
+  //     final val = cfg.speechModel;
+  //     return ListTile(
+  //       leading: const Icon(Icons.speaker),
+  //       title: Text(l10n.tts),
+  //       trailing: const Icon(Icons.keyboard_arrow_right),
+  //       subtitle: Text(val, style: UIs.text13Grey),
+  //       onTap: () async {
+  //         final model = await _showPickModelDialog(l10n.model, val);
+  //         if (model != null) {
+  //           Cfg.setTo(Cfg.current.copyWith(speechModel: model));
+  //           _cfgRN.notify();
+  //         }
+  //       },
+  //     );
+  //   }
 
-//   Widget _buildOpenAITranscribeModel() {
-//     final cfg = OpenAICfg.current;
-//     final val = cfg.transcribeModel;
-//     return ListTile(
-//       leading: const Icon(Icons.transcribe),
-//       title: Text(l10n.stt),
-//       trailing: const Icon(Icons.keyboard_arrow_right),
-//       subtitle: Text(val, style: UIs.text13Grey),
-//       onTap: () async {
-//   final model = await _showPickModelDialog(l10n.model, val);
-//         if (model != null) {
-//           OpenAICfg.setTo(OpenAICfg.current.copyWith(transcribeModel: model));
-//           _cfgRN.notify();
-//         }
-//       },
-//     );
-//   }
+  //   Widget _buildOpenAITranscribeModel() {
+  //     final cfg = OpenAICfg.current;
+  //     final val = cfg.transcribeModel;
+  //     return ListTile(
+  //       leading: const Icon(Icons.transcribe),
+  //       title: Text(l10n.stt),
+  //       trailing: const Icon(Icons.keyboard_arrow_right),
+  //       subtitle: Text(val, style: UIs.text13Grey),
+  //       onTap: () async {
+  //   final model = await _showPickModelDialog(l10n.model, val);
+  //         if (model != null) {
+  //           OpenAICfg.setTo(OpenAICfg.current.copyWith(transcribeModel: model));
+  //           _cfgRN.notify();
+  //         }
+  //       },
+  //     );
+  //   }
   Widget _buildOpenAIUrl(String val) {
     return ListTile(
       leading: const Icon(Icons.link),
@@ -297,25 +272,23 @@ final class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildOpenAIModels(ChatConfig cfg) {
-    return Cfg.models.listen(
-      () {
-        return ExpandTile(
-          leading: const Icon(Icons.model_training),
-          title: Text(l10n.model),
-          children: [
-            _buildOpenAIChatModel(),
-            _buildOpenAIImgModel(),
-            _buildOpenAITaskerModel(),
-            _buildOpenAIAlterModel(),
-_buildOpenAITranscribeModel(),
-_buildOpenAIVoiceModel(),
-_buildOpenAIWrkerModel(),
-            // _buildOpenAISpeechModel(),
-            // _buildOpenAITranscribeModel(),
-          ],
-        );
-      },
-    );
+    return Cfg.models.listen(() {
+      return ExpandTile(
+        leading: const Icon(Icons.model_training),
+        title: Text(l10n.model),
+        children: [
+          _buildOpenAIChatModel(),
+          _buildOpenAIImgModel(),
+          _buildOpenAITaskerModel(),
+          _buildOpenAIAlterModel(),
+          _buildOpenAITranscribeModel(),
+          _buildOpenAIVoiceModel(),
+          _buildOpenAIWrkerModel(),
+          // _buildOpenAISpeechModel(),
+          // _buildOpenAITranscribeModel(),
+        ],
+      );
+    });
   }
 
   Widget _buildOpenAIChatModel() {
@@ -337,13 +310,14 @@ _buildOpenAIWrkerModel(),
       },
     );
   }
+
   Widget _buildOpenAITaskerModel() {
     final cfg = Cfg.current;
     final val = cfg.imgModel;
     return ListTile(
       leading: const Icon(Icons.chat),
       title: Text('Tasker Administator Model'),
-      trailing: Text(val??'', style: UIs.text13Grey),
+      trailing: Text(val ?? '', style: UIs.text13Grey),
       onTap: () {
         Cfg.showPickModelDialog(
           context,
@@ -356,13 +330,14 @@ _buildOpenAIWrkerModel(),
       },
     );
   }
+
   Widget _buildOpenAIAlterModel() {
     final cfg = Cfg.current;
     final val = cfg.altrModel;
     return ListTile(
       leading: const Icon(Icons.chat),
       title: Text('Alternative Model'),
-      trailing: Text(val??'', style: UIs.text13Grey),
+      trailing: Text(val ?? '', style: UIs.text13Grey),
       onTap: () {
         Cfg.showPickModelDialog(
           context,
@@ -382,7 +357,7 @@ _buildOpenAIWrkerModel(),
     return ListTile(
       leading: const Icon(Icons.chat),
       title: Text('Tasker Worker Model'),
-      trailing: Text(val??'', style: UIs.text13Grey),
+      trailing: Text(val ?? '', style: UIs.text13Grey),
       onTap: () {
         Cfg.showPickModelDialog(
           context,
@@ -402,7 +377,7 @@ _buildOpenAIWrkerModel(),
     return ListTile(
       leading: const Icon(Icons.chat),
       title: Text('Transcribe Model'),
-      trailing: Text(val??'', style: UIs.text13Grey),
+      trailing: Text(val ?? '', style: UIs.text13Grey),
       onTap: () {
         Cfg.showPickModelDialog(
           context,
@@ -415,13 +390,14 @@ _buildOpenAIWrkerModel(),
       },
     );
   }
+
   Widget _buildOpenAIVoiceModel() {
     final cfg = Cfg.current;
     final val = cfg.audioModel;
     return ListTile(
       leading: const Icon(Icons.chat),
       title: Text('Voice Model'),
-      trailing: Text(val??'', style: UIs.text13Grey),
+      trailing: Text(val ?? '', style: UIs.text13Grey),
       onTap: () {
         Cfg.showPickModelDialog(
           context,
@@ -489,12 +465,9 @@ _buildOpenAIWrkerModel(),
   //     },
   //   );
   // }
-// profile.dart (snippet)
+  // profile.dart (snippet)
   Widget _buildPrompt(String val) {
-    return AlertDialog(
-      title: const Text('Generate Prompt'),
-      content: SingleChildScrollView(
-        child: Column(
+    return Column(
       children: [
         ListTile(
           leading: const Icon(Icons.abc),
@@ -514,12 +487,16 @@ _buildOpenAIWrkerModel(),
               title: libL10n.edit,
               child: Input(controller: ctrl, maxLines: 11, autoFocus: true),
               actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
+              titleBuilder: (ctx) => IconButton(
+                tooltip: 'Prompt generator',
+                onPressed:() async { await _navigateToAdvancedPromptPage(context);},
+                icon: const Icon(Icons.auto_awesome, size: 18),
+              ),
             );
             if (result == null) return;
             Cfg.setTo(cfg: Cfg.current.copyWith(prompt: result));
           },
         ),
-        SizedBox(height: 10,),
         ListTile(
           leading: const Icon(Icons.auto_awesome),
           title: Text(l10n.promptsSettingsItem),
@@ -534,66 +511,80 @@ _buildOpenAIWrkerModel(),
           ),
           onTap: () async {
             final ctrl = TextEditingController(text: val);
-            final result =  Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _topicController,
-              decoration: const InputDecoration(
-                labelText: 'Enter a topic or idea',
-                border: OutlineInputBorder(),
+            final result = await showDialog<String>(
+              context: context,
+              builder: (ctx) => PromptGeneratorDialog(
+                onPromptGenerated: (gen) {
+                  if (gen.isEmpty) return;
+                  final cur = ctrl.text;
+                  inputCtrl.text = cur.isEmpty ? gen : '$cur\n$gen';
+                  inputCtrl.selection = TextSelection.fromPosition(
+                    TextPosition(offset: inputCtrl.text.length),
+                  );
+                },
               ),
-              onSubmitted: (_) => _generate(),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _isLoading ? null : _generate,
-              icon: _isLoading
-                  ? const SizedBox(
-                      width: 20, height: 20, child: CircularProgressIndicator())
-                  : const Icon(Icons.auto_awesome),
-              label: const Text('Generate'),
-            ),
-            if (_generatedPrompt.isNotEmpty) ...[
-              const Divider(height: 32),
-              Text('Generated Prompt:',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SelectableText(_generatedPrompt),
-              ),
-            ]
-          ],
-        );
-    }  ),
-        if (_generatedPrompt.isNotEmpty && !_generatedPrompt.startsWith('Error'))
-          TextButton(
-            onPressed: () {
-            Cfg.setTo(cfg: Cfg.current.copyWith(prompt: _generatedPrompt));
-
-              Navigator.of(context).pop();
-            },
-            child: const Text('Use This Prompt'),
-          ),
-                
-      ],
-        )
-  
-    ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+            );
+            if (result == null) return;
+            Cfg.setTo(cfg: Cfg.current.copyWith(prompt: result));
+          },
         ),
       ],
     );
   }
 
+  Future<void> _navigateToAdvancedPromptPage(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      _fadeRoute(PromptGeneratorScreen()),
+    ); // Replace AnotherPage with your desired page
+  }
+
+  Route<T> _fadeRoute<T>(Widget page) {
+  return PageRouteBuilder<T>(
+    pageBuilder: (_, __, ___) => page,
+    transitionsBuilder: (_, anim, __, child) {
+      return FadeTransition(
+        opacity: anim.drive(CurveTween(curve: Curves.easeInOut)),
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 220),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
+    opaque: true,
+    fullscreenDialog: true,
+  );
+  }
+  // void _openPromptGenerator() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (ctx) => PromptGeneratorDialog(
+  //       onPromptGenerated: (gen) {
+  //         if (gen.isEmpty) return;
+  //         final cur = inputCtrl.text;
+  //         inputCtrl.text = cur.isEmpty ? gen : '$cur\n$gen';
+  //         inputCtrl.selection = TextSelection.fromPosition(
+  //           TextPosition(offset: inputCtrl.text.length),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
+  // Widget _buildGenTitlePrompt(String? val) {
+  //   return ListTile(
+  //     leading: const Icon(Icons.title),
+  //     title: Text('${l10n.promptsSettingsItem}(${l10n.genTitle})'),
+  //     trailing: Text(val ?? libL10n.empty, style: UIs.textGrey),
+  //     onTap: () async {
+  //       final ctrl = TextEditingController(text: val);
+  //       final result = await context.showRoundDialog<String>(
+  //         title: libL10n.edit,
+  //         child: Input(controller: ctrl, maxLines: 11, autoFocus: true),
+  //         actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
+  //       );
+  //       if (result == null) return;
+  //       Cfg.setTo(cfg: Cfg.current.copyWith(genTitlePrompt: result));
+  //     },
+  //   );
+  // }
 
   Widget _buildHistoryLength(int val) {
     return ListTile(

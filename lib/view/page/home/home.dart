@@ -9,7 +9,6 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:googleapis/realtimebidding/v1.dart' hide Image;
 import 'package:gpt_box/core/audio/audio_utils.dart';
 import 'package:gpt_box/core/audio/transcription_service.dart';
 import 'package:gpt_box/core/audio/tts_service.dart';
@@ -20,7 +19,6 @@ import 'package:gpt_box/core/responses/codex_local_shell.dart';
 import 'package:gpt_box/core/responses/responses_service.dart' as respsvc;
 import 'package:gpt_box/core/responses/responses_models.dart' as respmod;
 import 'package:gpt_box/core/util/file_type.dart';
-import 'package:gpt_box/core/util/sync.dart';
 import 'package:gpt_box/core/util/url.dart';
 import 'package:gpt_box/data/model/canvas_result.dart';
 //import 'package:flutter_tiktoken/flutter_tiktoken.dart';
@@ -38,15 +36,19 @@ import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/data/store/dummy.dart';
 import 'package:gpt_box/data/store/setting.dart';
-import 'package:gpt_box/main.dart' show persistentCache, prefs;
+import 'package:gpt_box/main.dart' show persistentCache;
+import 'package:gpt_box/view/file_contenter/file_contenter.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
+import 'package:gpt_box/view/prompt_generator/screens/prompt_generator_screen.dart';
 import 'package:gpt_box/view/translator/interfaces/chunker_translator.dart';
 import 'package:gpt_box/view/widget/canvas_free.dart';
+import 'package:http/http.dart' as http;
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:typed_data';
-
+import 'package:openai_core/openai_core.dart' as oc;
 import 'package:audioplayers/audioplayers.dart';
+import 'package:openai_core/sse_client.dart' as oc;
 import 'package:openai_dart/openai_dart.dart' as openai;
 import 'package:path_provider/path_provider.dart';
 import 'package:siri_wave/siri_wave.dart';
@@ -290,7 +292,6 @@ final class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const history = _HistoryPage();
-    const drawer= AiSettingsDrawerHive();
     const chat = _ChatPage();
     inputCtrl.addListener(aiSettings.onTextChangedForTokens);
 
@@ -303,7 +304,6 @@ final class _Body extends StatelessWidget {
               children: [
                 SizedBox(width: w, height: cons.maxHeight, child: history),
                 const Expanded(child: chat),
-                SizedBox(width:w, height: cons.maxHeight, child:drawer )
               ],
             );
           },
@@ -319,4 +319,7 @@ final class _Body extends StatelessWidget {
       );
     });
   }
+
+  
 }
+

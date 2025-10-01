@@ -384,7 +384,7 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
     ChatHistoryItem chatItem,
   ) {
         final int key = chatItems.index(chatItem);
-    final bool isTranslating = _isTranslatingMap[key] == true;
+    /// TODO  remember to implanting this => final bool isTranslating = _isTranslatingMap[key] == true;
     final String? translated = _translatedOverviews[key];
 
     final replayEnabled = chatItem.role.isUser;

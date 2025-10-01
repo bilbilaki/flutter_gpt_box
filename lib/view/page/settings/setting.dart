@@ -18,6 +18,7 @@ import 'package:gpt_box/generated/l10n/l10n.dart';
 import 'package:gpt_box/view/page/backup/view.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/home/home.dart';
+import 'package:gpt_box/view/prompt_generator/screens/prompt_generator_screen.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:shortid/shortid.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -112,6 +113,8 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
       _buildLocale(),
       // _buildColorSeed(),
       _buildThemeMode(),
+            _buildResponseTitle(),
+
       // _buildCheckUpdate(),
       _buildAppMore(),
     ];
@@ -219,31 +222,31 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     );
   }
 
-  Widget _buildCheckUpdate() {
-    return ListTile(
-      leading: const Icon(Icons.update),
-      title: Text(l10n.autoCheckUpdate),
-      subtitle: ValueListenableBuilder(
-        valueListenable: AppUpdateIface.newestBuild,
-        builder: (_, val, _) {
-          final text = switch (val) {
-            null => '${l10n.current} v${BuildData.build}, ${l10n.clickToCheck}',
-            > BuildData.build => libL10n.versionHasUpdate(val),
-            _ => libL10n.versionUpdated(BuildData.build),
-          };
-          return Text(text, style: UIs.textGrey);
-        },
-      ),
-      onTap: () => Fns.throttle(
-        () => AppUpdateIface.doUpdate(
-          url: Urls.appUpdateCfg,
-          context: context,
-          build: BuildData.build,
-        ),
-      ),
-      trailing: StoreSwitch(prop: _setStore.autoCheckUpdate),
-    );
-  }
+  // Widget _buildCheckUpdate() {
+  //   return ListTile(
+  //     leading: const Icon(Icons.update),
+  //     title: Text(l10n.autoCheckUpdate),
+  //     subtitle: ValueListenableBuilder(
+  //       valueListenable: AppUpdateIface.newestBuild,
+  //       builder: (_, val, _) {
+  //         final text = switch (val) {
+  //           null => '${l10n.current} v${BuildData.build}, ${l10n.clickToCheck}',
+  //           > BuildData.build => libL10n.versionHasUpdate(val),
+  //           _ => libL10n.versionUpdated(BuildData.build),
+  //         };
+  //         return Text(text, style: UIs.textGrey);
+  //       },
+  //     ),
+  //     onTap: () => Fns.throttle(
+  //       () => AppUpdateIface.doUpdate(
+  //         url: Urls.appUpdateCfg,
+  //         context: context,
+  //         build: BuildData.build,
+  //       ),
+  //     ),
+  //     trailing: StoreSwitch(prop: _setStore.autoCheckUpdate),
+  //   );
+  // }
 
 
   Widget _buildGenTitle() {
@@ -254,6 +257,13 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     );
   }
 
+  Widget _buildResponseTitle() {
+    return ListTile(
+      leading: const Icon(Icons.auto_awesome, size: 21),
+      title: Text("Using Response API?"),
+      trailing: StoreSwitch(prop: _setStore.response),
+    );
+  }
   Widget _buildAutoScrollBottom() {
     return ExpandTile(
       leading: const Icon(Icons.keyboard_arrow_down),
