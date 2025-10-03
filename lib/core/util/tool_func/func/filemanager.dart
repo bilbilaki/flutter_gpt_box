@@ -4,68 +4,89 @@ part of '../tool.dart';
 final class TfFileManager extends ToolFunc {
   static const instance = TfFileManager._();
 
-  const TfFileManager._()
-      : super(
-          name: 'filemanager',
-          parametersSchema: const {
-            'type': 'object',
-            'properties': {
-              'action': {
-                'type': 'string',
-                'description':
-                    "The file operation to perform. Must be one of: 'list', 'tree', 'read', 'create', 'search'.",
-              },
-              'path': {
-                'type': 'string',
-                'description':
-                    "The directory or full file path. Used for 'list', 'tree', and 'create' actions.",
-              },
-              'content': {
-                'type': 'string',
-                'description':
-                    "The text content to write to a new file. Required for the 'create' action.",
-              },
-              'fileIds': {
-                'type': 'array',
-                'items': {'type': 'string'},
-                'description':
-                    "A list of file IDs (obtained from 'list' or 'search') to read. Required for the 'read' action.",
-              },
-              'query': {
-                'type': 'string',
-                'description':
-                    "A search term to find indexed files by name. Required for the 'search' action.",
-              },
-              'extensions': {
-                'type': 'array',
-                'items': {'type': 'string'},
-                'description':
-                    "Optional list of file extensions to filter by (e.g., ['txt', 'md']). Used with 'list' action.",
-              },
+const TfFileManager._()
+    : super(
+        name: 'filemanager',
+        parametersSchema: const {
+          'type': 'object',
+          'properties': {
+            'action': {
+              'type': 'string',
+              'description':
+                  "The file operation to perform. Must be exactly one of: 'list' (list files in a directory), 'tree' (show directory structure), 'read' (read file contents), 'create' (create a new text file), or 'search' (find files by name). Use only one action per call to avoid conflicts.",
             },
-            'required': ['action'],
+            'path': {
+              'type': 'string',
+              'description':
+                  "The directory path (for 'list' or 'tree') or full file path (for 'create', e.g., '/path/to/new_file.txt'). Always confirm paths with the user before using—use absolute paths where possible for accuracy.",
+            },
+            'content': {
+              'type': 'string',
+              'description':
+                  "The text content to write into a new file. Required for the 'create' action. Keep content concise and inform the user if the file is created successfully.",
+            },
+            'fileIds': {
+              'type': 'array',
+              'items': {'type': 'string'},
+              'description':
+                  "An array of unique file IDs (obtained from previous 'list' or 'search' responses). Required for the 'read' action. For multiple files, provide all relevant IDs; if reading many, consider calling sequentially for better control.",
+            },
+            'query': {
+              'type': 'string',
+              'description':
+                  "The search term (e.g., 'report' or '.txt') to find files by name or partial match. Required for the 'search' action. Results include file IDs for further use (e.g., reading).",
+            },
+            'extensions': {
+              'type': 'array',
+              'items': {'type': 'string'},
+              'description':
+                  "Optional array of file extensions to filter results (e.g., ['.txt', '.md']). Primarily used with the 'list' action to narrow down files; omit for all types.",
+            },
           },
-        );
+          'required': ['action'],
+        },
+      );
 
   @override
   String get description => '''
-Manages local files and directories. It allows you to discover, read, and create files.
-All file operations return a temporary 'id' which can be used in other tools (like the pdfManager) to reference the file.
+Use this tool to manage local files and directories when the user requests discovering, reading, or creating files (e.g., "List files in my downloads" or "Create a note with this text").
+This tool supports safe, read-only and create operations only—no deletions or modifications to existing files. All responses include temporary 'fileId's for each file, which you can store and use in other tools (e.g., pdfManager for PDFs). Always confirm file paths and actions with the user to prevent errors.
 
-**Actions and Required Parameters:**
-1.  **'list'**: Lists files in a directory.
-    - `path`: The directory path to list.
-    - `extensions` (optional): Filter by file extensions.
-2.  **'tree'**: Shows a directory's structure as a tree.
-    - `path`: The directory path to display.
-3.  **'read'**: Reads the content of one or more files.
-    - `fileIds`: A list of file IDs to read.
-4.  **'create'**: Creates a new text file with specified content.
-    - `path`: The full path for the new file (e.g., '/path/to/new_file.txt').
-    - `content`: The text to write into the file.
-5.  **'search'**: Searches for previously listed/indexed files by name.
-    - `query`: The name or partial name of the file to search for.
-''';
+**Actions and Usage (Choose Exactly One Per Call):**
+1. **'list'**: Lists files in a specified directory.
+   - Required: 'path' (e.g., '/Downloads/GPTBOX').
+   - Optional: 'extensions' to filter (e.g., ['.pdf', '.txt']).
+   - Response: Array of files with names, sizes, and 'fileId's. Offer to the user: "Here are the files—want me to read one?"
+   - Tip: Use this first to discover files before reading or searching.
+
+2. **'tree'**: Displays a hierarchical view of a directory's structure.
+   - Required: 'path' (e.g., '/Documents').
+   - Response: Tree-formatted output showing subdirectories and files.
+   - Useful for overview; follow up with 'list' for details on a subfolder.
+
+3. **'read'**: Retrieves the content of one or more files.
+   - Required: 'fileIds' (array from 'list' or 'search').
+   - Response: Content for each file, keyed by 'fileId'. For multi-file reads, summarize or offer excerpts to avoid overwhelming the user.
+   - Best Practice: If the user wants multiple files, call sequentially (e.g., one ID at a time) for targeted control; confirm: "Which file should I read first?"
+
+4. **'create'**: Creates a new plain text file with provided content.
+   - Required: 'path' (full path including filename, e.g., '/Notes/my_note.txt') and 'content'.
+   - Response: Confirmation and new 'fileId'. Inform the user (e.g., "File created at [path]—want to read it back?").
+   - Note: Overwrites if the file exists; always ask the user to confirm the path to avoid accidents.
+
+5. **'search'**: Finds previously indexed or listed files by name.
+   - Required: 'query' (e.g., 'invoice' for partial match).
+   - Response: Matching files with names and 'fileId's. No path needed—searches across indexed areas.
+   - Tip: Run 'list' first to index directories if search yields no results; use returned 'fileId's for 'read'.
+
+**Best Practices to Avoid Errors and Confusion:**
+- Start with 'list' or 'search' to get 'fileId's—never assume IDs.
+- Handle multi-file scenarios: For reading or listing many items, use multiple tool calls to manage responses (e.g., read one file, then ask user for next).
+- Security: Only operate on user-confirmed paths (e.g., avoid system folders). If an action fails (e.g., invalid path), inform the user and suggest alternatives.
+- Integration: Pass 'fileId's to other tools promptly; they are temporary, so use them in the same conversation.
+- Proactively Offer: After listing, suggest next steps (e.g., "Found files—should I read the report.pdf?").
+
+Focus on user requests—do not perform unsolicited file operations.''';
 
   @override
   String get l10nName => "filemanager";

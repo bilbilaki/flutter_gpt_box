@@ -5,34 +5,38 @@ final smsSender = SmsSender();
 final class TfSMSSender extends ToolFunc {
   static const instance = TfSMSSender._();
   const TfSMSSender._()
-    : super(
-        name: 'smssender',
-        parametersSchema: const {
-          'type': 'object',
-          'properties': {
-            'contact': {
-              'type': 'string',
-              'description':
-                  'before using this tool you most get contact name to add it here one contact each time ',
-            },
-            'message': {
-              'type': 'string',
-              'description':
-                  'here put message user requested to you sending that',
-            },
-            'simslot2': {
-              'type': 'boolean',
-              'description':
-                  'by default we send using sim 1 if need using sim 2 set true ',
-            },
-          },
-          'required': ['contact', 'message'],
-        },
-      );
-  @override
-  String get description => '''
-call this tool if user requested to sending sms message for that . get contect info and message to send from user.''';
+  : super(
+  name: 'smssender',
+  parametersSchema: const {
+    'type': 'object',
+    'properties': {
+      'contact': {
+        'type': 'string',
+        'description':
+            'The recipient\'s contact name . Obtain the contact details directly from the user before invoking this tool. Use only one contact per call. but you can performing multi tool call',
+      },
+      'message': {
+        'type': 'string',
+        'description':
+            'The exact message content to send via SMS, as specified or requested by the user. Keep it concise to respect SMS limits.',
+      },
+      'simslot2': {
+        'type': 'boolean',
+        'description':
+            'Optional: Set to true to send from SIM slot 2; defaults to SIM slot 1 if false or omitted.',
+      },
+    },
+    'required': ['contact', 'message'],
+  },
+);
 
+@override
+String get description => '''
+Use this tool to send an SMS message to a specified contact when the user explicitly requests it (e.g., "Send a text to John saying I'm running late").
+- First, confirm and extract the recipient's contact details and message content from the user's input.
+- Do not assume or fabricate any contact info—always get it from the user.
+- This tool handles one SMS at a time; for multiple, invoke it sequentially.
+''';
   @override
   String get l10nName => "smssender";
 

@@ -14,6 +14,8 @@ import 'package:gpt_box/core/services/terminal_sessin_manager.dart';
 import 'package:gpt_box/core/util/utils.dart';
 // import 'package:flutter_js/extensions/fetch.dart';
 // import 'package:flutter_js/flutter_js.dart';
+import '../../../../bridges/golib_service.dart';
+
 import 'package:gpt_box/data/model/chat/history/history.dart';
 import 'package:gpt_box/data/model/download.dart';
 import 'package:gpt_box/data/res/build_data.dart';

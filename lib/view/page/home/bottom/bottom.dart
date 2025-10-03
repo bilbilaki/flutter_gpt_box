@@ -72,9 +72,10 @@ final class _HomeBottomState extends State<_HomeBottom> {
     if (cancel) return;
 
     final path = _recordingPath;
-    _recordingPath = null;
     if (path == null || !File(path).existsSync()) {
       context.showSnackBar('No audio captured');
+          _recordingPath = null;
+
       return;
     }
 
@@ -82,7 +83,9 @@ final class _HomeBottomState extends State<_HomeBottom> {
     // This uses the existing voice input flow (VoiceJustInput) so it attaches the audio base64.
     final chatId = _curChatId.value;
     final text = inputCtrl.text; // keep any current text
-    _onTtsModel(context, chatId, text, [path]);
+    _onAudioModel(context, chatId, text, [path]);
+        _recordingPath = null;
+
   }
 
   @override
@@ -155,7 +158,8 @@ Widget _buildBottomFnsTwoRows() {
           _buildOpenSettingsDrawerBtn(), // new: open Hive-backed drawer
           _buildRight(),
           _buildFileSearchBtn(),
-          _buildPromptGeneratorPageBTN()
+          _buildPromptGeneratorPageBTN(),
+          _buildBatchTaskRunnerPageBTN(),
         ],
       ),
       const SizedBox(height: 1),
@@ -222,6 +226,13 @@ Widget _buildBottomFnsTwoRows() {
       icon: Icon(Icons.auto_awesome_mosaic_sharp, size: 17),
     );
   }
+     Widget _buildBatchTaskRunnerPageBTN() {
+    return IconButton(
+      onPressed: () async{ await _navigateToBatchTaskerPage(context);},
+      icon: Icon(Icons.batch_prediction, size: 17),
+    );
+  }
+  
   Widget _buildOpenSettingsDrawerBtn() {
     return IconButton(
       tooltip: 'Open Settings Drawer',
@@ -268,24 +279,24 @@ Widget _buildBottomFnsTwoRows() {
   Widget _buildTextField() {
     return Column(
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            // child: Text(
-            //   'Tokens: ${ss.currentTokenCount.get()}',
-            //   style: TextStyle(
-            //     color: Theme.of(context).colorScheme.primary,
-            //     fontSize: 12,
-            //     fontWeight: FontWeight.bold,
-            //   ),
-         //   ),
-          ),
-        ),
+        // Align(
+        //   alignment: Alignment.centerLeft,
+        //   child: Container(
+        //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        //     decoration: BoxDecoration(
+        //       color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        //       borderRadius: BorderRadius.circular(8),
+        //     ),
+        //     // child: Text(
+        //     //   'Tokens: ${ss.currentTokenCount.get()}',
+        //     //   style: TextStyle(
+        //     //     color: Theme.of(context).colorScheme.primary,
+        //     //     fontSize: 12,
+        //     //     fontWeight: FontWeight.bold,
+        //     //   ),
+        //  //   ),
+        //   ),
+        // ),
 
         Input(
           controller: inputCtrl,
@@ -444,7 +455,11 @@ Widget _buildBottomFnsTwoRows() {
       _fadeRoute( FileSearchScreen()),
     ); // Replace AnotherPage with your desired page
   }
-  
+  Future<void> _navigateToBatchTaskerPage(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      _fadeRoute(   AIBatchProcessorScreen()),
+    ); // Replace AnotherPage with your desired page
+  }
 // Future<void> _navigateToWebView(BuildContext context) async {
 //     await Navigator.of(context).push<void>(
 //       _fadeRoute( ()),

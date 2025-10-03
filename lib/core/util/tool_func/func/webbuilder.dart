@@ -14,7 +14,7 @@ part of '../tool.dart';
 final class TfWebBuilder extends ToolFunc {
   static const instance = TfWebBuilder._();
 
-  const TfWebBuilder._()
+const TfWebBuilder._()
     : super(
         name: 'webbuilder',
         parametersSchema: const {
@@ -23,61 +23,100 @@ final class TfWebBuilder extends ToolFunc {
             'action': {
               'type': 'string',
               'description':
-                  "Action to perform. One of: 'writeFile','mkdirs','readFile','listDir','deletePath','finishBuild','toggleServer','resetWorkspace'.",
+                  "The file or build operation to perform. Must be exactly one of: 'writeFile' (create/update a file), 'mkdirs' (create directories), 'readFile' (retrieve file content), 'listDir' (list directory contents), 'deletePath' (remove file/dir), 'finishBuild' (finalize and preview the app), 'toggleServer' (start/stop local server), or 'resetWorkspace' (clear the workspace). Use only one action per call to avoid conflicts.",
             },
             'relPath': {
               'type': 'string',
               'description':
-                  'Relative path under the workspace (e.g., "index.html", "assets/css/app.css"). Required for file ops.',
+                  'The relative path within the workspace (e.g., "index.html", "css/styles.css", or "js/app.js"). Required for file/directory operations (writeFile, readFile, listDir, deletePath, mkdirs). Always confirm paths with the user to ensure accuracy—use forward slashes and avoid absolute paths.',
             },
             'content': {
               'type': 'string',
               'description':
-                  'File content. If encoding=base64, provide base64 of the raw bytes; if utf8, plain text.',
+                  'The file content to write. For writeFile, provide plain text (UTF-8) or base64-encoded bytes. Keep it concise and relevant (e.g., HTML/JS code); confirm code snippets with user for correctness.',
             },
             'encoding': {
               'type': 'string',
               'enum': ['utf8', 'base64'],
               'description':
-                  'Content encoding for writeFile/readFile. Defaults to utf8.',
+                  'Encoding for writeFile or readFile content (e.g., utf8 for text, base64 for binaries like images). Defaults to utf8. Use base64 only for non-text files fetched via other tools.',
             },
             'recursive': {
               'type': 'boolean',
-              'description': 'For deletePath and mkdirs: apply recursively.',
+              'description': 'Set to true for recursive operations on directories (e.g., delete entire folders with deletePath or create nested dirs with mkdirs). Defaults to false. Confirm recursive actions with user to prevent accidental deletions.',
             },
             'isDone': {
               'type': 'boolean',
               'description':
-                  'If true with action=finishBuild, app will start local preview server, export to Downloads, zip, and open browser.',
+                  'Set to true with finishBuild to complete the build: Starts a local preview server, exports files to Downloads folder, creates a ZIP archive, and opens the app in the browser. Use after core files are ready.',
             },
             'isTurnOff': {
               'type': 'boolean',
               'description':
-                  'If true with action=toggleServer, the local preview server will be stopped.',
+                  'Set to true with toggleServer to stop the local preview server; set to false (or omit) to start it. Useful for pausing previews without resetting the workspace.',
             },
           },
           'required': ['action'],
         },
       );
 
-  @override
-  String get l10nName => 'webbuilder';
+@override
+String get l10nName => 'webbuilder';
 
-  @override
-  String get description => '''
-A tool to generate and preview web apps locally:
-- writeFile: write files (HTML/CSS/JS/assets) into a sandboxed workspace.
-- mkdirs, readFile, listDir, deletePath: manage files/dirs.
-- finishBuild: start a local HTTP server to preview, export sources to Downloads, create a zip, and open the browser.
-- toggleServer: stop (or start) the server.
-- resetWorkspace: wipe and recreate an empty workspace.
-Return values always include "workspaceRoot".
-Important:
-- After building First concept or editing project by sending request for toggleserver you should open web to user see changes.
-- For user explain your unlimited abilities to can make any kind webpage then try to interseted user with yoour power of creation.
-- if user add access for you to can performing web search or webpages fetch you can mixing that with this tool and looking for resources if user request a website clone from you.
-- if you need you can retry tool calls , or performing more tool call instead of just once ''';
+@override
+String get description => '''
+Use this tool to build, manage, and preview web applications in a local sandboxed workspace when the user requests it (e.g., "Create a simple HTML page with CSS" or "Build a portfolio site"). This enables generating HTML/CSS/JS files, organizing assets, and providing a live preview via a local server. Integrate with 'httpReq' or 'downloader' to fetch external resources (e.g., clone sites by pulling templates/styles). Do not call unsolicited—always confirm file paths, content, and actions with the user for accuracy and safety. All responses include "workspaceRoot" (base directory path) for reference.
+This tool supports iterative development: Write files, organize dirs, preview, and export. For complex sites, use sequential calls (e.g., write HTML, then CSS, then finishBuild). You can create any webpage type (static sites, simple apps)—highlight your ability to craft custom, responsive designs to engage the user.
 
+**Actions and Usage (Choose Exactly One Per Call):**
+1. **'writeFile'**: Creates or updates a file in the workspace.
+   - Required: 'relPath', 'content'.
+   - Optional: 'encoding' (default 'utf8').
+   - Example: {'relPath': 'index.html', 'content': '<h1>Hello World</h1>'}.
+   - Response: Confirmation and updated workspace info. Offer: "Wrote index.html—want to add CSS next?"
+
+2. **'mkdirs'**: Creates one or more directories.
+   - Required: 'relPath' (e.g., 'assets/css').
+   - Optional: 'recursive' (true for nested dirs).
+   - Response: Created paths. Use for organizing: "Created assets folder—ready for JS files?"
+
+3. **'readFile'**: Retrieves the content of a file.
+   - Required: 'relPath'.
+   - Optional: 'encoding'.
+   - Response: File content (string or base64). Summarize if long: "Read index.html (~200 lines)—preview?"
+
+4. **'listDir'**: Lists files and subdirs in a directory.
+   - Required: 'relPath' (e.g., '. ' for root or 'assets').
+   - Response: Array of paths. Use to review: "Workspace has 3 files—list details?"
+
+5. **'deletePath'**: Removes a file or directory.
+   - Required: 'relPath'.
+   - Optional: 'recursive' (true for dirs).
+   - Response: Confirmation. Always confirm: "Delete styles.css? Irreversible."
+
+6. **'finishBuild'**: Finalizes the project and prepares for preview/export.
+   - Optional: 'isDone' (true to trigger server start, export to Downloads, ZIP, and browser open).
+   - Response: Build status, preview URL (if server starts). Offer: "App built and opened in browser—check changes?"
+
+7. **'toggleServer'**: Starts or stops the local preview server.
+   - Optional: 'isTurnOff' (true to stop).
+   - Response: Server status (e.g., "Server running at http://localhost:8080"). Use after edits: "Toggled server on—refresh to see updates."
+
+8. **'resetWorkspace'**: Clears all files and starts fresh.
+   - No other params.
+   - Response: Empty workspace confirmation. Confirm: "Reset everything? All changes lost."
+
+**Best Practices to Avoid Errors and Enhance Interaction:**
+- Confirmation Key: Verify 'relPath' and 'content' with the user (e.g., "Write this HTML to index.html?")—prevent typos or overwrites.
+- Iterative Building: For full sites, sequence actions (e.g., mkdirs → writeFile multiple times → finishBuild). Retry calls if needed (e.g., on errors) or chain more for refinements.
+- Integration: Fetch resources via 'httpReq' (e.g., CSS from CDN) and write as base64; for clones, search/pull elements then adapt. Example: "Cloning a site? I'll fetch the layout and customize."
+- Safety: Avoid destructive actions (delete/reset) without approval; no external network from workspace (sandboxed). Limit file sizes to prevent overloads.
+- Preview Flow: After writes, toggleServer or finishBuild to show changes—inform: "Preview ready at localhost—want tweaks?"
+- Multi-Call: Use loops in reasoning for batches (e.g., write multiple files sequentially); explain capabilities: "I can build any webpage— from landing pages to interactive apps. What do you envision?"
+- Errors: If path invalid, suggest alternatives (e.g., "Dir not found—create it first?"). Handle exports: "Zipped to Downloads—download link ready."
+- Engagement: Showcase power: "With this, I can craft responsive sites, integrate APIs, or even simple PWAs—let's create something amazing!"
+
+Focus on user-requested web creation—empower with versatile, step-by-step building.''';
   @override
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
     final action = (args['action'] as String?)?.trim().toLowerCase();

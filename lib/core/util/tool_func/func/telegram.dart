@@ -7,7 +7,7 @@ part of '../tool.dart';
 final class TfTelegramManager extends ToolFunc {
   static const instance = TfTelegramManager._();
 
-  const TfTelegramManager._()
+const TfTelegramManager._()
     : super(
         name: 'telegramManager',
         parametersSchema: const {
@@ -16,17 +16,17 @@ final class TfTelegramManager extends ToolFunc {
             'action': {
               'type': 'string',
               'description':
-                  "The primary operation to perform. One of: 'sendMessage', 'editMessage', 'deleteMessage', 'pinMessage', 'manageBot', 'getBotInfo'.",
+                  "The primary operation to perform. Must be exactly one of: 'sendMessage' (send new message), 'editMessage' (update message text), 'deleteMessage' (remove a message), 'pinMessage' (pin/unpin message).",
             },
             'chatId': {
               'type': 'string',
               'description':
-                  "The target chat ID (e.g., '@username' or group public username or invite links). Required for most message-related actions.",
+                  "The target chat ID (e.g., '@channelid' or 'userid' or '@userid', for user/group, or invite link)",
             },
             'messageId': {
               'type': 'integer',
               'description':
-                  "The ID of a specific message to edit, delete, or pin.",
+                  "The unique ID of a specific message (obtained from previous 'sendMessage' response or bot logs). Required for 'editMessage', 'deleteMessage', and 'pinMessage'. Verify the ID to avoid errors.",
             },
             // Properties for 'sendMessage'
             'messageType': {
@@ -44,82 +44,65 @@ final class TfTelegramManager extends ToolFunc {
                 'poll',
                 'dice',
               ],
-              'description': "The type of message to send.",
+              'description':
+                  "The type of message to send for 'sendMessage' action (e.g., 'text' for plain messages, 'photo' for images). Required for 'sendMessage'; defaults not applicable—choose based on user request.",
             },
             'text': {
               'type': 'string',
-              'description': "The text content for a message.",
+              'description':
+                  "The main text content for 'text' messages or captions. For 'sendMessage', provide for text types; for media, use as optional caption. Keep concise and confirm sensitive content with user.",
             },
             'mediaUrlOrPath': {
               'type': 'string',
-              'description': "The URL or local file path for any media type.",
+              'description':
+                  "The URL (e.g., 'https://example.com/image.jpg') or local file path for media types ('photo', 'video', etc.) in 'sendMessage'. Verify accessibility before calling; use trusted sources only.",
             },
             'caption': {
               'type': 'string',
-              'description': "A caption for media messages.",
+              'description':
+                  "Optional short description for media messages (under 1024 chars). Use for context; confirm if it includes links or sensitive info.",
             },
             'parseMode': {
               'type': 'string',
-              'enum': ['plain','HTML', 'MarkdownV2'],
-              'description': "Formatting for text content. Defaults to plain.",
-            },
-            'pollData': {
-              'type': 'object',
-              'description': "Required for 'poll' messageType.",
-              'properties': {
-                'question': {'type': 'string'},
-                'options': {
-                  'type': 'array',
-                  'items': {'type': 'string'},
-                },
-                'isAnonymous': {'type': 'boolean'},
-                'allowsMultipleAnswers': {'type': 'boolean'},
-              },
-            },
-            // Properties for 'manageBot'
-            'botDescription': {'type': 'string'},
-            'botCommands': {
-              'type': 'array',
-              'items': {
-                'type': 'object',
-                'properties': {
-                  'command': {'type': 'string'},
-                  'description': {'type': 'string'},
-                },
-                'required': [],
-              },
+              'enum': ['plain', 'HTML', 'MarkdownV2'],
+              'description':
+                  "Text formatting for 'text' or 'caption' (e.g., 'HTML' for bold/italics). Defaults to 'plain'. Use 'MarkdownV2' carefully for advanced escapes.",
             },
             'pin': {
               'type': 'boolean',
               'description':
-                  "For 'pinMessage' action, set to 'true' to pin and 'false' to unpin. If omitted, it will pin.",
+                  "For 'pinMessage' action, set to true to pin a message or false to unpin. Defaults to true (pin) if omitted. Confirm pinning for group chats to avoid spam.",
             },
           },
-          'required': ['action'],
+          'required': ['action','chatId','messageType','text'],
         },
       );
 
   @override
   String get description => '''
-A comprehensive tool to manage a Telegram bot.
-It can send various types of messages, edit/delete them, and configure the bot's profile.
+Use this tool to manage Telegram bot interactions when the user explicitly requests it (e.g., "Send a photo to my channel" or "Update my bot's description"). Ideal for sending messages, editing content, or bot configuration—integrate with other tools like 'downloader' for media. Do not call unsolicited; always confirm chat IDs, content, and actions with the user to respect privacy and Telegram's rules (e.g., no spam). Responses include message IDs for follow-ups (e.g., edit later).
+This tool handles one operation per call—use sequentially for multi-step tasks (e.g., send then edit). Focus on user-authorized chats; obtain chat IDs from user or bot context.
 
-**Key Actions:**
-1.  **'sendMessage'**: Sends a message. You MUST specify 'messageType'.
-    - For `messageType: 'text'`, provide the `text` parameter.
-    - For media types (`photo`, `video`, etc.), provide `mediaUrlOrPath` and an optional `caption`.
-    - For `messageType: 'poll'`, provide the `pollData` object.
-2.  **'editMessage'**: Edits the text of an existing message.
-    - Requires `chatId`, `messageId`, and the new `text`.
-3.  **'deleteMessage'**: Deletes a message.
-    - Requires `chatId` and `messageId`.
-4.  **'pinMessage'**: Pins or unpins a message.
-    - Requires `chatId` and `messageId`. Use `pin: false` to unpin.
-5.  **'manageBot'**: Updates the bot's profile.
-    - Provide one or more of: `botDescription`, `botCommands`.
-6.  **'getBotInfo'**: Retrieves information about the bot itself ('getMe').
-''';
+**Actions and Usage (Choose Exactly One Per Call):**
+1. **'sendMessage'**: Sends a new message to a chat.
+   - Required: 'chatId', 'messageType' (e.g., 'text', 'photo'), and relevant content ('text' for text, 'mediaUrlOrPath' for media, 'pollData' for polls).
+   - Optional: 'caption', 'parseMode' for formatting.
+   - Example: For text: {'text': 'Hello!'}; for photo: {'mediaUrlOrPath': 'url.jpg', 'caption': 'Check this out'}.
+   - Response: Sent message details with 'messageId'. Offer: "Message sent to @channel—want to edit or pin it?"
+   - Tip: For polls/dice, ensure options are neutral; confirm media URLs are valid.
 
+2. **'editMessage'**: Updates the text/caption of an existing message.
+   - Required: 'chatId', 'messageId', 'text' (new content).
+   - Optional: 'parseMode'.
+   - Response: Updated message info. Confirm changes: "Editing message to say 'Updated text'—okay?"
+
+3. **'deleteMessage'**: Removes a message from a chat.
+   - Required: 'chatId', 'messageId'.
+   - Response: Confirmation of deletion. Always confirm destructive action: "Delete this message? It's permanent."
+
+4. **'pinMessage'**: Pins a message to the top of a chat (or unpins).
+   - Required: 'chatId', 'messageId'; optional 'pin' (true/false).
+   - Response: Pin status. Useful for announcements; confirm for groups: "Pin this for visibility?".''';
   @override
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
     // IMPORTANT: Configure your bot token here or in your app's startup logic.

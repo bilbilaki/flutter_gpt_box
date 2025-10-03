@@ -37,6 +37,7 @@ import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/data/store/dummy.dart';
 import 'package:gpt_box/data/store/setting.dart';
 import 'package:gpt_box/main.dart' show persistentCache;
+import 'package:gpt_box/view/bitcher/app.dart';
 import 'package:gpt_box/view/file_contenter/file_contenter.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
