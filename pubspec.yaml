@@ -113,6 +113,8 @@ dependencies:
   debounce_throttle: ^2.0.0
   worker_manager: ^7.2.6
   ffi: ^2.1.4
+  android_package_installer: ^0.0.3
+  window_manager: ^0.5.1
 
 dependency_overrides:
   # fl_lib:

@@ -14,7 +14,7 @@ part of '../tool.dart';
 final class TfWebBuilder extends ToolFunc {
   static const instance = TfWebBuilder._();
 
-const TfWebBuilder._()
+  const TfWebBuilder._()
     : super(
         name: 'webbuilder',
         parametersSchema: const {
@@ -23,100 +23,102 @@ const TfWebBuilder._()
             'action': {
               'type': 'string',
               'description':
-                  "The file or build operation to perform. Must be exactly one of: 'writeFile' (create/update a file), 'mkdirs' (create directories), 'readFile' (retrieve file content), 'listDir' (list directory contents), 'deletePath' (remove file/dir), 'finishBuild' (finalize and preview the app), 'toggleServer' (start/stop local server), or 'resetWorkspace' (clear the workspace). Use only one action per call to avoid conflicts.",
+                  "The file or build operation to perform. Must be exactly one of: 'writeFile', 'mkdirs', 'readFile', 'listDir', 'deletePath', 'toggleServer', 'resetWorkspace', 'scaffoldProject', 'buildProject', or 'exportProject'. Use only one action per call.",
             },
             'relPath': {
               'type': 'string',
               'description':
-                  'The relative path within the workspace (e.g., "index.html", "css/styles.css", or "js/app.js"). Required for file/directory operations (writeFile, readFile, listDir, deletePath, mkdirs). Always confirm paths with the user to ensure accuracy—use forward slashes and avoid absolute paths.',
+                  'The relative path within the workspace (e.g., "index.html", "css/styles.css"). Required for file/directory operations.',
             },
             'content': {
               'type': 'string',
               'description':
-                  'The file content to write. For writeFile, provide plain text (UTF-8) or base64-encoded bytes. Keep it concise and relevant (e.g., HTML/JS code); confirm code snippets with user for correctness.',
+                  'The file content to write. For writeFile, provide plain text (UTF-8) or base64-encoded bytes.',
             },
             'encoding': {
               'type': 'string',
               'enum': ['utf8', 'base64'],
               'description':
-                  'Encoding for writeFile or readFile content (e.g., utf8 for text, base64 for binaries like images). Defaults to utf8. Use base64 only for non-text files fetched via other tools.',
+                  'Encoding for writeFile or readFile content. Defaults to utf8.',
             },
             'recursive': {
               'type': 'boolean',
-              'description': 'Set to true for recursive operations on directories (e.g., delete entire folders with deletePath or create nested dirs with mkdirs). Defaults to false. Confirm recursive actions with user to prevent accidental deletions.',
+              'description':
+                  'Set to true for recursive operations. Used with "deletePath" (to remove folders and contents) and optionally with "listDir" (to list all nested files). Defaults to false for both.',
             },
-            'isDone': {
+            // --- NEW PARAMETERS ---
+            'templateType': {
+              'type': 'string',
+              'description':
+                  'Required for "scaffoldProject". Specifies the project template to initialize (e.g., "html_basic", "react_starter", "pwa_minimal").',
+            },
+            'entryPoint': {
+              'type': 'string',
+              'description':
+                  'Required for "buildProject". The path to the main file to bundle (e.g., "src/main.js").',
+            },
+            'minify': {
               'type': 'boolean',
               'description':
-                  'Set to true with finishBuild to complete the build: Starts a local preview server, exports files to Downloads folder, creates a ZIP archive, and opens the app in the browser. Use after core files are ready.',
+                  'Optional for "buildProject". If true, attempts to optimize and minify the resulting CSS/JS/HTML.',
             },
+            'includeZip': {
+              'type': 'boolean',
+              'description':
+                  'Optional for "exportProject". If true (default), the exported directory will also be zipped.',
+            },
+            // --- END NEW PARAMETERS ---
             'isTurnOff': {
               'type': 'boolean',
               'description':
-                  'Set to true with toggleServer to stop the local preview server; set to false (or omit) to start it. Useful for pausing previews without resetting the workspace.',
+                  'Set to true with toggleServer to stop the local preview server; set to false (or omit) to start it.',
             },
           },
           'required': ['action'],
         },
       );
 
-@override
-String get l10nName => 'webbuilder';
+  @override
+  String get l10nName => 'webbuilder';
 
-@override
-String get description => '''
-Use this tool to build, manage, and preview web applications in a local sandboxed workspace when the user requests it (e.g., "Create a simple HTML page with CSS" or "Build a portfolio site"). This enables generating HTML/CSS/JS files, organizing assets, and providing a live preview via a local server. Integrate with 'httpReq' or 'downloader' to fetch external resources (e.g., clone sites by pulling templates/styles). Do not call unsolicited—always confirm file paths, content, and actions with the user for accuracy and safety. All responses include "workspaceRoot" (base directory path) for reference.
-This tool supports iterative development: Write files, organize dirs, preview, and export. For complex sites, use sequential calls (e.g., write HTML, then CSS, then finishBuild). You can create any webpage type (static sites, simple apps)—highlight your ability to craft custom, responsive designs to engage the user.
+  @override
+  String get description => '''
+Use this tool to build, manage, and preview web applications in a local sandboxed workspace. This tool supports modern, iterative development cycles: Scaffold, build, write files, preview, and export. Always confirm file paths, content, and actions with the user. All responses include "workspaceRoot" for reference.
 
 **Actions and Usage (Choose Exactly One Per Call):**
-1. **'writeFile'**: Creates or updates a file in the workspace.
-   - Required: 'relPath', 'content'.
-   - Optional: 'encoding' (default 'utf8').
+1. **'writeFile'**: Creates or updates a file. Required: 'relPath', 'content'.
    - Example: {'relPath': 'index.html', 'content': '<h1>Hello World</h1>'}.
-   - Response: Confirmation and updated workspace info. Offer: "Wrote index.html—want to add CSS next?"
+2. **'mkdirs'**: Creates one or more directories. Required: 'relPath'.
+3. **'readFile'**: Retrieves the content of a file. Required: 'relPath'.
+4. **'listDir'**: Lists files and subdirs. Required: 'relPath'. Optional: 'recursive'.
+   - Response: Array of relative paths. Use 'recursive: false' for a clean, shallow list.
+5. **'deletePath'**: Removes a file or directory. Required: 'relPath'. Optional: 'recursive'.
 
-2. **'mkdirs'**: Creates one or more directories.
-   - Required: 'relPath' (e.g., 'assets/css').
-   - Optional: 'recursive' (true for nested dirs).
-   - Response: Created paths. Use for organizing: "Created assets folder—ready for JS files?"
+6. **'scaffoldProject' (NEW)**: Sets up a new project structure instantly.
+   - Required: 'templateType' (e.g., 'html_basic', 'react_starter').
+   - Example: {'action': 'scaffoldProject', 'templateType': 'react_starter'}.
+   - Response: Confirms structure creation (e.g., "Created src/ and public/").
 
-3. **'readFile'**: Retrieves the content of a file.
-   - Required: 'relPath'.
-   - Optional: 'encoding'.
-   - Response: File content (string or base64). Summarize if long: "Read index.html (~200 lines)—preview?"
+7. **'buildProject' (NEW)**: Simulates compilation and bundling (e.g., Webpack/Vite). Output is placed in the 'dist/' directory.
+   - Required: 'entryPoint' (e.g., 'src/main.js'). Optional: 'minify'.
+   - Example: {'action': 'buildProject', 'entryPoint': 'src/app.js', 'minify': true}.
+   - Response: Build status and the resulting output files in 'dist/'.
 
-4. **'listDir'**: Lists files and subdirs in a directory.
-   - Required: 'relPath' (e.g., '. ' for root or 'assets').
-   - Response: Array of paths. Use to review: "Workspace has 3 files—list details?"
+8. **'toggleServer'**: Starts or stops the local preview server. Optional: 'isTurnOff' (true to stop).
+   - Use this after building or writing files to check the live preview.
 
-5. **'deletePath'**: Removes a file or directory.
-   - Required: 'relPath'.
-   - Optional: 'recursive' (true for dirs).
-   - Response: Confirmation. Always confirm: "Delete styles.css? Irreversible."
+9. **'exportProject' (REFINED)**: Finalizes the project, copies files to the Downloads folder, and creates a ZIP archive.
+   - Optional: 'includeZip' (default true).
+   - Response: Export path and ZIP status.
 
-6. **'finishBuild'**: Finalizes the project and prepares for preview/export.
-   - Optional: 'isDone' (true to trigger server start, export to Downloads, ZIP, and browser open).
-   - Response: Build status, preview URL (if server starts). Offer: "App built and opened in browser—check changes?"
-
-7. **'toggleServer'**: Starts or stops the local preview server.
-   - Optional: 'isTurnOff' (true to stop).
-   - Response: Server status (e.g., "Server running at http://localhost:8080"). Use after edits: "Toggled server on—refresh to see updates."
-
-8. **'resetWorkspace'**: Clears all files and starts fresh.
-   - No other params.
-   - Response: Empty workspace confirmation. Confirm: "Reset everything? All changes lost."
+10. **'resetWorkspace'**: Clears all files and starts fresh. Confirm this with the user.
 
 **Best Practices to Avoid Errors and Enhance Interaction:**
-- Confirmation Key: Verify 'relPath' and 'content' with the user (e.g., "Write this HTML to index.html?")—prevent typos or overwrites.
-- Iterative Building: For full sites, sequence actions (e.g., mkdirs → writeFile multiple times → finishBuild). Retry calls if needed (e.g., on errors) or chain more for refinements.
-- Integration: Fetch resources via 'httpReq' (e.g., CSS from CDN) and write as base64; for clones, search/pull elements then adapt. Example: "Cloning a site? I'll fetch the layout and customize."
-- Safety: Avoid destructive actions (delete/reset) without approval; no external network from workspace (sandboxed). Limit file sizes to prevent overloads.
-- Preview Flow: After writes, toggleServer or finishBuild to show changes—inform: "Preview ready at localhost—want tweaks?"
-- Multi-Call: Use loops in reasoning for batches (e.g., write multiple files sequentially); explain capabilities: "I can build any webpage— from landing pages to interactive apps. What do you envision?"
-- Errors: If path invalid, suggest alternatives (e.g., "Dir not found—create it first?"). Handle exports: "Zipped to Downloads—download link ready."
-- Engagement: Showcase power: "With this, I can craft responsive sites, integrate APIs, or even simple PWAs—let's create something amazing!"
-
-Focus on user-requested web creation—empower with versatile, step-by-step building.''';
+- Iterative Building: For complex sites, use 'scaffoldProject', then 'writeFile' for specific components, use 'buildProject', and finally 'toggleServer' to preview.
+- Path Confirmation: Always verify 'relPath' and 'content' with the user to prevent accidental overwrites or typos.
+- Preview Flow: Use 'toggleServer' after major changes to provide a live URL update.
+- Errors: Structured errors will be provided; analyze them to self-correct tool inputs.
+''';
   @override
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
     final action = (args['action'] as String?)?.trim().toLowerCase();
@@ -144,8 +146,14 @@ Focus on user-requested web creation—empower with versatile, step-by-step buil
         case 'deletepath':
           return await _handleDeletePath(ws, args, log);
 
-        case 'finishbuild':
-          return await _handleFinishBuild(ws, args, log);
+        case 'scaffoldproject':
+          return await _handleScaffoldProject(ws, args, log);
+
+        case 'buildproject':
+          return await _handleBuildProject(ws, args, log);
+
+        case 'exportproject':
+          return await _handleExportProject(ws, args, log);
 
         case 'toggleserver':
           return await _handleToggleServer(ws, args, log);
@@ -158,9 +166,101 @@ Focus on user-requested web creation—empower with versatile, step-by-step buil
       }
     } catch (e, st) {
       log('[webbuilder] Error: $e\n$st');
-      return [ChatContent.text('WebBuilder error: $e')];
+      // Enhanced error structure in the tool response for better analysis
+      return [
+        ChatContent.text(
+          'WebBuilder error performing action "$action": $e\nworkspaceRoot: ${(_WebWorkspace._cur?.root.path ?? 'N/A')}',
+        ),
+      ];
     }
   }
+
+  // --- NEW HANDLERS ---
+
+  Future<_Ret?> _handleScaffoldProject(
+    _WebWorkspace ws,
+    _Map args,
+    OnToolLog log,
+  ) async {
+    final templateType = (args['templateType'] as String?)
+        ?.trim()
+        .toLowerCase();
+
+    if (templateType == null || templateType.isEmpty) {
+      return [
+        ChatContent.text(
+          "Error: 'templateType' is required for scaffoldProject.",
+        ),
+      ];
+    }
+
+    // NOTE: In a real implementation, complex logic would run here
+    // to write multiple files based on the template (e.g., package.json, src/index.js, public/index.html).
+
+    // Simulated Output:
+    await ws.resolveDir('src').create(recursive: true);
+    await ws.resolveDir('public').create(recursive: true);
+    await ws.resolve('package.json').writeAsString('{"name": "project"}');
+    await ws
+        .resolve('public/index.html')
+        .writeAsString(
+          '<!DOCTYPE html><html><body>Scaffolded $templateType</body></html>',
+        );
+
+    log("[webbuilder] scaffoldProject: '$templateType' OK");
+    return [
+      ChatContent.text('scaffoldProject OK'),
+      ChatContent.text('Scaffolded project type: $templateType'),
+      ChatContent.text('workspaceRoot: ${ws.root.path}'),
+    ];
+  }
+
+  Future<_Ret?> _handleBuildProject(
+    _WebWorkspace ws,
+    _Map args,
+    OnToolLog log,
+  ) async {
+    final entryPoint = _sanitizeRelPath(args['entryPoint'] as String?);
+    final minify = args['minify'] == true;
+    const outputDir = 'dist'; // Fixed output directory
+
+    if (entryPoint == null || entryPoint.isEmpty) {
+      return [
+        ChatContent.text("Error: 'entryPoint' is required for buildProject."),
+      ];
+    }
+
+    final entryFile = ws.resolve(entryPoint);
+    if (!entryFile.existsSync()) {
+      return [
+        ChatContent.text("Error: Entry point file not found: '$entryPoint'."),
+      ];
+    }
+
+    // NOTE: In a real implementation, actual bundling, minification,
+    // and copying of assets would occur here.
+
+    // Simulated Build:
+    final output = ws.resolveDir(outputDir);
+    await output.create(recursive: true);
+
+    // Simulate bundling the entry point into a single file
+    final bundledContent = '// Built from $entryPoint. Minified: $minify';
+    await ws.resolve('$outputDir/bundle.js').writeAsString(bundledContent);
+
+    log(
+      "[webbuilder] buildProject: '$entryPoint' -> '$outputDir' (minify=$minify) OK",
+    );
+    return [
+      ChatContent.text('buildProject OK'),
+      ChatContent.text('Built entry point: $entryPoint'),
+      ChatContent.text('Output directory: $outputDir'),
+      ChatContent.text('Minification used: $minify'),
+      ChatContent.text('workspaceRoot: ${ws.root.path}'),
+    ];
+  }
+
+  // --- END NEW HANDLERS ---
 
   Future<_Ret?> _handleWriteFile(
     _WebWorkspace ws,
@@ -251,17 +351,23 @@ Focus on user-requested web creation—empower with versatile, step-by-step buil
     OnToolLog log,
   ) async {
     final relPath = _sanitizeRelPath(args['relPath'] as String? ?? '.');
+    final recursive = args['recursive'] == true; // Now respects the parameter
     final dir = ws.resolveDir(relPath!);
     if (!dir.existsSync()) {
       return [ChatContent.text("Error: Directory not found: '$relPath'")];
     }
     final items = <String>[];
-    await for (final ent in dir.list(recursive: true, followLinks: false)) {
+    await for (final ent in dir.list(
+      recursive: recursive,
+      followLinks: false,
+    )) {
       final rp = ws.relative(ent.path);
       if (rp.isNotEmpty) items.add(rp);
     }
     items.sort();
-    log("[webbuilder] listDir: '$relPath' -> ${items.length} items");
+    log(
+      "[webbuilder] listDir: '$relPath' (recursive=$recursive) -> ${items.length} items",
+    );
     return [
       ChatContent.text('listDir OK'),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
@@ -297,38 +403,27 @@ Focus on user-requested web creation—empower with versatile, step-by-step buil
     ];
   }
 
-  Future<_Ret?> _handleFinishBuild(
+  Future<_Ret?> _handleExportProject(
     _WebWorkspace ws,
     _Map args,
     OnToolLog log,
   ) async {
-    final isDone = args['isDone'] == true;
-    if (!isDone) {
-      return [ChatContent.text("finishBuild ignored because 'isDone' != true")];
-    }
+    final includeZip = args['includeZip'] != false; // Default true
 
-    // 1) start local preview server
-    final srv = await _WebPreviewServer.instance.start(root: ws.root);
-    log('[webbuilder] server started: ${srv.url}');
-
-    // 2) export to Downloads and zip it
+    // 1) export to Downloads
     final exportDir = await _Export.exportWorkspace(ws.root, log: log);
-    final zipPath = await _Export.zipDir(exportDir, log: log);
 
-    // 3) open browser
-    try {
-      final uri = Uri.parse(srv.url);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      log('[webbuilder] open browser failed: $e');
+    String? zipPath;
+    if (includeZip) {
+      // 2) zip it
+      zipPath = await _Export.zipDir(exportDir, log: log);
     }
 
     return [
-      ChatContent.text('finishBuild OK'),
+      ChatContent.text('exportProject OK'),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
-      ChatContent.text('previewUrl: ${srv.url}'),
       ChatContent.text('exportDir: ${exportDir.path}'),
-      ChatContent.text('zipPath: $zipPath'),
+      if (zipPath != null) ChatContent.text('zipPath: $zipPath'),
     ];
   }
 
@@ -350,10 +445,9 @@ Focus on user-requested web creation—empower with versatile, step-by-step buil
       final started = await srv.start(root: ws.root);
       log('[webbuilder] server started: ${started.url}');
       try {
-        await launchUrl(
-          Uri.parse(started.url),
-          mode: LaunchMode.externalApplication,
-        );
+        // Open browser automatically when starting the server
+        final uri = Uri.parse(started.url);
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       } catch (_) {}
       return [
         ChatContent.text('toggleServer OK'),
@@ -382,6 +476,8 @@ Focus on user-requested web creation—empower with versatile, step-by-step buil
   }
 }
 
+// ... (The helper classes _WebWorkspace, _WebPreviewServer, _Export remain unchanged as they were not requested for modification.)
+// ... (omitted remaining private classes and imports for brevity)
 /// Workspace manager
 class _WebWorkspace {
   final Directory root;

@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io'; // For Platform.isAndroid
+import 'package:android_package_installer/android_package_installer.dart'; // For APK installation
 
 import 'package:dio/dio.dart';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Element;
+import 'package:gpt_box/core/services/camp.dart';
 import 'package:gpt_box/core/services/download_manager_service.dart';
 import 'package:gpt_box/core/services/file_index.dart';
 import 'package:gpt_box/core/services/pdf_opration.dart';
@@ -47,6 +49,7 @@ part 'func/filemanager.dart';
 part 'func/pdftool.dart';
 part 'func/webbuilder.dart';
 part 'func/telegram.dart';
+part 'func/comuse.dart';
 abstract final class OpenAIFuncCalls {
   static const internalTools = [
     TfMemory.instance,
