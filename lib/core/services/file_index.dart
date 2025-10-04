@@ -5,12 +5,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:gpt_box/data/model/app/file_model.dart';
+import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import 'package:file_saver/file_saver.dart' as fs;
 import 'package:dio/dio.dart';
 
-// Headless-friendly service (no Flutter UI dependencies).
+// Headless-friendly service (no Flutte.
 class FileIndexService {
   FileIndexService._internal();
   static final FileIndexService instance = FileIndexService._internal();
@@ -487,6 +488,226 @@ class FileIndexService {
     return out;
   }
 
+// NEW: Delete a single file and clean up index.
+  Future<bool> deleteFile(String filePath) async {
+    final fileToDelete = File(filePath);
+    if (!await fileToDelete.exists()) {
+      print("File not found: $filePath"); // Or use a logger if available
+      return false;
+    }
+    try {
+      await fileToDelete.delete();
+      // Clean up index: Remove any entries matching this exact path
+      final keysToRemove = _index.keys
+          .where((id) => _index[id]?.filePath == filePath)
+          .toList();
+      for (final key in keysToRemove) {
+        _index.remove(key);
+        _generatedFiles.remove(key); // In case it's generated
+      }
+      print("File deleted: $filePath"); // Or log
+      return true;
+    } catch (e) {
+      print("Error deleting file $filePath: $e");
+      return false;
+    }
+  }
+
+  // NEW: Delete a folder (recursive) and clean up index. Adapted from your example.
+  Future<bool> deleteFolder(String folderPath, {bool recursive = true}) async {
+    final dirToDelete = Directory(folderPath);
+    if (!await dirToDelete.exists()) {
+      print("Folder not found: $folderPath");
+      return false;
+    }
+    try {
+      await dirToDelete.delete(
+        recursive: recursive,
+      ); // Delete folder and all its contents
+      // Clean up index: Remove any entries under this folder path
+      final folderPrefix = folderPath.endsWith('/')
+          ? folderPath
+          : '$folderPath/';
+      final keysToRemove = _index.keys.where((id) {
+        final entryPath = _index[id]?.filePath ?? '';
+        return entryPath == folderPath || entryPath.startsWith(folderPrefix);
+      }).toList();
+      for (final key in keysToRemove) {
+        _index.remove(key);
+        _generatedFiles.remove(key);
+      }
+      print("Folder deleted: $folderPath (recursive: $recursive)"); // Or log
+      // Optional: Refresh parent index if desired (e.g., re-list parent dir)
+      // await listFiles(p.dirname(folderPath), includeContent: false); // Uncomment if you want auto-refresh
+      return true;
+    } catch (e) {
+      print("Error deleting folder $folderPath: $e");
+      return false;
+    }
+  }
+Future<bool> copyFile(
+    String sourceFilePath,
+    String destinationFilePath,
+  ) async {
+    try {
+      final sourceFile = File(sourceFilePath);
+      if (!await sourceFile.exists()) {
+        print("Source file not found: $sourceFilePath");
+        return false;
+      }
+      final destDir = Directory(p.dirname(destinationFilePath));
+      if (!await destDir.exists()) {
+        await destDir.create(recursive: true);
+      }
+      await sourceFile.copy(destinationFilePath);
+      // Re-index destination to add the new copy
+      await listFiles(p.dirname(destinationFilePath), includeContent: false);
+      print("File copied: $sourceFilePath -> $destinationFilePath");
+      return true;
+    } catch (e) {
+      print("Error copying file: $e");
+      return false;
+    }
+  }
+
+  // Copy a directory recursively and update index.
+  Future<bool> copyDirectory(
+    String sourceDirPath,
+    String destinationDirPath,
+  ) async {
+    final sourceDir = Directory(sourceDirPath);
+    if (!await sourceDir.exists()) {
+      print("Source directory not found: $sourceDirPath");
+      return false;
+    }
+    final destinationDir = Directory(destinationDirPath);
+    try {
+      if (!await destinationDir.exists()) {
+        await destinationDir.create(recursive: true);
+      }
+      await for (final entity in sourceDir.list(recursive: false)) {
+        final newPath = p.join(destinationDirPath, p.basename(entity.path));
+        if (entity is File) {
+          await copyFile(entity.path, newPath);
+        } else if (entity is Directory) {
+          await copyDirectory(entity.path, newPath);
+        }
+      }
+      // Re-index destination
+      await listFiles(p.dirname(destinationDirPath), includeContent: false);
+      print("Directory copied: $sourceDirPath -> $destinationDirPath");
+      return true;
+    } catch (e) {
+      print("Error copying directory: $e");
+      return false;
+    }
+  }
+
+  // Move a file (updates existing index entry's path).
+  Future<bool> moveFile(
+    String sourceFilePath,
+    String destinationFilePath,
+  ) async {
+    try {
+      final sourceFile = File(sourceFilePath);
+      if (!await sourceFile.exists()) {
+        print("Source file not found: $sourceFilePath");
+        return false;
+      }
+      final destDir = Directory(p.dirname(destinationFilePath));
+      if (!await destDir.exists()) {
+        await destDir.create(recursive: true);
+      }
+      await sourceFile.rename(destinationFilePath);
+      // Update index: Find and update path for matching entry
+      final keysToUpdate = _index.keys
+          .where((id) => _index[id]?.filePath == sourceFilePath)
+          .toList();
+      for (final key in keysToUpdate) {
+        final model = _index[key]!;
+        _index[key] = model.copyWith(filePath: destinationFilePath);
+        if (model.file != null)
+          model.file = File(destinationFilePath); // Update file ref if needed
+      }
+      // Re-index source and dest parents if different
+      final sourceParent = p.dirname(sourceFilePath);
+      final destParent = p.dirname(destinationFilePath);
+      await listFiles(destParent, includeContent: false);
+      if (sourceParent != destParent) {
+        await listFiles(sourceParent, includeContent: false);
+      }
+      print("File moved: $sourceFilePath -> $destinationFilePath");
+      return true;
+    } catch (e) {
+      print("Error moving file: $e");
+      // Fallback copy+delete for cross-volume
+      if (e is FileSystemException &&
+          (e.osError?.errorCode == 18 || e.toString().contains('EXDEV'))) {
+        if (await copyFile(sourceFilePath, destinationFilePath)) {
+          return await deleteFile(sourceFilePath);
+        }
+      }
+      return false;
+    }
+  }
+
+  // Move a directory (updates index entries under the dir).
+  Future<bool> moveDirectory(
+    String sourceDirPath,
+    String destinationDirPath,
+  ) async {
+    try {
+      final sourceDir = Directory(sourceDirPath);
+      if (!await sourceDir.exists()) {
+        print("Source directory not found: $sourceDirPath");
+        return false;
+      }
+      final destParentDir = Directory(p.dirname(destinationDirPath));
+      if (!await destParentDir.exists()) {
+        await destParentDir.create(recursive: true);
+      }
+      await sourceDir.rename(destinationDirPath);
+      // Update index: Prefix-replace paths for all entries under source
+      final sourcePrefix = sourceDirPath.endsWith('/')
+          ? sourceDirPath
+          : '$sourceDirPath/';
+      final destPrefix = destinationDirPath.endsWith('/')
+          ? destinationDirPath
+          : '$destinationDirPath/';
+      final keysToUpdate = _index.keys.where((id) {
+        final entryPath = _index[id]?.filePath ?? '';
+        return entryPath == sourceDirPath || entryPath.startsWith(sourcePrefix);
+      }).toList();
+      for (final key in keysToUpdate) {
+        final model = _index[key]!;
+        final oldPath = model.filePath ?? '';
+        final newPath = oldPath.replaceFirst(sourcePrefix, destPrefix);
+        _index[key] = model.copyWith(filePath: newPath);
+        if (model.file != null) {
+          model.file = File(newPath); // Update ref if applicable
+        }
+      }
+      // Re-index parents if different
+      final sourceParent = p.dirname(sourceDirPath);
+      final destParent = p.dirname(destinationDirPath);
+      await listFiles(destParent, includeContent: false);
+      if (sourceParent != destParent) {
+        await listFiles(sourceParent, includeContent: false);
+      }
+      print("Directory moved: $sourceDirPath -> $destinationDirPath");
+      return true;
+    } catch (e) {
+      print("Error moving directory: $e");
+      // Fallback copy+delete
+      if (e is FileSystemException &&
+          (e.osError?.errorCode == 18 || e.toString().contains('EXDEV'))) {
+        if (await copyDirectory(sourceDirPath, destinationDirPath)) {
+          return await deleteFolder(sourceDirPath, recursive: true);
+        }
+      }
+      return false;
+    }
+  }
   // Clear index (useful for headless resets)
   void clearIndex() {
     _index.clear();

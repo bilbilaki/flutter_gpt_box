@@ -27,6 +27,9 @@ _ChatConfig _$ChatConfigFromJson(Map<String, dynamic> json) => _ChatConfig(
   file: json['file'] as String?,
   image: json['image'] as String?,
   audio: json['audio'] as String?,
+  isVertex: json['isVertex'] as bool?,
+  vertexProjectId: json['vertexProjectId'] as String?,
+  vertexLocation: json['vertexLocation'] as String?,
 );
 
 Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
@@ -50,4 +53,7 @@ Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
       'file': instance.file,
       'image': instance.image,
       'audio': instance.audio,
+      'isVertex': instance.isVertex,
+      'vertexProjectId': instance.vertexProjectId,
+      'vertexLocation': instance.vertexLocation,
     };

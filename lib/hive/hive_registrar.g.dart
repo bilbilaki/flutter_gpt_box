@@ -17,6 +17,7 @@ extension HiveRegistrar on HiveInterface {
     registerAdapter(ChatSettingsAdapter());
     registerAdapter(ChatTypeAdapter());
     registerAdapter(DownloadItemAdapter());
+
     registerAdapter(TranslatorConfigAdapter());
   }
 }

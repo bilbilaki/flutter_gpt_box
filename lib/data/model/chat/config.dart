@@ -35,6 +35,9 @@ abstract class ChatConfig with _$ChatConfig {
     String? file,
     String? image,
     String? audio,
+       bool? isVertex,
+   String? vertexProjectId,
+   String? vertexLocation
   }) = _ChatConfig;
 
   factory ChatConfig.fromJson(Map<String, dynamic> json) =>
@@ -56,6 +59,9 @@ extension ChatConfigX on ChatConfig {
     static const defaultaltrModel = 'gemini-2.5-flash-lite';
         static const defaultwrkrModel = 'gpt-4.1-mini';
         static const defaultTranslateLanguage= 'English';
+        static const isVertex= false;
+        static const vertexProjectId = '';
+        static const vertexLocation ='';
 
 
   static const defaultOne = ChatConfig(
@@ -67,7 +73,10 @@ extension ChatConfigX on ChatConfig {
     historyLen: defaultHistoryLen,
     name: '',
     imgModel: defaultImgModel,
-    defaultTranslateLanguage: 'English'
+    defaultTranslateLanguage: 'English',
+    isVertex: isVertex,
+    vertexProjectId: vertexProjectId,
+    vertexLocation: vertexLocation
     // audioModel: defaultaudioModel,
     // trnscrbModel: defaulttrnscrbModel,
     // tskrModel: defaulttaskrModel,
@@ -125,7 +134,10 @@ extension ChatConfigX on ChatConfig {
 
       wrkrModel: params_['TaskerModel']??defaultwrkrModel,
             trnscrbModel: params_['TaskerModel']??defaulttrnscrbModel,
-            defaultTranslateLanguage: params_['defaultTranslateLanguage']??defaultTranslateLanguage
+            defaultTranslateLanguage: params_['defaultTranslateLanguage']??defaultTranslateLanguage,
+             isVertex: params_['isVertex'],
+      vertexProjectId: params_['vertexProjectId'],
+      vertexLocation: params_['vertexLocation'],
 
 
 

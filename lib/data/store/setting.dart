@@ -75,7 +75,7 @@ late final response = propertyDefault('response', false);
     'groundingWithSearchEnabled',
     false,
   );
-  late final urlContextEnabled = propertyDefault('urlContextEnabled', false);
+  late final urlContextEnabled = propertyDefault('urlContextEnabled', true);
   late final safetySettingsEnabled = propertyDefault(
     'safetySettingsEnabled',
     false,

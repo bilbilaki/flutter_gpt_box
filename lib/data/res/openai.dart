@@ -25,6 +25,16 @@ abstract final class Cfg {
   static ChatConfig get currentTasker => vn.value;
 
   static ChatConfig get currentAlter => vn.value;
+ static bool isVertex( bool yesorno ) { 
+ yesorno ? true:false;
+ return yesorno;
+ }
+  static String vertexProjectId(String projid){
+return projid;
+  }
+  static String vertexLocation(String location) {
+    return location;
+  }
 
   static final _store = Stores.config;
   static final chatType = ChatType.text.vn;

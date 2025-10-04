@@ -279,13 +279,16 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       file: fields[41] as String?,
       image: fields[42] as String?,
       audio: fields[43] as String?,
+      isVertex: fields[44] as bool?,
+      vertexProjectId: fields[45] as String?,
+      vertexLocation: fields[46] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(19)
+      ..writeByte(22)
       ..writeByte(25)
       ..write(obj.prompt)
       ..writeByte(26)
@@ -323,7 +326,13 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       ..writeByte(42)
       ..write(obj.image)
       ..writeByte(43)
-      ..write(obj.audio);
+      ..write(obj.audio)
+      ..writeByte(44)
+      ..write(obj.isVertex)
+      ..writeByte(45)
+      ..write(obj.vertexProjectId)
+      ..writeByte(46)
+      ..write(obj.vertexLocation);
   }
 
   @override

@@ -116,6 +116,41 @@ Future<GoogleSignInCredentials?> _loadCredentials() async {
   print('No credentials found in storage.');
   return null;
 }
+Future<GoogleSignInCredentials?> _loadCredentialsForCloudSignIn() async {
+  final accessToken = await _storage.read(key: 'accessToken');
+  final refreshToken = await _storage.read(key: 'refreshToken');
+  final idToken = await _storage.read(key: 'idToken');
+
+  if (accessToken != null && refreshToken != null && idToken != null) {
+    // You might want to check if the accessToken is expired here,
+    // and if so, try to refresh it using the refreshToken.
+    // google_sign_in_all_platforms *should* handle this internally with signInSilently
+    // when using a stored refresh token.
+    _currentCredentials = GoogleSignInCredentials(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      idToken: idToken,
+      scopes: const [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive.appdata',
+        'https://www.googleapis.com/auth/generative-language.peruserquota',
+        'https://www.googleapis.com/auth/gmail.addons.current.action.compose',
+        'https://www.googleapis.com/auth/gmail.addons.current.message.action',
+
+        // ADD THIS NEW SCOPE FOR LISTING PROJECTS
+      //  'https://www.googleapis.com/auth/cloud-platform.read-only',
+      ], // Re-use the configured scopes
+      // Other fields might be needed depending on the exact GoogleSignInCredentials class
+      // In this specific package, it seems to be just these tokens.
+    );
+    print('Credentials loaded from storage.');
+    return _currentCredentials;
+  }
+  print('No credentials found in storage.');
+  return null;
+}
 
 Future<void> performSignIn() async {
   try {
@@ -141,11 +176,8 @@ Future<void> performSignOut() async {
 
 
 // Modified getClient to manage persistence and token refreshing
-Future<_AuthenticatedClient?> getAuthenticatedClient() async {
-  if (_currentCredentials == null) {
-    // Try to load from storage
-    _currentCredentials = await _loadCredentials();
-  }
+Future<_AuthenticatedClient?> getAuthenticatedClient({bool useforgemini=false}) async {
+ useforgemini? _currentCredentials= await _loadCredentialsForCloudSignIn() :_currentCredentials ??= await _loadCredentials();
 
   if (_currentCredentials == null) {
     // If not in storage, try silent sign-in (might refresh token)
@@ -168,4 +200,54 @@ Future<_AuthenticatedClient?> getAuthenticatedClient() async {
   };
 
   return _AuthenticatedClient(http.Client(), authHeaders);
+}
+
+
+class GoogleCloudProject {
+  final String projectId; // e.g., "my-cool-project-12345"
+  final String name; // e.g., "My Cool Project"
+
+  GoogleCloudProject({required this.projectId, required this.name});
+
+  factory GoogleCloudProject.fromJson(Map<String, dynamic> json) {
+    return GoogleCloudProject(
+      projectId: json['projectId'] as String,
+      name: json['name'] as String,
+    );
+  }
+}
+
+
+Future<List<GoogleCloudProject>> fetchUserGoogleCloudProjects() async {
+  final client = await getAuthenticatedClient(useforgemini: true);
+  if (client == null) {
+    print("Cannot fetch projects, user not signed in.");
+    return []; // Return empty list if not signed in
+  }
+
+  final url = Uri.parse(
+    'https://cloudresourcemanager.googleapis.com/v1/projects',
+  );
+
+  try {
+    final response = await client.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['projects'] != null) {
+        final List<dynamic> projectListJson = data['projects'];
+        return projectListJson
+            .map((json) => GoogleCloudProject.fromJson(json))
+            .toList();
+      }
+      return []; // No projects found
+    } else {
+      print(
+        'Failed to fetch projects: ${response.statusCode} ${response.body}',
+      );
+      return [];
+    }
+  } catch (e) {
+    print('Error fetching Google Cloud projects: $e');
+    return [];
+  }
 }

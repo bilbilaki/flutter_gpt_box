@@ -79,7 +79,7 @@ types:
         index: 6
   ChatConfig:
     typeId: 6
-    nextIndex: 44
+    nextIndex: 47
     fields:
       prompt:
         index: 25
@@ -119,6 +119,12 @@ types:
         index: 42
       audio:
         index: 43
+      isVertex:
+        index: 44
+      vertexProjectId:
+        index: 45
+      vertexLocation:
+        index: 46
   ChatType:
     typeId: 7
     nextIndex: 6

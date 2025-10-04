@@ -8,7 +8,7 @@ final class TfTerminal extends ToolFunc {
 
 const TfTerminal._()
     : super(
-        name: 'interactiveTerminal',
+        name: 'terminal',
         parametersSchema: const {
           'type': 'object',
           'properties': {
@@ -62,14 +62,6 @@ This tool enables a workflow of starting a session, sending commands, and closin
 - Call 2: {'action': 'write', 'sessionId': 'abc-123', 'command': 'ls -l'} → "file1.txt\nfile2.pdf"
 - Call 3: {'action': 'close', 'sessionId': 'abc-123'} → "Session closed."
 
-**Best Practices to Avoid Errors and Enhance Safety:**
-- Confirmation Critical: Verify every 'command' with the user (e.g., "Run 'rm file.txt'? This deletes—confirm.")—especially for sudo, rm, or network commands.
-- Security: No root/sudo without explicit user approval; avoid commands accessing sensitive data. If interactive (e.g., password prompts), pause and ask: "Session prompts for sudo—enter password in next write?"
-- Session Management: Store 'sessionId' across calls in your reasoning; start new only if no active one. Close promptly after tasks to prevent resource leaks.
-- Output Handling: For long outputs, summarize (e.g., "Listed 50 files—key ones: ..."); if timeout, suggest increasing 'timeoutMs' or breaking commands.
-- Multi-Command: Use sequential 'write' calls for workflows (e.g., install then test); inform progress: "Running update... Output ready."
-- Errors: If invalid 'sessionId' or command fails, inform (e.g., "Command errored—try again?") and suggest debugging (').
-- Limits: Keep sessions short; no persistent state across conversations unless user requests.
 ''';
 
   @override

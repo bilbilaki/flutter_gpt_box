@@ -17,7 +17,7 @@ class FileModel {
   final Uint8List? bytes;
 
   @FilePathConverter()
-  final File? file;
+  late final File? file;
 
   final String? filePath;
 
@@ -38,7 +38,7 @@ class FileModel {
   @JsonKey(ignore: true)
   final Uint8List Function(Uint8List)? transformDioResponse;
 
-  const FileModel({
+   FileModel({
     required this.id,
     required this.name,
     this.bytes,
@@ -53,7 +53,39 @@ class FileModel {
     this.transformDioResponse,
   });
 
-  factory FileModel.fromJson(Map<String, dynamic> json) => _$FileModelFromJson(json);
+  // NEW: copyWith method for immutable updates (e.g., changing path during moves)
+  FileModel copyWith({
+    String? id,
+    String? name,
+    Uint8List? bytes,
+    File? file,
+    String? filePath,
+    LinkDetails? link,
+    String? fileExtension,
+    bool? includeExtension,
+    MimeType? mimeType,
+    String? customMimeType,
+    Dio? dioClient,
+    Uint8List Function(Uint8List)? transformDioResponse,
+  }) {
+    return FileModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      bytes: bytes ?? this.bytes,
+      file: file ?? this.file,
+      filePath: filePath ?? this.filePath,
+      link: link ?? this.link,
+      fileExtension: fileExtension ?? this.fileExtension,
+      includeExtension: includeExtension ?? this.includeExtension,
+      mimeType: mimeType ?? this.mimeType,
+      customMimeType: customMimeType ?? this.customMimeType,
+      dioClient: dioClient ?? this.dioClient,
+      transformDioResponse: transformDioResponse ?? this.transformDioResponse,
+    );
+  }
+
+  factory FileModel.fromJson(Map<String, dynamic> json) =>
+      _$FileModelFromJson(json);
   Map<String, dynamic> toJson() => _$FileModelToJson(this);
 }
 
@@ -141,13 +173,9 @@ class LinkDetails {
   final String? method;
   final dynamic body;
 
-  LinkDetails({
-    required this.link,
-    this.headers,
-    this.method,
-    this.body,
-  });
+  LinkDetails({required this.link, this.headers, this.method, this.body});
 
-  factory LinkDetails.fromJson(Map<String, dynamic> json) => _$LinkDetailsFromJson(json);
+  factory LinkDetails.fromJson(Map<String, dynamic> json) =>
+      _$LinkDetailsFromJson(json);
   Map<String, dynamic> toJson() => _$LinkDetailsToJson(this);
 }
