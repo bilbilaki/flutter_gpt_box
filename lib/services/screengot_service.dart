@@ -381,7 +381,7 @@ void _handleNativeMessage(dynamic raw) {
     int w,
     int h, {
     int port = 0,
-  }) {
+  }) async{
     return _callAndWait('capture_screen_base64', () {
       _native.CaptureScreenBase64(x, y, w, h, port);
     });
