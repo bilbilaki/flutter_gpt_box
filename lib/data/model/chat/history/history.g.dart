@@ -15,6 +15,9 @@ ChatHistory _$ChatHistoryFromJson(Map<String, dynamic> json) => ChatHistory(
   settings: json['settings'] == null
       ? null
       : ChatSettings.fromJson(json['settings'] as Map<String, dynamic>),
+  isPinned: json['isPinned'] as bool?,
+  colorIndicator: json['colorIndicator'] as String?,
+  folderId: json['folderId'] as String?,
 );
 
 Map<String, dynamic> _$ChatHistoryToJson(ChatHistory instance) =>
@@ -23,6 +26,9 @@ Map<String, dynamic> _$ChatHistoryToJson(ChatHistory instance) =>
       'items': instance.items,
       if (instance.name case final value?) 'name': value,
       if (instance.settings case final value?) 'settings': value,
+      if (instance.isPinned case final value?) 'isPinned': value,
+      if (instance.colorIndicator case final value?) 'colorIndicator': value,
+      if (instance.folderId case final value?) 'folderId': value,
     };
 
 ChatHistoryItem _$ChatHistoryItemFromJson(Map<String, dynamic> json) =>

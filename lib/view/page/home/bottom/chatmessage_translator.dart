@@ -30,7 +30,7 @@ class _TranslatableTextState extends State<TranslatableText> {
     final svc = TranslationService(
       apiKey: Cfg.current.key,
       baseUrl: Cfg.current.url,
-      modelId: 'gemini-2.5-flash-lite',
+      modelId: Cfg.current.model,
     );
     _display = svc.translateSyncFirst(
       text: widget.text,
@@ -73,7 +73,7 @@ class TranslationService {
   TranslationService({
     required this.apiKey,
     required this.baseUrl,
-    this.modelId = 'gemini-2.5-flash-lite',
+    required this.modelId,
     this.cacheTtl = const Duration(days: 14),
     this.memoryCapacity = 2000,
   });

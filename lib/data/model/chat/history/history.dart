@@ -22,16 +22,31 @@ final class ChatHistory {
   final String? name;
   @JsonKey(includeIfNull: false)
   final ChatSettings? settings;
+  @JsonKey(includeIfNull: false)
+  final bool? isPinned;
+  @JsonKey(includeIfNull: false)
+  final String? colorIndicator;
+  @JsonKey(includeIfNull: false)
+  final String? folderId;
 
   ChatHistory({
     required this.items,
     required this.id,
     this.name,
     this.settings,
+    this.isPinned,
+    this.colorIndicator,
+    this.folderId,
   });
 
-  ChatHistory.noid({required this.items, this.name, this.settings})
-    : id = shortid.generate();
+  ChatHistory.noid({
+    required this.items,
+    this.name,
+    this.settings,
+    this.isPinned,
+    this.colorIndicator,
+    this.folderId,
+  }) : id = shortid.generate();
 
   factory ChatHistory.fromJson(Map<String, dynamic> json) =>
       _$ChatHistoryFromJson(json);

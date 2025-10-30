@@ -219,13 +219,16 @@ class ChatHistoryAdapter extends TypeAdapter<ChatHistory> {
       id: fields[0] as String,
       name: fields[2] as String?,
       settings: fields[6] as ChatSettings?,
+      isPinned: fields[7] as bool?,
+      colorIndicator: fields[8] as String?,
+      folderId: fields[9] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatHistory obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -233,7 +236,13 @@ class ChatHistoryAdapter extends TypeAdapter<ChatHistory> {
       ..writeByte(2)
       ..write(obj.name)
       ..writeByte(6)
-      ..write(obj.settings);
+      ..write(obj.settings)
+      ..writeByte(7)
+      ..write(obj.isPinned)
+      ..writeByte(8)
+      ..write(obj.colorIndicator)
+      ..writeByte(9)
+      ..write(obj.folderId);
   }
 
   @override

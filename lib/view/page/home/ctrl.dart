@@ -175,6 +175,282 @@ void _onTapRenameChat(String chatId, BuildContext context) async {
   _appbarTitleVN.value = title;
 }
 
+void _onCloneChat(String chatId, BuildContext context) async {
+  final entity = allHistories[chatId];
+  if (entity == null) {
+    final msg = 'Clone Chat($chatId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
+
+  // Create a deep copy of the chat history
+  final clonedItems = entity.items.map((item) {
+    return ChatHistoryItem(
+      role: item.role,
+      content: item.content.map((c) => ChatContent(
+        type: c.type,
+        raw: c.raw,
+        id: c.id,
+      )).toList(),
+      createdAt: item.createdAt,
+      id: item.id,
+      toolCallId: item.toolCallId,
+      toolCalls: item.toolCalls,
+      reasoning: item.reasoning,
+      inputTokens: item.inputTokens,
+      outputTokens: item.outputTokens,
+      totalTokens: item.totalTokens,
+      nanobenana: item.nanobenana,
+    );
+  }).toList();
+
+  final clonedChat = ChatHistory.noid(
+    items: clonedItems,
+    name: '${entity.name ?? l10n.untitled} (Copy)',
+    settings: entity.settings,
+    isPinned: entity.isPinned,
+    colorIndicator: entity.colorIndicator,
+    folderId: entity.folderId,
+  );
+
+  allHistories = {clonedChat.id: clonedChat, ...allHistories};
+  clonedChat.save();
+  _historyRN.notify();
+  context.showSnackBar('${l10n.chat} copied');
+}
+
+void _onTogglePinChat(String chatId, BuildContext context) {
+  final entity = allHistories[chatId];
+  if (entity == null) {
+    final msg = 'Pin Chat($chatId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
+
+  final newPinState = !(entity.isPinned ?? false);
+  final ne = entity.copyWith(isPinned: newPinState)..save();
+  allHistories[chatId] = ne;
+  _historyRN.notify();
+  _storeChat(chatId);
+  
+  // Re-sort to show pinned chats at the top
+  _resortHistories();
+}
+
+void _onSetColorIndicator(String chatId, BuildContext context) async {
+  final entity = allHistories[chatId];
+  if (entity == null) {
+    final msg = 'Set color for Chat($chatId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
+
+  final colors = [
+    null, // No color
+    'red',
+    'orange',
+    'yellow',
+    'green',
+    'blue',
+    'purple',
+    'pink',
+  ];
+
+  final colorNames = [
+    'None',
+    '🔴 Red',
+    '🟠 Orange',
+    '🟡 Yellow',
+    '🟢 Green',
+    '🔵 Blue',
+    '🟣 Purple',
+    '🩷 Pink',
+  ];
+
+  final selectedColor = await context.showPickSingleDialog<String?>(
+    title: 'Select Color',
+    items: colors,
+    display: (color) {
+      final idx = colors.indexOf(color);
+      return colorNames[idx];
+    },
+  );
+
+  if (selectedColor == entity.colorIndicator) return;
+
+  final ne = entity.copyWith(colorIndicator: selectedColor)..save();
+  allHistories[chatId] = ne;
+  _historyRN.notify();
+  _storeChat(chatId);
+}
+
+void _onMoveToFolder(String chatId, BuildContext context) async {
+  final entity = allHistories[chatId];
+  if (entity == null) {
+    final msg = 'Move Chat($chatId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
+
+  final folders = _allFolders.value.values.toList();
+  final folderOptions = <String?>[null, ...folders.map((f) => f.id)];
+  final folderNames = ['None', ...folders.map((f) => f.name)];
+
+  final selectedFolderId = await context.showPickSingleDialog<String?>(
+    title: 'Move to Folder',
+    items: folderOptions,
+    display: (folderId) {
+      final idx = folderOptions.indexOf(folderId);
+      return folderNames[idx];
+    },
+  );
+
+  if (selectedFolderId == entity.folderId) return;
+
+  final ne = entity.copyWith(folderId: selectedFolderId)..save();
+  allHistories[chatId] = ne;
+  _historyRN.notify();
+  _storeChat(chatId);
+}
+
+void _onCreateFolder(BuildContext context) async {
+  final ctrl = TextEditingController();
+  final folderName = await context.showRoundDialog<String>(
+    title: 'New Folder',
+    child: Input(
+      controller: ctrl,
+      autoFocus: true,
+      hint: 'Folder name',
+      onSubmitted: (p0) => context.pop(p0),
+    ),
+    actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
+  );
+
+  if (folderName == null || folderName.isEmpty) return;
+
+  final newFolder = ChatFolder.noid(name: folderName, isExpanded: true);
+  _allFolders.value[newFolder.id] = newFolder;
+  Stores.folder.put(newFolder);
+  _allFolders.notify();
+  _historyRN.notify();
+}
+
+void _onRenameFolder(String folderId, BuildContext context) async {
+  final folder = _allFolders.value[folderId];
+  if (folder == null) {
+    final msg = 'Rename Folder($folderId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
+
+  final ctrl = TextEditingController(text: folder.name);
+  final newName = await context.showRoundDialog<String>(
+    title: l10n.rename,
+    child: Input(
+      controller: ctrl,
+      autoFocus: true,
+      onSubmitted: (p0) => context.pop(p0),
+    ),
+    actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
+  );
+
+  if (newName == null || newName.isEmpty) return;
+
+  final updated = folder.copyWith(name: newName);
+  _allFolders.value[folderId] = updated;
+  Stores.folder.put(updated);
+  _allFolders.notify();
+  _historyRN.notify();
+}
+
+void _onDeleteFolder(String folderId, BuildContext context) async {
+  final folder = _allFolders.value[folderId];
+  if (folder == null) return;
+
+  // Check if folder has chats
+  final chatsInFolder = allHistories.values.where((h) => h.folderId == folderId);
+  
+  String message;
+  if (chatsInFolder.isEmpty) {
+    message = l10n.delFmt(folder.name, 'folder');
+  } else {
+    message = 'Delete folder "${folder.name}"? ${chatsInFolder.length} chat(s) will be moved out.';
+  }
+
+  final confirmed = await context.showRoundDialog<bool>(
+    title: l10n.attention,
+    child: Text(message),
+    actions: Btnx.okReds,
+  );
+
+  if (confirmed != true) return;
+
+  // Move all chats out of the folder
+  for (final chat in chatsInFolder) {
+    final updated = chat.copyWith(folderId: null)..save();
+    allHistories[chat.id] = updated;
+  }
+
+  _allFolders.value.remove(folderId);
+  Stores.folder.delete(folderId);
+  _allFolders.notify();
+  _historyRN.notify();
+}
+
+void _onDuplicateFolder(String folderId, BuildContext context) async {
+  final folder = _allFolders.value[folderId];
+  if (folder == null) return;
+
+  final duplicated = ChatFolder.noid(
+    name: '${folder.name} (Copy)',
+    colorIndicator: folder.colorIndicator,
+    isExpanded: folder.isExpanded,
+  );
+
+  _allFolders.value[duplicated.id] = duplicated;
+  Stores.folder.put(duplicated);
+  _allFolders.notify();
+  _historyRN.notify();
+}
+
+void _onToggleFolderExpanded(String folderId) {
+  final folder = _allFolders.value[folderId];
+  if (folder == null) return;
+
+  final updated = folder.copyWith(isExpanded: !(folder.isExpanded ?? true));
+  _allFolders.value[folderId] = updated;
+  Stores.folder.put(updated);
+  _allFolders.notify();
+}
+
+void _resortHistories() {
+  final entries = allHistories.entries.toList();
+  
+  // Sort: pinned first, then by last modified time
+  entries.sort((a, b) {
+    final aPinned = a.value.isPinned ?? false;
+    final bPinned = b.value.isPinned ?? false;
+    
+    if (aPinned && !bPinned) return -1;
+    if (!aPinned && bPinned) return 1;
+    
+    // Both pinned or both not pinned, sort by time
+    final now = DateTime.now();
+    final aTime = a.value.items.lastOrNull?.createdAt ?? now;
+    final bTime = b.value.items.lastOrNull?.createdAt ?? now;
+    return bTime.compareTo(aTime);
+  });
+  
+  allHistories = Map.fromEntries(entries);
+  _historyRN.notify();
+}
+
+
 /// Used in send btn and [_onCreateText]
 void _onStopStreamSub(String chatId) async {
   _chatStreamSubs[chatId]?.cancel();

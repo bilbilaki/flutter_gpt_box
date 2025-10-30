@@ -22,7 +22,6 @@ final Telegram telegram= Telegram();
 final persistentCache = PersistentTranslationCache(ttl: Duration(days: 365), maxEntries: 5000);
 
 Future<void> main() async {
-  Telegram.setBotToken(telBotToken);
  
   _runInZone(() async {
     await _initApp();

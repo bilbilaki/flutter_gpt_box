@@ -35,6 +35,9 @@ void _onCurChatIdChanged() {
   _appbarTitleVN.value = _curChat?.name;
 }
 
+/// Folder management
+final _allFolders = <String, ChatFolder>{}.vn;
+
 /// [ChatHistory.id] or [ChatHistoryItem.id]
 final _loadingChatIds = <String>{}.vn;
 final _chatStreamSubs = <String, StreamSubscription>{};

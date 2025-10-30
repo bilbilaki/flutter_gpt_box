@@ -7,11 +7,9 @@ import 'package:dio/dio.dart';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Element;
-import 'package:gpt_box/core/services/camp.dart';
 import 'package:gpt_box/core/services/download_manager_service.dart';
 import 'package:gpt_box/core/services/file_index.dart';
 import 'package:gpt_box/core/services/pdf_opration.dart';
-import 'package:gpt_box/core/services/terminal_sessin_manager.dart';
 import 'package:gpt_box/core/util/utils.dart';
 // import 'package:flutter_js/extensions/fetch.dart';
 // import 'package:flutter_js/flutter_js.dart';
@@ -48,8 +46,6 @@ part 'func/ziptool.dart';
 part 'func/filemanager.dart';
 part 'func/pdftool.dart';
 part 'func/webbuilder.dart';
-part 'func/telegram.dart';
-part 'func/comuse.dart';
 abstract final class OpenAIFuncCalls {
   static const internalTools = [
     TfMemory.instance,
@@ -64,7 +60,6 @@ abstract final class OpenAIFuncCalls {
     TfPdfManager.instance,
     TfZipManager.instance,
     TfWebBuilder.instance,
-    TfTelegramManager.instance,
   ];
 
   static Future<Set<ChatCompletionTool>> get tools async {

@@ -9,13 +9,11 @@ import 'package:gpt_box/data/model/chat/type.dart';
 import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/res/url.dart';
 import 'package:gpt_box/data/store/all.dart';
-import 'package:openai_core/openai_client.dart' as oc;
 import 'package:openai_dart/openai_dart.dart';
 import 'package:dio/dio.dart';
 
 abstract final class Cfg {
   static var client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url);
-  static var clientoc = oc.OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url);
   static final models = nvn<List<String>>();
 
   // ignore: deprecated_member_use_from_same_package

@@ -27,7 +27,6 @@ dependencies:
   json_annotation: ^4.9.0
   freezed_annotation: ^3.0.0
   responsive_framework: ^1.5.1
-  openai_core: ^0.10.0
   # flutter_riverpod: ^2.6.1
   # riverpod_annotation: ^2.6.1
   # dart_openai: #^5.1.0

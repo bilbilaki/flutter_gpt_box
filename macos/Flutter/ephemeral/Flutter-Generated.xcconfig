@@ -1,6 +1,6 @@
 // This is a generated file; do not edit or check into version control.
-FLUTTER_ROOT=/home/inosuke/flutter
-FLUTTER_APPLICATION_PATH=/home/inosuke/flutter_gpt_box
+FLUTTER_ROOT=/home/ns/flutter
+FLUTTER_APPLICATION_PATH=/home/ns/Documents/ws/flutter_gpt_box
 COCOAPODS_PARALLEL_CODE_SIGN=true
 FLUTTER_BUILD_DIR=build
 FLUTTER_BUILD_NAME=1.57.0

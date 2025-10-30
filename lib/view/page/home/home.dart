@@ -26,6 +26,7 @@ import 'package:gpt_box/data/model/chat/history/share.dart';
 import 'package:gpt_box/core/util/chat_title.dart';
 import 'package:gpt_box/core/util/tool_func/tool.dart';
 import 'package:gpt_box/data/model/chat/config.dart';
+import 'package:gpt_box/data/model/chat/folder.dart';
 import 'package:gpt_box/data/model/chat/history/history.dart';
 import 'package:gpt_box/data/model/chat/history/view.dart';
 import 'package:gpt_box/data/model/chat/type.dart';
@@ -44,12 +45,9 @@ import 'package:gpt_box/view/page/settings/setting.dart';
 import 'package:gpt_box/view/prompt_generator/screens/prompt_generator_screen.dart';
 import 'package:gpt_box/view/translator/interfaces/chunker_translator.dart';
 import 'package:gpt_box/view/widget/canvas_free.dart';
-import 'package:http/http.dart' as http;
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:typed_data';
-import 'package:openai_core/openai_core.dart' as oc;
 import 'package:audioplayers/audioplayers.dart';
-import 'package:openai_core/sse_client.dart' as oc;
 import 'package:openai_dart/openai_dart.dart' as openai;
 import 'package:path_provider/path_provider.dart';
 import 'package:siri_wave/siri_wave.dart';
@@ -78,6 +76,10 @@ part 'settings_drawer.dart';
 part 'bottom/chatmessage_translator.dart';
 //part '../../widget/v1.dart';
 final aiSettings = AiSettings();
+
+// Global key to access the Home Scaffold from places that are not descendants
+// of the Scaffold in the widget tree (e.g., bottomNavigationBar content).
+final GlobalKey<ScaffoldState> homeScaffoldKey = GlobalKey<ScaffoldState>();
 
 bool modelUseFilePath=false;
 const int kTtsSampleRate =
@@ -202,6 +204,7 @@ class _HomePageState extends State<HomePage>
     return ExitConfirm(
       onPop: (_) => ExitConfirm.exitApp(),
       child: Scaffold(
+        key: homeScaffoldKey,
         appBar: _CustomAppBar(),
         endDrawer: AiSettingsDrawerHive(),
         endDrawerEnableOpenDragGesture: true,
@@ -214,6 +217,7 @@ class _HomePageState extends State<HomePage>
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {
     allHistories = Stores.history.fetchAll();
+    _allFolders.value = Stores.folder.fetchAll();
     _refreshTimeTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted) _timeRN.notify();
     });

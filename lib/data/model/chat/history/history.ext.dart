@@ -37,12 +37,18 @@ extension ChatHistoryX on ChatHistory {
     List<ChatHistoryItem>? items,
     String? name,
     ChatSettings? settings,
+    bool? isPinned,
+    String? colorIndicator,
+    String? folderId,
   }) {
     return ChatHistory(
       id: id,
       items: items ?? this.items,
       name: name ?? this.name,
       settings: settings ?? this.settings,
+      isPinned: isPinned ?? this.isPinned,
+      colorIndicator: colorIndicator ?? this.colorIndicator,
+      folderId: folderId ?? this.folderId,
     );
   }
 

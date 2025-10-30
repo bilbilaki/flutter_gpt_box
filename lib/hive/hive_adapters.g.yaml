@@ -67,7 +67,7 @@ types:
         index: 3
   ChatHistory:
     typeId: 5
-    nextIndex: 7
+    nextIndex: 10
     fields:
       id:
         index: 0
@@ -77,6 +77,12 @@ types:
         index: 2
       settings:
         index: 6
+      isPinned:
+        index: 7
+      colorIndicator:
+        index: 8
+      folderId:
+        index: 9
   ChatConfig:
     typeId: 6
     nextIndex: 47

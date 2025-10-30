@@ -1,18 +1,16 @@
+# gpt_box
 
-This is a small package that allows you to retrieve text (text only) from .docx files (Microsoft Word).  
+A new Flutter project.
 
-Thanks [SnowLukin](https://github.com/SnowLukin)
+## Getting Started
 
-## Usage
+This project is a starting point for a Flutter application.
 
-```dart
-import 'package:docx_to_text/docx_to_text.dart';
+A few resources to get you started if this is your first Flutter project:
 
-final file = File('path/to/file.docx');
-final bytes = await file.readAsBytes();
-final text = docxToText(bytes);
-```
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-## Additional information
-
-If there is anything you want to improve or fix, pool requesters are welcome.
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

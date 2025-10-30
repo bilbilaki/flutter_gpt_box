@@ -237,13 +237,14 @@ Widget _buildBottomFnsTwoRows() {
     return IconButton(
       tooltip: 'Open Settings Drawer',
       onPressed: () {
-        // Requires Scaffold with endDrawer: AiSettingsDrawerHive(...)
-        final scaffold = Scaffold.maybeOf(context);
-        if (scaffold == null) {
+        // Prefer using the global key so it works on desktop where context
+        // may not resolve to the correct Scaffold (e.g., nested navigators).
+        final state = homeScaffoldKey.currentState ?? Scaffold.maybeOf(context);
+        if (state == null) {
           context.showSnackBar('No Scaffold found for opening drawer.');
           return;
         }
-        scaffold.openEndDrawer();
+        state.openEndDrawer();
       },
       icon:  Icon(Icons.tune, size: 17),
     );
@@ -544,9 +545,7 @@ $jsonRaw
     );
   }
 
-  void _onTapSyncChats() async {
-    
-  }
+  // Removed unused _onTapSyncChats() method
 }
 
 class _HoldToRecordButton extends StatelessWidget {

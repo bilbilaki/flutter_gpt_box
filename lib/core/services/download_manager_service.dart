@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:background_downloader/background_downloader.dart' show DownloadTask, Batch, FileDownloader, TaskNotification, Task, TaskUpdate, TaskProgressUpdate, TaskStatusUpdate, BaseDirectory, Updates, TaskStatus, SharedStorage;
+import 'package:background_downloader/background_downloader.dart' show DownloadTask, Batch, FileDownloader, Task, TaskUpdate, TaskProgressUpdate, TaskStatusUpdate, BaseDirectory, Updates, TaskStatus, SharedStorage;
 import 'package:collection/collection.dart';
 import 'package:gpt_box/core/util/utils.dart';
 import 'package:gpt_box/data/model/download.dart' hide DownloadItemAdapter;
 import 'package:hive_ce/hive.dart';
-import 'notification_service.dart';
 
 /// DownloadManagerService
 /// - Singleton. Call init() once at app startup.
@@ -31,46 +30,21 @@ class DownloadManagerService {
   String _defaultFolderUnderApp = 'Downloads';
   String _defaultUserSubdir = '';
 
-  // Whether to also show desktop progress via flutter_local_notifications
-  bool _desktopProgressNotifications = true;
-
   bool _initialized = false;
 
   Future<void> init({
     String appFolderName = 'GPTBOX',
     String folderUnderApp = 'Downloads',
     String userSubdir = '',
-    bool desktopProgressNotifications = true,
-    bool configureNativeNotificationsOnAndroid = true,
   }) async {
     if (_initialized) return;
 
     _defaultAppFolderName = appFolderName;
     _defaultFolderUnderApp = folderUnderApp;
     _defaultUserSubdir = userSubdir;
-    _desktopProgressNotifications = desktopProgressNotifications;
-
-    // Notifications: desktop via flutter_local_notifications; Android uses native
-    await NotificationService.I.init();
 
     // Initialize Hive box for history
     historyBox = await Hive.openBox<DownloadItem>('download_history');
-
-    // Optionally configure native notifications for Android via background_downloader
-    if (Platform.isAndroid && configureNativeNotificationsOnAndroid) {
-      _downloader.configureNotification(
-        running: const TaskNotification('Downloading', 'file: {filename}'),
-        complete: const TaskNotification(
-          'Download finished',
-          'file: {filename}',
-        ),
-        error: const TaskNotification('Error', '{filename}'),
-        canceled: const TaskNotification('Canceled', '{filename}'),
-        paused: const TaskNotification('Paused', '{filename}'),
-        progressBar: true,
-        tapOpensFile: true,
-      );
-    }
 
     // Start downloader with DB tracking, resume, reschedule killed tasks
     await _downloader.start(
@@ -116,22 +90,7 @@ class DownloadManagerService {
       final t = (await _buildTask(req)) as DownloadTask;
       tasks.add(t);
     }
-    return _downloader.downloadBatch(
-      tasks,
-      batchProgressCallback: (succeeded, failed) async {
-        // Optional: desktop notification showing overall batch progress
-        if (_desktopProgressNotifications &&
-            (Platform.isWindows || Platform.isLinux)) {
-          final pct = ((succeeded + failed) / tasks.length * 100).round();
-          await NotificationService.I.showOrUpdateProgress(
-            id: _notifIdForGroup(tasks.first.group),
-            title: 'Batch downloading',
-            body: '$succeeded of ${tasks.length}',
-            progressPercent: pct,
-          );
-        }
-      },
-    );
+    return _downloader.downloadBatch(tasks);
   }
   /// Pause a task
   Future<bool> pause(String taskId) async {
@@ -210,9 +169,6 @@ class DownloadManagerService {
 
   // region Internals
 
-  int _notifIdForTask(String taskId) => taskId.hashCode;
-  int _notifIdForGroup(String group) => group.hashCode;
-
   Future<Task> _buildTask(DownloadRequest req) async {
     // Determine target directory and filename
     final directory = await getTargetDirectory(
@@ -252,7 +208,6 @@ class DownloadManagerService {
       );
     } else if (Platform.isAndroid) {
       // Use app support; we'll move to shared storage on completion
-      final appSupport = getTargetDirectory(folderUnderApp: "Downloads");
       return DownloadTask(
         url: req.url,
         urlQueryParameters: req.urlQueryParameters,
@@ -341,18 +296,6 @@ class DownloadManagerService {
           speedBps: update.hasNetworkSpeed ? update.networkSpeed : null,
           eta: update.hasTimeRemaining ? update.timeRemaining : null,
         );
-
-        // Desktop progress notification
-        if (_desktopProgressNotifications &&
-            (Platform.isLinux || Platform.isWindows)) {
-          final pct = (update.progress * 100).clamp(0, 100).round();
-          await NotificationService.I.showOrUpdateProgress(
-            id: _notifIdForTask(t.taskId),
-            title: 'Downloading',
-            body: t.filename,
-            progressPercent: pct,
-          );
-        }
         break;
 
       case TaskStatusUpdate():
@@ -415,16 +358,6 @@ class DownloadManagerService {
       );
       await historyBox?.put(task.taskId, hist);
 
-      // Desktop summary notification
-      if (Platform.isLinux || Platform.isWindows) {
-        await NotificationService.I.showSummary(
-          id: _notifIdForTask(task.taskId),
-          title: 'Download finished',
-          body: task.filename,
-          payload: finalPath,
-        );
-      }
-
       // Auto-open if desired (supported across platforms via background_downloader)
       if (_readOpenAfterComplete(task)) {
         unawaited(_downloader.openFile(task: task));
@@ -453,14 +386,6 @@ class DownloadManagerService {
         metaData: task.metaData ?? '',
       );
       await historyBox?.put(task.taskId, hist);
-
-      if (Platform.isLinux || Platform.isWindows) {
-        await NotificationService.I.showSummary(
-          id: _notifIdForTask(task.taskId),
-          title: 'Download ${su.status.name}',
-          body: task.filename,
-        );
-      }
 
       _active.remove(task.taskId);
     }

@@ -24,7 +24,6 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
       setState(() => _isTranslatingMap[key] = false);
     }
   }
-///TODO  most change All name of code functioons and class I take them from other projects 
 
   @override
   Widget build(BuildContext context) {
