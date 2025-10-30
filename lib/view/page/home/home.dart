@@ -166,6 +166,7 @@ class HomePage extends StatefulWidget {
 
   static void afterRestore() {
     allHistories = Stores.history.fetchAll();
+    _allFolders.value = Stores.folder.fetchAll();
     _historyRN.notify();
     _chatRN.notify();
     _switchChat();

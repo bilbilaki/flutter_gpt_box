@@ -11,6 +11,7 @@ extension HiveRegistrar on HiveInterface {
     registerAdapter(ChatConfigAdapter());
     registerAdapter(ChatContentAdapter());
     registerAdapter(ChatContentTypeAdapter());
+    registerAdapter(ChatFolderAdapter());
     registerAdapter(ChatHistoryAdapter());
     registerAdapter(ChatHistoryItemAdapter());
     registerAdapter(ChatRoleAdapter());
@@ -26,6 +27,7 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
     registerAdapter(ChatConfigAdapter());
     registerAdapter(ChatContentAdapter());
     registerAdapter(ChatContentTypeAdapter());
+    registerAdapter(ChatFolderAdapter());
     registerAdapter(ChatHistoryAdapter());
     registerAdapter(ChatHistoryItemAdapter());
     registerAdapter(ChatRoleAdapter());

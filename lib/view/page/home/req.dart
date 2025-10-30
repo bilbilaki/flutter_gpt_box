@@ -304,9 +304,9 @@ Future<void> _onCreateImg(
     return;
   }
 
-  final userQuestion = ChatHistoryItem.single(role: ChatRole.user, raw: prompt);
+  var userQuestion = ChatHistoryItem.single(role: ChatRole.user, raw: prompt);
   workingChat.items.add(userQuestion);
-  final assistReply = ChatHistoryItem.gen(role: ChatRole.assist, content: []);
+  var assistReply = ChatHistoryItem.gen(role: ChatRole.assist, content: []);
   workingChat.items.add(assistReply);
   _chatRN.notify();
   _autoScroll(chatId);
@@ -325,35 +325,97 @@ Future<void> _onCreateImg(
   _autoHideCtrl.autoHideEnabled = false;
 
   try {
-    final resp = await Cfg.client.createImage(
-      request: CreateImageRequest(
-        prompt: prompt,
-        model: CreateImageRequestModel.modelId(imgModel),
-      ),
-    );
-    final imgs = <String>[];
-    for (final item in resp.data) {
-      final url = item.url;
-      if (url != null) {
-        imgs.add(url);
+    // Make direct HTTP request to support X.AI API format
+    // which doesn't include all fields expected by openai_dart library
+    final client = HttpClient();
+    final uri = Uri.parse('${cfg.url}/images/generations');
+    final request = await client.postUrl(uri);
+    
+    // Set headers
+    request.headers.set('Content-Type', 'application/json');
+    request.headers.set('Accept', 'application/json');
+    request.headers.set('Authorization', 'Bearer ${cfg.key}');
+    
+    // Prepare request body with b64_json format
+    final body = jsonEncode({
+      'model': imgModel,
+      'prompt': prompt,
+      'response_format': 'b64_json',
+    });
+    request.write(body);
+    
+    // Send request and get response
+    final response = await request.close();
+    final responseBody = await response.transform(utf8.decoder).join();
+    
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: $responseBody');
+    }
+    
+    // Parse JSON response manually
+    final Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
+    final List<dynamic>? dataList = jsonResponse['data'];
+    
+    if (dataList == null || dataList.isEmpty) {
+      throw Exception('No data in response');
+    }
+    
+    // Build response text with base64 images embedded
+    final responseBuffer = StringBuffer();
+    for (final item in dataList) {
+      // Handle b64_json format
+      final b64Json = item['b64_json'];
+      if (b64Json != null && b64Json.toString().isNotEmpty) {
+        // Create data URI for automatic detection by splitDataUrisToChatContents
+        final dataUri = 'data:image/jpeg;base64,${b64Json}';
+        responseBuffer.write(dataUri);
+        Loggers.app.info('Image generated (base64)');
+      }
+      
+      // Also handle URL format as fallback
+      final url = item['url'];
+      if (url != null && url.toString().isNotEmpty) {
+        responseBuffer.write(url.toString());
+        Loggers.app.info('Image generated: $url');
+      }
+      
+      // Log revised prompt if available
+      final revisedPrompt = item['revised_prompt'];
+      if (revisedPrompt != null && revisedPrompt.toString().isNotEmpty) {
+        Loggers.app.info('Revised prompt: $revisedPrompt');
       }
     }
-    if (imgs.isEmpty) {
-      const msg = 'Create image: empty resp';
+
+    if (responseBuffer.isEmpty) {
+      final msg = 'Create image: empty response or no image data returned';
       Loggers.app.warning(msg);
       context.showSnackBar(msg);
+      // Remove empty assistant reply
+      workingChat.items.remove(assistReply);
+      _chatRN.notify();
       return;
     }
 
-    final imgContents = imgs.map((e) => ChatContent.image(e)).toList();
+    // Use your existing splitDataUrisToChatContents function to auto-detect
+    // and parse base64 data URIs into proper ChatContent objects
+    final imgContents = splitDataUrisToChatContents(responseBuffer.toString());
     assistReply.content.addAll(imgContents);
 
     _storeChat(chatId);
     _chatRN.notify();
     _autoScroll(chatId);
 
-    // Only sync if success
+    // Show success message
+    context.showSnackBar('Image generated successfully');
+    
+    // Close HTTP client
+    client.close();
   } catch (e, s) {
+    // Enhanced error logging
+    Loggers.app.severe('Create image error: $e\n$s');
+    // Remove empty assistant reply on error
+    workingChat.items.remove(assistReply);
+    _chatRN.notify();
     // _onErr handles removing loading state and enabling auto-hide
     _onErr(e, s, chatId, 'Create image');
   } finally {
@@ -1322,7 +1384,7 @@ Future<void> _onCreateTextTranslated(
               content: ChatCompletionUserMessageContent.string(translatePrompt),
             ),
           ],
-          model: ChatCompletionModel.modelId('gemini-2.5-flash-lite'),
+          model: ChatCompletionModel.modelId(Cfg.current.model),
         ),
       );
       translated =

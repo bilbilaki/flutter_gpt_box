@@ -1,15 +1,21 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:shortid/shortid.dart';
 
 part 'folder.g.dart';
 
 @JsonSerializable()
+@HiveType(typeId: 20)
 final class ChatFolder {
+  @HiveField(0)
   final String id;
+  @HiveField(1)
   final String name;
   @JsonKey(includeIfNull: false)
+  @HiveField(2)
   final String? colorIndicator;
   @JsonKey(includeIfNull: false)
+  @HiveField(3)
   final bool? isExpanded;
 
   ChatFolder({

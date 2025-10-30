@@ -90,7 +90,7 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
         final listView = ListView.builder(
           key: Key(_curChatId.value), // Used for animation
           controller: _chatScrollCtrl,
-          padding: const EdgeInsets.all(7),
+          padding: const EdgeInsets.all(1),
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -109,10 +109,7 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
                 : AxisDirection.down,
             child: child,
           ),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 77),
-            child: listView,
-          ),
+          child: listView,
         );
       },
     );
@@ -155,12 +152,12 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
     };
 
     final child = Padding(
-      padding: const EdgeInsets.only(top: 11, left: 11, right: 11, bottom: 2),
+      padding: const EdgeInsets.only(top: 8, left: 11, right: 11, bottom: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           title,
-          UIs.height13,
+          const SizedBox(height: 6),
           ListenBuilder(
             listenable: node,
             builder: () {
@@ -180,7 +177,7 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
               );
             },
           ).paddingSymmetric(horizontal: 2),
-          UIs.height13,
+          const SizedBox(height: 6),
         ],
       ),
     );

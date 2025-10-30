@@ -102,7 +102,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
     return Container(
       padding: isDesktop
           ? const EdgeInsets.only(left: 11, right: 11, top: 5, bottom: 17)
-          : const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+          : const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
         boxShadow: RNodes.dark.value ? _boxShadow : _boxShadowDark,
@@ -304,7 +304,7 @@ Widget _buildBottomFnsTwoRows() {
           label: l10n.message,
           node: _imeFocus,
           action: TextInputAction.newline,
-          maxLines: 5,
+          maxLines: 3,
           minLines: 1,
           type: TextInputType
               .multiline, // Keep this, or 'Wrap' will not work on iOS
