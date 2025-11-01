@@ -32,6 +32,9 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+./.local-chrome/*
+./.*
+/.local-chrome/*
 
 # Symbolication related
 app.*.symbols
@@ -43,7 +46,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
+./.vscode/
+./.dart_tool/
+./android/.gradle/
+/android/.gradle/
+/android/app/build/
 /android/app/app.key
 linux.AppDir
 GPTBox*.AppImage

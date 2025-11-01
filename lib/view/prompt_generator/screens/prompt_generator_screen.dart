@@ -9,7 +9,8 @@ import 'package:gpt_box/view/prompt_generator/widgets/topic_details_input.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-import 'package:gpt_box/view/prompt_generator/models/prompt_settings.dart'; // For JSON encoding/decoding
+import 'package:gpt_box/view/prompt_generator/models/prompt_settings.dart';
+
 
 class PromptGeneratorScreen extends StatefulWidget {
   const PromptGeneratorScreen({super.key});
@@ -30,7 +31,6 @@ class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
     _loadSavedPrompts();
     _loadSavedTemplates();
   }
@@ -41,17 +41,7 @@ class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
     super.dispose();
   }
 
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _openAiApiKeyController.text = prefs.getString('openai_api_key') ?? '';
-    });
-  }
 
-  Future<void> _saveSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('openai_api_key', _openAiApiKeyController.text);
-  }
 
   Future<void> _loadSavedPrompts() async {
     final prefs = await SharedPreferences.getInstance();
@@ -149,7 +139,6 @@ class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
     });
     final PromptBuilder builder = PromptBuilder(
       _settings,
-      openAiApiKey: _openAiApiKeyController.text,
     );
     final String? response = await builder.sendPromptToAI();
     setState(() {
@@ -160,15 +149,6 @@ class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Advanced AI Prompt Generator'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => _showApiKeyDialog(context),
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -423,52 +403,4 @@ class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
     );
   }
 
-  Future<void> _showApiKeyDialog(BuildContext context) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('OpenAI API Key'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(
-                  'Enter your OpenAI API Key to send prompts to the AI.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _openAiApiKeyController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'API Key',
-                    hintText: 'sk-...',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _saveSettings();
-                Navigator.of(dialogContext).pop();
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('API Key saved!')));
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }

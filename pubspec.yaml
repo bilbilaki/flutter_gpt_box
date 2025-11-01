@@ -114,6 +114,8 @@ dependencies:
   ffi: ^2.1.4
   android_package_installer: ^0.0.3
   window_manager: ^0.5.1
+  beautiful_soup_dart: ^0.3.0
+  puppeteer: ^3.19.0
 
 dependency_overrides:
   # fl_lib:

@@ -173,8 +173,19 @@ Widget _buildBottomFnsTwoRows() {
           IconButton(
             tooltip: 'Translate Files',
             icon: const Icon(Icons.translate, size: 19),
-            onPressed: () => _navigateToTranslator(context),
+            onPressed: () => _navigateToPage(context,ChunkerInterfaceand()),
           ),
+                  IconButton(
+            tooltip: 'X.Search',
+            icon: const Icon(Icons.one_x_mobiledata, size: 19),
+            onPressed: () => _navigateToPage(context,XAiSearchFantasy()),
+          ),
+                            IconButton(
+            tooltip: 'Browser Automation',
+            icon: const Icon(Icons.auto_awesome_motion_sharp, size: 19),
+            onPressed: () => _navigateToPage(context,PDFGeneratorWidget()),
+          ),
+          
          // IconButton(
          //   tooltip: 'Voice mode',
           //  onPressed: () {
@@ -216,19 +227,20 @@ Widget _buildBottomFnsTwoRows() {
   }
   Widget _buildFileSearchBtn() {
     return IconButton(
-      onPressed:()async{await _navigateToAdvancedFileSearchPage(context);},
+      onPressed:()async{await _navigateToPage(context,FileSearchScreen());},
       icon: Icon(Icons.search, size: 17),
     );
   }
+
    Widget _buildPromptGeneratorPageBTN() {
     return IconButton(
-      onPressed: () async{ await _navigateToAdvancedPromptPage(context);},
+      onPressed: () async{ await _navigateToPage(context,PromptGeneratorScreen());},
       icon: Icon(Icons.auto_awesome_mosaic_sharp, size: 17),
     );
   }
      Widget _buildBatchTaskRunnerPageBTN() {
     return IconButton(
-      onPressed: () async{ await _navigateToBatchTaskerPage(context);},
+      onPressed: () async{ await _navigateToPage(context,AIBatchProcessorScreen());},
       icon: Icon(Icons.batch_prediction, size: 17),
     );
   }
@@ -304,7 +316,7 @@ Widget _buildBottomFnsTwoRows() {
           label: l10n.message,
           node: _imeFocus,
           action: TextInputAction.newline,
-          maxLines: 3,
+          maxLines: 5,
           minLines: 1,
           type: TextInputType
               .multiline, // Keep this, or 'Wrap' will not work on iOS
@@ -441,21 +453,15 @@ Widget _buildBottomFnsTwoRows() {
 
   
 
-  Future<void> _navigateToTranslator(BuildContext context) async {
+
+
+    Future<void> _navigateToPage(BuildContext context, Widget page) async {
     await Navigator.of(context).push<void>(
-      _fadeRoute( ChunkerInterfaceand()),
+      _fadeRoute( page),
     ); // Replace AnotherPage with your desired page
   }
-  Future<void> _navigateToAdvancedPromptPage(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      _fadeRoute( PromptGeneratorScreen()),
-    ); // Replace AnotherPage with your desired page
-  }
-  Future<void> _navigateToAdvancedFileSearchPage(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      _fadeRoute( FileSearchScreen()),
-    ); // Replace AnotherPage with your desired page
-  }
+
+  
   Future<void> _navigateToBatchTaskerPage(BuildContext context) async {
     await Navigator.of(context).push<void>(
       _fadeRoute(   AIBatchProcessorScreen()),

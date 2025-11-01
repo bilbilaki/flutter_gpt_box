@@ -16,7 +16,7 @@ final Map<int, String?> _translatedOverviews = {};
 Future<void> _translateOverviewForEpisode(int key, String original) async {
     setState(() => _isTranslatingMap[key] = true);
     try {
-      final translated = await _translator.translateTextForMoviesAndTV(
+      final translated = await _translator.mainTreanslator(
         original,
       );
       setState(() => _translatedOverviews[key] = translated);
@@ -396,30 +396,30 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
         text: l10n.freeCopy,
         icon: Icon(BoxIcons.bxs_crop, size: size, color: color),
       ),
-       Btn.icon(
-        onTap: () async {
-          context.pop();
-        final tbase= await _MarkdownCopyPage.route.go(context, chatItem);
-    if (translated != null) {
-      setState(() => _translatedOverviews.remove(key));
-      return;
-    }
-    await _translateOverviewForEpisode(key, tbase);
-    if (_translatedOverviews[key] != null) {
-    chatItem.content.clear();
-    chatItem.content.add(ChatContent.text(translated!=''?translated!:'a problem exist in translation process that return translated text as ""'));
-    _storeChat(_curChatId.value);
-    _chatRN.notify();
-    context.pop();
-  ///TODO  creating functions too can with one click switch between original message and translated one 
+  //      Btn.icon(
+  //       onTap: () async {
+  //         context.pop();
+  //       final tbase= await _MarkdownCopyPage.route.go(context, chatItem);
+  //   if (translated != null) {
+  //     setState(() => _translatedOverviews.remove(key));
+  //     return;
+  //   }
+  //   await _translateOverviewForEpisode(key, tbase);
+  //   if (_translatedOverviews[key] != null) {
+  //   chatItem.content.clear();
+  //   chatItem.content.add(ChatContent.text(translated!=''?translated!:'a problem exist in translation process that return translated text as ""'));
+  //   _storeChat(_curChatId.value);
+  //   _chatRN.notify();
+  //   context.pop();
+  // ///TODO  creating functions too can with one click switch between original message and translated one 
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Chat Message translated'), duration: Duration(seconds:1)));
-    }
+  //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Chat Message translated'), duration: Duration(seconds:1)));
+  //   }
 
-        },
-        text: l10n.freeCopy,
-        icon: Icon(BoxIcons.bxs_crop, size: size, color: color),
-      ),
+  //       },
+  //       text: l10n.freeCopy,
+  //       icon: Icon(BoxIcons.bxs_crop, size: size, color: color),
+  //     ),
       if (replayEnabled)
         _loadingChatIds.listenVal((chats) {
           final isWorking = chats.contains(_curChatId.value);
@@ -660,7 +660,7 @@ class Base64Image extends StatelessWidget {
   final ImageRepeat repeat;
 
   const Base64Image({
-    Key? key,
+    super.key,
     required this.base64,
     this.width,
     this.height,
@@ -671,7 +671,7 @@ class Base64Image extends StatelessWidget {
     this.allowShrink = true,
     this.alignment = Alignment.center,
     this.repeat = ImageRepeat.noRepeat,
-  }) : super(key: key);
+  });
 
   Uint8List? _decodeBase64(String data) {
     try {
@@ -745,7 +745,7 @@ class AudioEvent extends ChatEvent {
 }
 
 final base64ImageRegex = RegExp(r'data:image\/\w+;base64,([A-Za-z0-9+/=]+)');
-final base64AudioRegex = RegExp(r'data:image\/\w+;base64,([A-Za-z0-9+/=]+)');
+final base64AudioRegex = RegExp(r'data:audio\/\w+;base64,([A-Za-z0-9+/=]+)');
 
 // class ChatStreamTransformer
 //     extends StreamTransformerBase<String, ChatEvent> {

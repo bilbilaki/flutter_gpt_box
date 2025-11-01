@@ -1,14 +1,17 @@
 import 'package:openai_dart/openai_dart.dart';
 import 'package:gpt_box/view/prompt_generator/models/prompt_settings.dart';
 
+import '../../../data/res/openai.dart';
+
 class PromptBuilder {
   final PromptSettings settings;
-  final String? openAiApiKey; // Required for actual API calls
 
-  PromptBuilder(this.settings, {this.openAiApiKey});
+  PromptBuilder(this.settings,);
+       String? openAiApiKey=Cfg.current.key; // Required for actual API calls
 
   String buildPrompt() {
     final StringBuffer prompt = StringBuffer();
+
 
     // 1. Format Type
     prompt.writeln(
@@ -80,14 +83,14 @@ class PromptBuilder {
       return "OpenAI API Key is not set. Cannot send request.";
     }
 
-    final OpenAIClient client = OpenAIClient(apiKey: openAiApiKey!,baseUrl: "https://api.avalai.org/v1");
+    final OpenAIClient client = OpenAIClient(apiKey: openAiApiKey!,baseUrl: Cfg.current.url);
     final String constructedPrompt = buildPrompt();
 
     try {
       final  chatCompletion = await client.createChatCompletion(
         request: CreateChatCompletionRequest(
 
-              model: ChatCompletionModel.modelId("gemini-2.5-flash-lite"), // Or gpt35Turbo
+              model: ChatCompletionModel.modelId(Cfg.current.model), // Or gpt35Turbo
               messages: [
                 ChatCompletionUserMessage(
                   role: ChatCompletionMessageRole.user,

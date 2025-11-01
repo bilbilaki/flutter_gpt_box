@@ -305,15 +305,8 @@ done
   Widget build(BuildContext context) {
     final theme = _themes[_currentTheme]!;
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Code Crafter Demo',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
-      home: Scaffold(
+    return RepaintBoundary(
+      child: Scaffold(
         appBar: AppBar(
           title: const Text('Code Editor'),
           actions: [
@@ -472,6 +465,17 @@ done
                 },
               ),
             ),
+            const Divider(height: 1),
+            Container(
+              height: 24,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Status: Ready | Language: $_currentLanguage',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           ],
         ),
       ),
@@ -527,7 +531,7 @@ done
         break;
       case 'Claude':
         if (apiKey.isEmpty || (model == null || model.isEmpty)) return null;
-        m = Claude(apiKey: apiKey, model: model, version: '');
+        m = Claude(apiKey: apiKey, model: model,);
         break;
       case 'Grok':
         if (apiKey.isEmpty || (model == null || model.isEmpty)) return null;

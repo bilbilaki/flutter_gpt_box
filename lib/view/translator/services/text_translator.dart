@@ -1,13 +1,15 @@
 import 'package:gpt_box/main.dart';
 import 'package:openai_dart/openai_dart.dart';
 
+import '../../../data/res/openai.dart';
+
 /// Service for handling translation via OpenAI API.
 class TranslationService {
   OpenAIClient? _client;
   void setApiKey() {
     _client = OpenAIClient(
-      apiKey: translatorConfig.apiKey,
-      baseUrl: translatorConfig.baseUrl,
+      apiKey: Cfg.current.key,
+      baseUrl: Cfg.current.url,
     );
   }
 

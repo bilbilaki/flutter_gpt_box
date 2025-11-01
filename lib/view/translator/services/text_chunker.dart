@@ -1,5 +1,7 @@
 import 'package:gpt_box/view/widget/chunker_interface.dart';
 
+import '../configuration/config.dart';
+
 /// Service class responsible for text chunking operations.
 class TextChunkerService {
   static List<String> chunkText({

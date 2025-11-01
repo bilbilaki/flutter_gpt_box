@@ -10,13 +10,16 @@ import 'package:gpt_box/view/translator/interfaces/configuration_interface.dart'
 import 'package:gpt_box/view/translator/services/ocr.dart';
 import 'package:gpt_box/view/translator/utils/colors.dart';
 import 'package:gpt_box/view/translator/widgets/language_picker.dart';
-import 'package:gpt_box/view/widget/chunker_interface.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:tiktoken/tiktoken.dart' as tk;
 
 import '../../../main.dart';
+import '../configuration/config.dart';
+import '../services/text_chunker.dart';
+import '../services/text_translator.dart';
+import '../widgets/content_box.dart';
 
 part '../widgets/chunking_input.dart';
 
@@ -255,9 +258,9 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
       showSnack('No files selected for OCR.', error: true);
       return;
     }
-    // Note: Ensure your config page saves the Gemini API Key to translatorConfig.apiKey
+    // Note: Ensure your config page saves the  API Key to translatorConfig.apiKey
     if (translatorConfig.apiKey.isEmpty) {
-      showSnack('Gemini API key is not set in the configuration.',
+      showSnack(' API key is not set in the configuration.',
           error: true);
       return;
     }
@@ -266,7 +269,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
       isOcrProcessing = true;
       ocrProgress = 0.0;
       originalFileContent =
-          'Starting OCR process with Gemini for ${selectedFilesForOcr.length} files...';
+          'Starting OCR process for ${selectedFilesForOcr.length} files...';
       chunkedContent = '';
       translatedContent = '';
     });
@@ -347,7 +350,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
       translatedContent = 'Translating...';
     });
 
-    translationService.setApiKey(translatorConfig.apiKey);
+    translationService.setApiKey();
     //  _startMinuteMonitor();
     int completedCount = 0;
     try {
@@ -692,8 +695,9 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
                   label: const Text('Translate Chunks'),
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.resolveWith((states) {
-                      if (states.contains(WidgetState.disabled))
+                      if (states.contains(WidgetState.disabled)) {
                         return Colors.grey.shade600;
+                      }
                       return Colors.green.shade600;
                     }),
                     foregroundColor: const WidgetStatePropertyAll(Colors.white),
