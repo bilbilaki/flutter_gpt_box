@@ -24,11 +24,11 @@ Map<String, dynamic> _$ChatHistoryToJson(ChatHistory instance) =>
     <String, dynamic>{
       'id': instance.id,
       'items': instance.items,
-      if (instance.name case final value?) 'name': value,
-      if (instance.settings case final value?) 'settings': value,
-      if (instance.isPinned case final value?) 'isPinned': value,
-      if (instance.colorIndicator case final value?) 'colorIndicator': value,
-      if (instance.folderId case final value?) 'folderId': value,
+      'name': ?instance.name,
+      'settings': ?instance.settings,
+      'isPinned': ?instance.isPinned,
+      'colorIndicator': ?instance.colorIndicator,
+      'folderId': ?instance.folderId,
     };
 
 ChatHistoryItem _$ChatHistoryItemFromJson(Map<String, dynamic> json) =>
@@ -60,13 +60,13 @@ Map<String, dynamic> _$ChatHistoryItemToJson(ChatHistoryItem instance) =>
       'content': instance.content,
       'createdAt': instance.createdAt.toIso8601String(),
       'id': instance.id,
-      if (instance.toolCallId case final value?) 'toolCallId': value,
-      if (instance.toolCalls case final value?) 'toolCalls': value,
-      if (instance.reasoning case final value?) 'reasoning': value,
-      if (instance.inputTokens case final value?) 'inputTokens': value,
-      if (instance.outputTokens case final value?) 'outputTokens': value,
-      if (instance.totalTokens case final value?) 'totalTokens': value,
-      if (instance.nanobenana case final value?) 'nanobenana': value,
+      'toolCallId': ?instance.toolCallId,
+      'toolCalls': ?instance.toolCalls,
+      'reasoning': ?instance.reasoning,
+      'inputTokens': ?instance.inputTokens,
+      'outputTokens': ?instance.outputTokens,
+      'totalTokens': ?instance.totalTokens,
+      'nanobenana': ?instance.nanobenana,
     };
 
 const _$ChatRoleEnumMap = {
@@ -74,6 +74,7 @@ const _$ChatRoleEnumMap = {
   ChatRole.assist: 'assist',
   ChatRole.system: 'system',
   ChatRole.tool: 'tool',
+  ChatRole.ask: 'ask',
 };
 
 ChatContent _$ChatContentFromJson(Map<String, dynamic> json) => ChatContent(

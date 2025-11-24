@@ -174,6 +174,8 @@ class ChatRoleAdapter extends TypeAdapter<ChatRole> {
         return ChatRole.system;
       case 3:
         return ChatRole.tool;
+      case 4:
+        return ChatRole.ask;
       default:
         return ChatRole.user;
     }
@@ -190,6 +192,8 @@ class ChatRoleAdapter extends TypeAdapter<ChatRole> {
         writer.writeByte(2);
       case ChatRole.tool:
         writer.writeByte(3);
+      case ChatRole.ask:
+        writer.writeByte(4);
     }
   }
 

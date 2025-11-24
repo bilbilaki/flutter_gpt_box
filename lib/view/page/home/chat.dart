@@ -149,6 +149,12 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
         final isWorking = chats.contains(_curChatId.value) && isLast;
         return ChatRoleTitle(role: chatItem.role, loading: isWorking);
       }),
+      // TODO: Handle this case.
+      ChatRole.ask ||ChatRole.assist => _loadingChatIds.listenVal((chats) {
+        final isLast = chatItems.length - 1 == idx;
+        final isWorking = chats.contains(_curChatId.value) && isLast;
+        return ChatRoleTitle(role: chatItem.role, loading: isWorking);
+      }),
     };
 
     final child = Padding(
@@ -396,30 +402,6 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
         text: l10n.freeCopy,
         icon: Icon(BoxIcons.bxs_crop, size: size, color: color),
       ),
-  //      Btn.icon(
-  //       onTap: () async {
-  //         context.pop();
-  //       final tbase= await _MarkdownCopyPage.route.go(context, chatItem);
-  //   if (translated != null) {
-  //     setState(() => _translatedOverviews.remove(key));
-  //     return;
-  //   }
-  //   await _translateOverviewForEpisode(key, tbase);
-  //   if (_translatedOverviews[key] != null) {
-  //   chatItem.content.clear();
-  //   chatItem.content.add(ChatContent.text(translated!=''?translated!:'a problem exist in translation process that return translated text as ""'));
-  //   _storeChat(_curChatId.value);
-  //   _chatRN.notify();
-  //   context.pop();
-  // ///TODO  creating functions too can with one click switch between original message and translated one 
-
-  //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Chat Message translated'), duration: Duration(seconds:1)));
-  //   }
-
-  //       },
-  //       text: l10n.freeCopy,
-  //       icon: Icon(BoxIcons.bxs_crop, size: size, color: color),
-  //     ),
       if (replayEnabled)
         _loadingChatIds.listenVal((chats) {
           final isWorking = chats.contains(_curChatId.value);

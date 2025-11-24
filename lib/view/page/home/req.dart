@@ -29,7 +29,13 @@ Future<Iterable<ChatCompletionMessage>> _historyCarried(
     return Future.wait(workingChat.items.map((e) => e.toOpenAI()));
   }
 
-  final promptStr = config.prompt + Stores.mcp.memories.get().join('\n');
+  // Build system prompt from configured prompt and MCP memories with safe delimiters
+  final memories = Stores.mcp.memories.get();
+  final promptParts = <String>[
+    if (config.prompt.isNotEmpty) config.prompt.trim(),
+    if (memories.isNotEmpty) memories.join('\n'),
+  ];
+  final promptStr = promptParts.join('\n\n');
   final prompt = promptStr.isNotEmpty
       ? await ChatHistoryItem.single(
           role: ChatRole.system,
@@ -45,15 +51,25 @@ Future<Iterable<ChatCompletionMessage>> _historyCarried(
 
   var count = 0;
   final msgs = <ChatCompletionMessage>[];
-  for (final item in workingChat.items.reversed) {
-    if (count > config.historyLen) break;
-    if (item.role.isSystem) continue;
-    final msg = await item.toOpenAI();
-    msgs.add(msg);
-    count++;
+    // Respect history length exactly; do not exceed configured limit
+    for (final item in workingChat.items.reversed) {
+  if (count > config.historyLen) break;
+  if (item.role.isSystem) continue;
+
+  // NEW: skip huge tool outputs unless they are very recent
+  final isTool = item.role.isTool;
+  final rawLen = item.toMarkdown.length;
+  if (isTool && rawLen > 4000 && count > 2) {
+    continue;
   }
-  if (prompt != null) msgs.add(prompt);
-  return msgs.reversed;
+
+  final msg = await item.toOpenAI();
+  msgs.add(msg);
+  count++;
+}
+
+     if (prompt != null) msgs.add(prompt);
+return msgs.reversed;
 }
 
 /// Auto select model and send the request
@@ -189,11 +205,13 @@ Future<void> _onCreateText(
       for (final mcpCall in mcpCalls) {
         final contents = <ChatContent>[];
         try {
-          final msg = await OpenAIFuncCalls.handle(
-            mcpCall,
-            (e, s) => _askMcpConfirm(context, e, s),
-            onMcpLog,
-          );
+          final msg = await appResourcePool.withResource(() async {
+            return await OpenAIFuncCalls.handle(
+              mcpCall,
+              (e, s) => _askMcpConfirm(context, e, s),
+              onMcpLog,
+            );
+          });
           if (msg != null) contents.addAll(msg);
         } catch (e, s) {
           _onErr(e, s, chatId, 'MCP call');
@@ -227,6 +245,8 @@ Future<void> _onCreateText(
   workingChat.items.add(assistReply);
   _chatRN.notify();
   _filesPicked.value = [];
+  // Accumulate assistant raw output to avoid repeated joins on each delta
+  final assistRawBuffer = StringBuffer();
 
   try {
     final sub = chatStream.listen(
@@ -236,14 +256,10 @@ Future<void> _onCreateText(
 
         final content = delta.content;
         if (content != null) {
-          // Merge previous raw parts into a single string for detection
-          final prev = assistReply.content.isEmpty
-              ? ''
-              : assistReply.content.map((e) => e.raw).join();
-          final merged = '$prev$content';
-          // Try to split into text/image parts; if decoding fails,
-          // fallback to a single text content so partial base64 isn't rendered as image.
-          final parts = splitDataUrisToChatContents(merged);
+          // Append new chunk and re-segment once against accumulated buffer
+          assistRawBuffer.write(content);
+          final parts =
+              splitDataUrisToChatContents(assistRawBuffer.toString());
           assistReply.content
             ..clear()
             ..addAll(parts);
@@ -291,7 +307,8 @@ Future<void> _onCreateImg(
   String input,
   List<String> files,
 ) async {
-  final prompt = inputCtrl.text;
+  // Use provided input instead of reading from controller
+  final prompt = input;
   if (prompt.isEmpty) return;
   _imeFocus.unfocus();
   inputCtrl.clear();
@@ -325,8 +342,6 @@ Future<void> _onCreateImg(
   _autoHideCtrl.autoHideEnabled = false;
 
   try {
-    // Make direct HTTP request to support X.AI API format
-    // which doesn't include all fields expected by openai_dart library
     final client = HttpClient();
     final uri = Uri.parse('${cfg.url}/images/generations');
     final request = await client.postUrl(uri);
@@ -360,7 +375,7 @@ Future<void> _onCreateImg(
       throw Exception('No data in response');
     }
     
-    // Build response text with base64 images embedded
+  // Build response text with base64 images embedded
     final responseBuffer = StringBuffer();
     for (final item in dataList) {
       // Handle b64_json format
@@ -396,8 +411,6 @@ Future<void> _onCreateImg(
       return;
     }
 
-    // Use your existing splitDataUrisToChatContents function to auto-detect
-    // and parse base64 data URIs into proper ChatContent objects
     final imgContents = splitDataUrisToChatContents(responseBuffer.toString());
     assistReply.content.addAll(imgContents);
 
@@ -586,34 +599,9 @@ Future<bool> _ensureRecordPermission() async {
   }
 }
 
-Future<String?> _quickRecordWav({
-  Duration duration = const Duration(seconds: 6),
-}) async {
-  if (!await _ensureRecordPermission()) return null;
-  final dir = Directory.systemTemp.createTempSync('rec_');
-  final path = p.join(
-    dir.path,
-    'input_${DateTime.now().millisecondsSinceEpoch}.wav',
-  );
-  await _audioRecorder.start(
-    const RecordConfig(
-      encoder: AudioEncoder.wav,
-      sampleRate: 16000,
-      bitRate: 128000,
-    ),
-    path: path,
-  );
-  try {
-    await Future.delayed(duration);
-  } finally {
-    try {
-      await _audioRecorder.stop();
-    } catch (_) {}
-  }
-  return File(path).existsSync() ? path : null;
-}
 
-bool _isImagePath(String path) {
+
+bool isImagePath(String path) {
   final ext = p.extension(path).toLowerCase();
   return [
     '.png',
@@ -665,8 +653,10 @@ String _mimeFromExt(String path) {
 }
 
 Future<String> _fileToBase64(String path) async {
-  final bytes = await File(path).readAsBytes();
-  return base64Encode(bytes);
+  return appResourcePool.withResource(() async {
+    final bytes = await File(path).readAsBytes();
+    return base64Encode(bytes);
+  });
 }
 
 Uint8List wavFromPcm16(
@@ -752,19 +742,16 @@ List<ChatContent> splitDataUrisToChatContents(String s) {
       parts.add(ChatContent.text(s.substring(last, m.start)));
     }
     final dataUri = s.substring(m.start, m.end);
-    // Validate base64 decodes; if invalid, bail and return single text chunk
     try {
       final comma = dataUri.indexOf(',');
       final body = comma >= 0 ? dataUri.substring(comma + 1) : dataUri;
       base64Decode(body.replaceAll(RegExp(r'\s+'), ''));
-      // If decode OK, treat as image/audio content
       if (dataUri.toLowerCase().contains('data:image/')) {
         parts.add(ChatContent.image(dataUri));
       } else {
         parts.add(ChatContent.audio(dataUri));
       }
     } catch (_) {
-      // If any decode fails, return the whole string as text to avoid partial rendering
       return [ChatContent.text(s)];
     }
     last = m.end;
@@ -774,81 +761,50 @@ List<ChatContent> splitDataUrisToChatContents(String s) {
 }
 
 Future<ChatContent> contentFromPath(String path) async {
-  if (getAppFileType(path) == AppFileType.image) {
-    final dataUrl = await _pathToDataUrl(path);
-    return ChatContent.image(dataUrl);
-  } else if (getAppFileType(path) == AppFileType.audio) {
-    final dataUrl = await _pathToDataUrl(path);
-    return ChatContent.audio(dataUrl);
-  } else if (getAppFileType(path) == AppFileType.directdoc) {
-    final dataUrl = await _pathToDataUrl(path);
-    return ChatContent.file(dataUrl);
-  } else if (getAppFileType(path) == AppFileType.undirectdoc) {
-    final content = await File(path).readAsString();
-    if (content.isNotEmpty && content != '') {
-      Directory tmp = await getTemporaryDirectory();
-      final newf = p.join(tmp.path, '${Uuid().v4()}.txt');
-      final ffile = await File(newf).writeAsString(newf);
-      final dataUrl = await _pathToDataUrl(ffile.path);
+  return appResourcePool.withResource(() async {
+    if (getAppFileType(path) == AppFileType.image) {
+      final dataUrl = await _pathToDataUrl(path);
+      return ChatContent.image(dataUrl);
+    } else if (getAppFileType(path) == AppFileType.audio) {
+      final dataUrl = await _pathToDataUrl(path);
+      return ChatContent.audio(dataUrl);
+    } else if (getAppFileType(path) == AppFileType.directdoc) {
+      final dataUrl = await _pathToDataUrl(path);
       return ChatContent.file(dataUrl);
+    } else if (getAppFileType(path) == AppFileType.undirectdoc) {
+      final content = await File(path).readAsString();
+      if (content.isNotEmpty && content != '') {
+        Directory tmp = await getTemporaryDirectory();
+        final newf = p.join(tmp.path, '${Uuid().v4()}.txt');
+        final ffile = await File(newf).writeAsString(newf);
+        final dataUrl = await _pathToDataUrl(ffile.path);
+        return ChatContent.file(dataUrl);
+      }
     }
-  }
-  return ChatContent.file(
-    'app cant process sending file , tell this to user and if this helpful this is file path : $path',
-  );
+    return ChatContent.file(
+      'app cant process sending file , tell this to user and if this helpful this is file path : $path',
+    );
+  });
 }
 
 Future<String> _saveBase64ToFile(
   String base64Data, {
   String ext = '.wav',
 }) async {
-  final bytes = base64Decode(base64Data);
-  final dir = await Directory.systemTemp.createTemp('oai_audio_');
-  final path = p.join(
-    dir.path,
-    'out_${DateTime.now().millisecondsSinceEpoch}$ext',
-  );
-  final f = File(path);
-  await f.writeAsBytes(bytes, flush: true);
-  return f.path;
+  return appResourcePool.withResource(() async {
+    final bytes = base64Decode(base64Data);
+    final dir = await Directory.systemTemp.createTemp('oai_audio_');
+    final path = p.join(
+      dir.path,
+      'out_${DateTime.now().millisecondsSinceEpoch}$ext',
+    );
+    final f = File(path);
+    await f.writeAsBytes(bytes, flush: true);
+    return f.path;
+  });
 }
 
-// This helper may be referenced dynamically; suppress unused-element lint here.
-// ignore: unused_element
-Future<String?> _ensureAudioInputPath(List<String> files) async {
-  final audio = files.firstWhereOrNull(isAudioPath);
-  if (audio != null) return audio;
-  // fallback quick record if nothing provided
-  return await _quickRecordWav();
-}
 
-Future<String?> deppReSearch(
-  BuildContext context,
-  String chatId,
-  String input,
-  List<String> files,
-) async {
-  final svc = ResponsesService();
-  final req = DeepResearchRequest(
-    model: 'o4-mini-deep-research',
-    input: input,
-    tools: [WebSearchPreviewTool()],
-    reasoning: {'summary': 'auto'},
-  );
-  await for (final chunk in svc.stream(req)) {
-    try {
-      if (chunk.deltaText != null && chunk.deltaText!.isNotEmpty) {
-        stdout.write(chunk.deltaText);
-        return chunk.deltaText!;
-      }
-    } catch (e) {
-      return e.toString();
-    }
-    // print('\n[stream failed end]');
-  }
-  // If stream ended without producing deltaText, return null
-  return null;
-}
 
 Future<void> _onAudioModel(
   BuildContext context,
@@ -865,10 +821,8 @@ Future<void> _onAudioModel(
   }
   final config = Cfg.current;
 
-  // Prepare user question (text + optionally images/files already attached)
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
-      // Ensure images are sent as base64 data URL
       final content = await contentFromPath(file);
       questionContents.add(content);
   }
@@ -889,12 +843,10 @@ Future<void> _onAudioModel(
   _loadingChatIds.notify();
   _autoHideCtrl.autoHideEnabled = false;
 
-  // Assistant reply placeholder (will attach audio file when done)
   final assistReply = ChatHistoryItem.gen(role: ChatRole.assist, content: []);
   workingChat.items.add(assistReply);
   _chatRN.notify();
   _filesPicked.value = [];
-  // Accumulate streaming audio base64 and transcript for audio-preview model
   final audioDataBuffer = StringBuffer();
   final transcriptBuffer = StringBuffer();
 
@@ -919,7 +871,6 @@ Future<void> _onAudioModel(
         final delta = eve.choices.firstOrNull?.delta;
         if (delta == null) return;
 
-        // Accumulate streaming audio base64
         final a = delta.audio;
         if (a?.data != null && a!.data!.isNotEmpty) {
           audioDataBuffer.write(a.data);
@@ -928,18 +879,12 @@ Future<void> _onAudioModel(
           transcriptBuffer.write(a.transcript);
         }
 
-        // Live transcript update (optional)
         if (transcriptBuffer.isNotEmpty) {
           final t = transcriptBuffer.toString();
           if (assistReply.content.isEmpty) {
             assistReply.content.add(ChatContent.text(t));
-            //             final modelSoFar = assistReply.content.firstOrNull?.raw ?? '';
-            // TokenCounter.updateFrom(userText: input, modelText: modelSoFar);
           } else {
-            // Keep first content as transcript text until audio saved
             assistReply.content[0] = ChatContent.text(t);
-            //  final modelSoFar = assistReply.content.firstOrNull?.raw ?? '';
-            //   aiSettings.onTextChangedForTokens(modelText: modelSoFar);
           }
           _chatItemRNMap[assistReply.id]?.notify();
         }
@@ -957,18 +902,13 @@ Future<void> _onAudioModel(
             ss.voicePlayedUntilNow.set(false);
             if (assistReply.content.isEmpty) {
               assistReply.content.add(ChatContent.file(path));
-              //               final modelSoFar = assistReply.content.firstOrNull?.raw ?? '';
-              // TokenCounter.updateFrom(userText: input, modelText: modelSoFar);
             } else {
-              // Keep transcript if present, also add audio as second content
               final hasText =
                   assistReply.content.firstOrNull?.type.isText == true;
               if (hasText) {
                 assistReply.content.add(ChatContent.file(path));
               } else {
                 assistReply.content[0] = ChatContent.file(path);
-                //   final modelSoFar = assistReply.content.firstOrNull?.raw ?? '';
-                //     aiSettings.onTextChangedForTokens(modelText: modelSoFar);
               }
             }
             _chatItemRNMap[assistReply.id]?.notify();
@@ -1011,10 +951,8 @@ Future<void> _onTtsModel(
   }
   final config = Cfg.current;
 
-  // Prepare user question (text + optionally images/files already attached)
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
-      // Ensure images are sent as base64 data URL
       final content = await contentFromPath(file);
       questionContents.add(content);
 
@@ -1038,15 +976,12 @@ Future<void> _onTtsModel(
   _autoHideCtrl.autoHideEnabled = false;
   final mcpCompatible = Cfg.isMcpCompatible();
 
-  // #104
   final chatScopeUseMcp = workingChat.settings?.useTools != false;
 
-  // #111
   final availableMcp = await OpenAIFuncCalls.tools;
   final isMcpEmpty = availableMcp.isEmpty;
 
   if (mcpCompatible && chatScopeUseMcp && !isMcpEmpty) {
-    // Used for logging mcp call resp
     final mcpReply = ChatHistoryItem.single(role: ChatRole.tool, raw: '');
     workingChat.items.add(mcpReply);
     _chatRN.notify();
@@ -1089,11 +1024,13 @@ Future<void> _onTtsModel(
       for (final mcpCall in mcpCalls) {
         final contents = <ChatContent>[];
         try {
-          final msg = await OpenAIFuncCalls.handle(
-            mcpCall,
-            (e, s) => _askMcpConfirm(context, e, s),
-            onMcpLog,
-          );
+          final msg = await appResourcePool.withResource(() async {
+            return await OpenAIFuncCalls.handle(
+              mcpCall,
+              (e, s) => _askMcpConfirm(context, e, s),
+              onMcpLog,
+            );
+          });
           if (msg != null) contents.addAll(msg);
         } catch (e, s) {
           _onErr(e, s, chatId, 'MCP call');
@@ -1124,12 +1061,10 @@ Future<void> _onTtsModel(
     ),
   );
 
-  // Add two assist placeholders: one used while streaming text, one final to hold TTS file
   final assistReplyStreaming = ChatHistoryItem.single(role: ChatRole.assist);
   workingChat.items.add(assistReplyStreaming);
   _chatRN.notify();
 
-  // We'll accumulate full assistant text here, then call TTS once on completion
   final assistantTextBuffer = StringBuffer();
 
   try {
@@ -1140,10 +1075,7 @@ Future<void> _onTtsModel(
 
         final content = delta.content;
         if (content != null) {
-          // Append to streaming assistant text buffer
           assistantTextBuffer.write(content);
-
-          // Update streaming UI with merged parts (handle data URIs)
           final prev = assistReplyStreaming.content.isEmpty
               ? ''
               : assistReplyStreaming.content.map((e) => e.raw).join();
@@ -1165,12 +1097,8 @@ Future<void> _onTtsModel(
         _autoScroll(chatId);
       },
       onDone: () async {
-        // At this point we've received the full assistant text in assistantTextBuffer
         try {
           final finalText = assistantTextBuffer.toString();
-
-          // Replace streaming placeholder with final assist reply that will hold transcript + audio
-          // Keep existing transcript text if any
           final finalAssist = ChatHistoryItem.gen(
             role: ChatRole.assist,
             content: [],
@@ -1178,7 +1106,6 @@ Future<void> _onTtsModel(
           if (finalText.isNotEmpty) {
             finalAssist.content.add(ChatContent.text(finalText));
           }
-          // Replace the streaming item with final one
           final idx = workingChat.items.indexOf(assistReplyStreaming);
           if (idx != -1) {
             workingChat.items[idx] = finalAssist;
@@ -1187,9 +1114,7 @@ Future<void> _onTtsModel(
           }
           _chatRN.notify();
 
-          // Now call TTS once for the finalText (if non-empty)
           if (finalText.trim().isNotEmpty) {
-            // Prepare a temporary chat message with the assistant text as user content for audio model
             final ttsMsg = ChatHistoryItem.gen(
               content: [ChatContent.text(finalText)],
               role: ChatRole.user,
@@ -1213,7 +1138,6 @@ Future<void> _onTtsModel(
               ),
             );
 
-            // Accumulate audio from TTS stream
             final ttsAudioBuffer = StringBuffer();
             final ttsTranscriptBuffer = StringBuffer();
 
@@ -1237,7 +1161,6 @@ Future<void> _onTtsModel(
                       ext: '.wav',
                     );
                     ss.voicePlayedUntilNow.set(false);
-                    // Attach audio to finalAssist: if it already has text, add file; otherwise set file
                     if (finalAssist.content.isEmpty) {
                       finalAssist.content.add(ChatContent.file(path));
                     } else {
@@ -1246,7 +1169,6 @@ Future<void> _onTtsModel(
                     _chatItemRNMap[finalAssist.id]?.notify();
                   }
                 } finally {
-                  // cleanup
                 }
               },
               onError: (e, s) {
@@ -1254,7 +1176,6 @@ Future<void> _onTtsModel(
               },
             );
 
-            // keep ttsSub in map so user can cancel if needed
             _chatStreamSubs[chatId] = ttsSub;
           }
         } finally {
@@ -1273,7 +1194,6 @@ Future<void> _onTtsModel(
       },
     );
 
-    // store main chat stream subscription so it can be canceled
     _chatStreamSubs[chatId] = sub;
   } catch (e, s) {
     _loadingChatIds.value.remove(chatId);
@@ -1282,79 +1202,7 @@ Future<void> _onTtsModel(
   }
 }
 
-/// Web search quick
-Future<String> webSearchQuick(String query, {String model = 'gpt-5'}) async {
-  final svc = respsvc.ResponsesService();
-  final api = WebSearchApi(svc);
-  final text = await api.quickSearch(query: query, model: model);
-  return text;
-}
 
-/// Web search with filters and sources
-Future<respmod.DeepResponse> webSearchWithFilters(
-  String query, {
-  String model = 'gpt-5',
-  List<String>? allowedDomains,
-  bool includeSources = true,
-}) async {
-  final svc = respsvc.ResponsesService();
-  final api = WebSearchApi(svc);
-  final resp = await api.searchWithFilters(
-    query: query,
-    model: model,
-    allowedDomains: allowedDomains,
-    includeSources: includeSources,
-  );
-  return resp;
-}
-
-/// Codex local shell loop runner
-Future<respmod.DeepResponse> runCodexLocalShell(
-  String userPrompt, {
-  String model = 'codex-mini-latest',
-  List<String>? allowListPrefixes,
-  List<String>? denyListPrefixes,
-  String? workingDirectory,
-}) async {
-  final svc = respsvc.ResponsesService();
-  final agent = CodexLocalShellAgent(
-    svc: svc,
-    model: model,
-    allowListPrefixes: allowListPrefixes,
-    denyListPrefixes: denyListPrefixes,
-    workingDirectory: workingDirectory,
-  );
-
-  final finalResp = await agent.run(userPrompt);
-  return finalResp;
-}
-
-Future<String> transcribeFileToText(
-  File file, {
-  String model = 'gpt-4o-transcribe',
-}) async {
-  final svc = TranscriptionService();
-  final res = await svc.transcribeFile(file, model: model);
-  return res.text;
-}
-
-Future<String> synthesizeToWavAndSave({
-  required String text,
-  required String voice,
-  String model = 'gpt-4o-mini-tts', // pick your provider’s TTS-capable model id
-}) async {
-  final tts = TtsService();
-  final bytes = await tts.synthesize(model: model, input: text, voice: voice);
-  final wav = AudioUtils.ensureWav(bytes);
-  final dir = await Directory.systemTemp.createTemp('tts_');
-  final path = p.join(
-    dir.path,
-    'out_${DateTime.now().millisecondsSinceEpoch}.wav',
-  );
-  final f = File(path);
-  await f.writeAsBytes(wav, flush: true);
-  return f.path;
-}
 
 Future<void> _onCreateTextTranslated(
   BuildContext context,
@@ -1440,7 +1288,6 @@ Future<void> _onCreateTextTranslated(
   final isMcpEmpty = availableMcp.isEmpty;
 
   if (mcpCompatible && chatScopeUseMcp && !isMcpEmpty) {
-    // Used for logging mcp call resp
     final mcpReply = ChatHistoryItem.single(role: ChatRole.tool, raw: '');
     workingChat.items.add(mcpReply);
     _chatRN.notify();
@@ -1483,11 +1330,13 @@ Future<void> _onCreateTextTranslated(
       for (final mcpCall in mcpCalls) {
         final contents = <ChatContent>[];
         try {
-          final msg = await OpenAIFuncCalls.handle(
-            mcpCall,
-            (e, s) => _askMcpConfirm(context, e, s),
-            onMcpLog,
-          );
+          final msg = await appResourcePool.withResource(() async {
+            return await OpenAIFuncCalls.handle(
+              mcpCall,
+              (e, s) => _askMcpConfirm(context, e, s),
+              onMcpLog,
+            );
+          });
           if (msg != null) contents.addAll(msg);
         } catch (e, s) {
           _onErr(e, s, chatId, 'MCP call');
@@ -1574,96 +1423,4 @@ Future<void> _onCreateTextTranslated(
     _onErr(e, s, chatId, 'Catch text stream');
   }
 }
-
-// Future<void> _onCreateResponse(
-//   BuildContext context,
-//   String chatId,
-//   String input,
-//   List<String> files,
-// ) async {
-//   final workingChat = allHistories[chatId];
-//   if (workingChat == null) {
-//     final msg = 'Chat($chatId) not found';
-//     Loggers.app.warning(msg);
-//     context.showSnackBar(msg);
-//     return;
-//   }
-//   final config = Cfg.current;
-
-//   final questionContents = <ChatContent>[ChatContent.text(input)];
-//   for (final file in files) {
-//     if (!modelUseFilePath) {
-//       // Ensure images are sent as base64 data URL
-//       final content = await contentFromPath(file);
-//       questionContents.add(content);
-//     } else if (modelUseFilePath) {
-//       final content = <ChatContent>[
-//         ChatContent.text(
-//           'For Using Tools with file operation use this File Path: $file',
-//         ),
-//       ];
-//       questionContents.addAll(content);
-//       modelUseFilePath = false;
-//     }
-//   }
-//   final question = ChatHistoryItem.gen(
-//     content: questionContents,
-//     role: ChatRole.user,
-//   );
-//   final msgs = (await _historyCarried(workingChat)).toList();
-//   msgs.add(await question.toOpenAI());
-
-//   workingChat.items.add(question);
-//   inputCtrl.clear();
-//   _chatRN.notify();
-//   _autoScroll(chatId);
-//   final titleCompleter = await genChatTitle(context, chatId, config);
-
-
-
-//     final chatStream = await Cfg.clientoc.streamResponse(
-//       model: oc.ChatModel.fromJson(Cfg.current.model),
-//       input: oc.ResponseInputText(msgs.join()),
-//       text: const oc.TextFormatText(),
-//     );
-//     final assistReply = ChatHistoryItem.single(role: ChatRole.assist);
-//     workingChat.items.add(assistReply);
-//     _chatRN.notify();
-//     _filesPicked.value = [];
-
-//     await for (final eve in chatStream.events) {
-//       if (eve is oc.ResponseOutputTextDelta) {
-//         stdout.write(eve.delta);
-//         final content = eve.delta;
-//         final prev = assistReply.content.isEmpty
-//             ? ''
-//             : assistReply.content.map((e) => e.raw).join();
-//         final merged = '$prev$content';
-//         // Try to split into text/image parts; if decoding fails,
-//         // fallback to a single text content so partial base64 isn't rendered as image.
-//         final parts = splitDataUrisToChatContents(merged);
-//         assistReply.content
-//           ..clear()
-//           ..addAll(parts);
-//         _chatItemRNMap[assistReply.id]?.notify();
-
-//         final deltaResoningContent = null;
-//         if (deltaResoningContent != null) {
-//           final originReasoning = assistReply.reasoning ?? '';
-//           final newReasoning = '$originReasoning$deltaResoningContent';
-//           assistReply.reasoning = newReasoning;
-//           _chatItemRNMap[assistReply.id]?.notify();
-//         }
-
-//         _autoScroll(chatId);
-//       }
-//       if (eve is oc.ResponseOutputTextDone) stdout.writeln();
-//       if (eve is oc.ResponseCompleted) break;
-//     }
-
-//     await chatStream.close();
-
-//     Cfg.clientoc.close();
-//   }
-
 

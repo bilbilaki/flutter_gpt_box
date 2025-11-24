@@ -20,7 +20,7 @@ class PromptGeneratorScreen extends StatefulWidget {
 }
 
 class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
-  PromptSettings _settings = PromptSettings();
+  final PromptSettings _settings = PromptSettings();
   String _generatedPrompt = '';
   String _aiResponse = '';
   final TextEditingController _openAiApiKeyController = TextEditingController();

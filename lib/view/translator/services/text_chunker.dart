@@ -1,4 +1,3 @@
-import 'package:gpt_box/view/widget/chunker_interface.dart';
 
 import '../configuration/config.dart';
 

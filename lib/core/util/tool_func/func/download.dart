@@ -143,13 +143,28 @@ This tool does not support uploading or other file ops—focus on downloads (and
 
     // --- Action Logic (Ensure only one action per call) ---
     if (checkStatus && cancelTask) {
-      return [ChatContent.text('Error: Specify only one action (checkStatus or cancelTask).')];
+      final error = ToolError.invalidArgument(
+        'action',
+        'Both checkStatus and cancelTask are true',
+        suggestion: 'Specify only one action per call: either checkStatus or cancelTask.',
+      );
+      return [ChatContent.text(error.toMessage())];
     }
     if ((url != null || (batchTasks != null && batchTasks.isNotEmpty)) && (checkStatus || cancelTask || installApk)) {
-      return [ChatContent.text('Error: Separate download and status/install actions into different calls.')];
+      final error = ToolError.invalidArgument(
+        'action',
+        'Download and status/install actions mixed',
+        suggestion: 'Separate download operations from status checks or installations into different calls.',
+      );
+      return [ChatContent.text(error.toMessage())];
     }
     if (installApk && (checkStatus || cancelTask)) {
-      return [ChatContent.text('Error: Separate APK install from status/cancel actions.')];
+      final error = ToolError.invalidArgument(
+        'action',
+        'APK install mixed with status/cancel',
+        suggestion: 'Separate APK installation from status checks or cancellations into different calls.',
+      );
+      return [ChatContent.text(error.toMessage())];
     }
 
     // 1. Check Status
@@ -169,7 +184,8 @@ This tool does not support uploading or other file ops—focus on downloads (and
 
         final item = findById(taskId);
         if (item == null) {
-          return [ChatContent.text('No download task found with ID: $taskId')];
+          final error = ToolError.notFound('Download task with ID "$taskId"', suggestion: 'Verify the taskId from a previous download call or check active/completed tasks.');
+          return [ChatContent.text(error.toMessage())];
         }
         log('Status for $taskId: ${item.status}, Progress: ${(item.progress! * 100).toStringAsFixed(1)}%, Path: ${item.savedPath}');
         return [ChatContent.text(_formatItem(item))];
@@ -181,7 +197,8 @@ This tool does not support uploading or other file ops—focus on downloads (and
           ...svc.history(),
         ];
         if (records.isEmpty) {
-          return [ChatContent.text('There are no active or recent download tasks.')];
+          final error = ToolError.notFound('Active or recent download tasks', suggestion: 'Start a download first using the downloader tool with a URL.');
+          return [ChatContent.text(error.toMessage())];
         }
         final statusList = records.map(_formatItem).join('\n---\n');
         log('All tasks: ${records.length} items (active: ${svc.activeItems().length}, history: ${svc.history().length})');
@@ -192,7 +209,8 @@ This tool does not support uploading or other file ops—focus on downloads (and
     // 2. Cancel Task
     if (cancelTask) {
       if (taskId == null || taskId.isEmpty) {
-        return [ChatContent.text('Error: A "taskId" is required to cancel a task.')];
+        final error = ToolError.invalidInput('taskId', suggestion: 'Provide a valid taskId from a previous download operation.');
+        return [ChatContent.text(error.toMessage())];
       }
       log('Attempting to cancel task: $taskId');
 
@@ -202,7 +220,11 @@ This tool does not support uploading or other file ops—focus on downloads (and
         return [ChatContent.text('Successfully signaled cancellation for task: $taskId')];
       } else {
         log('Cancellation failed for $taskId');
-        return [ChatContent.text('Failed to cancel task: $taskId. It may not exist or may have already completed.')];
+        final error = ToolError.executionFailed(
+          'Failed to cancel task',
+          suggestion: 'The task may not exist or may have already completed. Verify the taskId.',
+        );
+        return [ChatContent.text(error.toMessage())];
       }
     }
 
@@ -210,20 +232,23 @@ This tool does not support uploading or other file ops—focus on downloads (and
     if (installApk) {
       if (!Platform.isAndroid) {
         log('APK install attempted on non-Android platform');
-        return [ChatContent.text('APK installation is only supported on Android devices.')];
+        final error = ToolError.executionFailed('APK installation not supported on this platform', suggestion: 'APK installation is only available on Android devices.');
+        return [ChatContent.text(error.toMessage())];
       }
       if (apkPath == null || apkPath.isEmpty) {
-        return [ChatContent.text('Error: "apkPath" is required for APK installation.')];
+        final error = ToolError.invalidInput('apkPath', suggestion: 'Provide a full path to the APK file (e.g., "/sdcard/Download/app.apk").');
+        return [ChatContent.text(error.toMessage())];
       }
-      // Verify file exists (basic check)
       final apkFile = File(apkPath);
       if (!await apkFile.exists()) {
         log('APK file not found: $apkPath');
-        return [ChatContent.text('Error: APK file not found at path: $apkPath')];
+        final error = ToolError.notFound('APK file at "$apkPath"', suggestion: 'Verify the file path is correct and the APK file exists.');
+        return [ChatContent.text(error.toMessage())];
       }
       if (!apkPath.toLowerCase().endsWith('.apk')) {
         log('Path does not end with .apk: $apkPath');
-        return [ChatContent.text('Error: Provided path does not point to an APK file.')];
+        final error = ToolError.invalidArgument('apkPath', 'Path does not end with .apk', suggestion: 'Ensure the path points to a valid APK file.');
+        return [ChatContent.text(error.toMessage())];
       }
 
       log('Starting APK installation for: $apkPath');
@@ -235,15 +260,24 @@ This tool does not support uploading or other file ops—focus on downloads (and
           if (installationStatus == PackageInstallerStatus.success) {
             return [ChatContent.text('APK installed successfully from: $apkPath')];
           } else {
-            return [ChatContent.text('APK installation failed (status: ${installationStatus.name}) from: $apkPath. Check device permissions or try manually.')];
+            final error = ToolError.executionFailed(
+              'APK installation failed with status: ${installationStatus.name}',
+              suggestion: 'Check device permissions, storage space, or try installing manually.',
+            );
+            return [ChatContent.text(error.toMessage())];
           }
         } else {
           log('APK installation returned null status code for $apkPath');
-          return [ChatContent.text('APK installation error: No status returned. Check logs or try manually.')];
+          final error = ToolError.executionFailed('APK installation returned no status', suggestion: 'Check device logs or try manual installation.');
+          return [ChatContent.text(error.toMessage())];
         }
       } catch (e) {
         log('APK installation exception: $e for $apkPath');
-        return [ChatContent.text('APK installation error: $e. Ensure the APK is from a trusted source.')];
+        final error = ToolError.executionFailed(
+          'APK installation failed: $e',
+          suggestion: 'Ensure the APK is from a trusted source and the device has sufficient storage.',
+        );
+        return [ChatContent.text(error.toMessage())];
       }
     }
 
@@ -288,11 +322,11 @@ This tool does not support uploading or other file ops—focus on downloads (and
     }
 
     // Fallback: If no valid action was specified
-    return [
-      ChatContent.text(
-        'Invalid downloader arguments. Please specify a valid action (add download, check status, cancel a task, or install APK).',
-      ),
-    ];
+    final error = ToolError.invalidInput(
+      'action',
+      suggestion: 'Specify one of: url (single download), batchTasks (multiple downloads), checkStatus, cancelTask, or installApk.',
+    );
+    return [ChatContent.text(error.toMessage())];
   }
 
   String _formatItem(DownloadItem item) {

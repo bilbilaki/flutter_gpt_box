@@ -201,18 +201,23 @@ enum ChatRole {
   user,
   assist,
   system,
-  tool;
+  tool,
+  ask;
 
   bool get isUser => this == user;
   bool get isAssist => this == assist;
   bool get isSystem => this == system;
   bool get isTool => this == tool;
+    bool get isAsk => this == ask;
+
 
   String get localized => switch (this) {
     user => Stores.setting.avatar.get(),
     assist => '🤖',
     system => '⚙️',
     tool => '🛠️',
+        ask => '🤖🛠️',
+
   };
 
   Color get color {
@@ -221,8 +226,10 @@ enum ChatRole {
       assist => UIs.primaryColor.withBlue(233),
       system => UIs.primaryColor.withRed(233),
       tool => UIs.primaryColor.withBlue(33),
+ask => UIs.primaryColor.withBlue(300),
+
     };
-    return c.withValues(alpha: 0.5);
+    return c.withValues(alpha: 0.6);
   }
 
   static ChatRole? fromString(String? val) => switch (val) {

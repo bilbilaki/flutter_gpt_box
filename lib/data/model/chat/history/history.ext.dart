@@ -115,6 +115,11 @@ extension ChatHistoryItemX on ChatHistoryItem {
           toolCallId: toolCallId ?? '',
           content: content.map((e) => e.raw).join('\n'),
         );
+      case ChatRole.ask:
+        return ChatCompletionMessage.tool(
+          toolCallId: toolCallId ?? '',
+          content: content.map((e) => e.raw).join('\n'),
+        );
     }
   }
 }

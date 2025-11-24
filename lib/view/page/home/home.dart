@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -9,15 +8,6 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gpt_box/core/audio/audio_utils.dart';
-import 'package:gpt_box/core/audio/transcription_service.dart';
-import 'package:gpt_box/core/audio/tts_service.dart';
-import 'package:gpt_box/core/deep_research/responses_models.dart';
-import 'package:gpt_box/core/deep_research/responses_service.dart';
-import 'package:gpt_box/core/responses/web_search_helpers.dart';
-import 'package:gpt_box/core/responses/codex_local_shell.dart';
-import 'package:gpt_box/core/responses/responses_service.dart' as respsvc;
-import 'package:gpt_box/core/responses/responses_models.dart' as respmod;
 import 'package:gpt_box/core/util/file_type.dart';
 import 'package:gpt_box/core/util/url.dart';
 import 'package:gpt_box/data/model/canvas_result.dart';
@@ -59,6 +49,7 @@ import 'package:path/path.dart' as p;
 import 'package:record/record.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:uuid/uuid.dart';
+import 'package:pool/pool.dart';
 part '../../widget/audio.dart';
 part 'chat.dart';
 part 'history.dart';
@@ -78,6 +69,10 @@ part 'settings_drawer.dart';
 part 'bottom/chatmessage_translator.dart';
 //part '../../widget/v1.dart';
 final aiSettings = AiSettings();
+
+// Global resource pool to limit concurrent heavy operations (file IO, base64, tool calls).
+// Size tuned conservatively; adjust based on profiling. Timeout omitted to avoid unintended failures.
+final Pool appResourcePool = Pool(8); // limit to 8 concurrent heavy tasks
 
 // Global key to access the Home Scaffold from places that are not descendants
 // of the Scaffold in the widget tree (e.g., bottomNavigationBar content).

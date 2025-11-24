@@ -30,7 +30,12 @@ final class TfTerminal extends ToolFunc {
     final command = args['command'] as String?;
     
     if (command == null || command.isEmpty) {
-      return [ChatContent.text("Error: 'command' is required.")];
+      final error = ToolError.invalidInput(
+        'command',
+        suggestion: 'Provide a valid shell command (e.g., "ls -la", "cat file.txt").',
+      );
+      log('Terminal Error: ${error.toMessage()}');
+      return [ChatContent.text(error.toMessage())];
     }
 
     try {
@@ -55,13 +60,22 @@ final class TfTerminal extends ToolFunc {
       }
       
       if (result.exitCode != 0) {
-        output.write('\n[Exit code: ${result.exitCode}]');
+        // For non-zero exit codes, provide structured error
+        final error = ToolError.executionFailed(
+          'Command exited with code ${result.exitCode}',
+          suggestion: 'Review the error output above and adjust the command if needed.',
+        );
+        output.write('\n${error.toMessage()}');
       }
 
       return [ChatContent.text(output.isEmpty ? 'Command completed with no output.' : output.toString())];
     } catch (e) {
-      log('Terminal Error: $e');
-      return [ChatContent.text('Error executing command: $e')];
+      final error = ToolError.executionFailed(
+        'Command execution failed: $e',
+        suggestion: 'Verify the command syntax and ensure all required tools are installed.',
+      );
+      log('Terminal Error: ${error.toMessage()}');
+      return [ChatContent.text(error.toMessage())];
     }
   }
 }

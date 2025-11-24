@@ -60,7 +60,7 @@ class _TranslatableTextState extends State<TranslatableText> {
 }
 class _Lru<K, V> {
   final int capacity;
-  final _map = LinkedHashMap<K, V>();
+  final _map = <K, V>{};
   _Lru(this.capacity);
   V? get(K k) {
     final v = _map.remove(k);

@@ -97,25 +97,22 @@ dependencies:
   native_zip: ^0.8.4
   uuid: ^4.5.1
   riverpod: ^2.6.1
-  file_selector: ^1.0.3
-  dns_resolver: ^0.1.1
+  file_selector: any
   mime: ^2.0.0
   http_parser: ^4.1.2
   shelf_static: ^1.1.3
   shelf: ^1.4.2
-  background_downloader: ^9.2.4
+  background_downloader: any
   collection: ^1.19.1
-  flutter_local_notifications: ^19.4.2
-  telegram: ^1.0.0
   flutter_secure_storage: ^9.2.4
   universal_html: ^2.2.4
   debounce_throttle: ^2.0.0
   worker_manager: ^7.2.6
-  ffi: ^2.1.4
   android_package_installer: ^0.0.3
   window_manager: ^0.5.1
-  beautiful_soup_dart: ^0.3.0
   puppeteer: ^3.19.0
+  telegram: ^1.0.0
+  pool: ^1.5.2
 
 dependency_overrides:
   # fl_lib:
@@ -162,31 +159,3 @@ flutter_launcher_icons:
   image_path: "assets/app_icon.png"
 
 
-ffigen:
-  # Name of the generated class
-  name: Libgoolib
-  # Description for the generated file
-  description: Bindings for the golib native library.
-  # Output file for the generated bindings
-  output: 'lib/bridges/generated_bindings_golib.dart'
-  # The C header file to parse
-  headers:
-    entry-points:
-      - 'native/libgolib-linux-amd64.h'
-  # Optional: Add a preamble to the generated file to ignore lint warnings
-  preamble: |
-    // ignore_for_file: unused_element, unused_field
-
-# ...Your existing configuration...
-hooks:
-  user_defines:
-    dartcv4:
-      exclude_modules:
-        - contrib
-        - dnn
-        - features2d
-        - core
-      include_modules:
-        - core # core is always required thus will be ignored even configured here.
-        - imgproc
-        - videoio

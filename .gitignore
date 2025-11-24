@@ -34,7 +34,8 @@ migrate_working_dir/
 /build/
 ./.local-chrome/*
 ./.*
-/.local-chrome/*
+.local-chrome
+**.hyb
 
 # Symbolication related
 app.*.symbols

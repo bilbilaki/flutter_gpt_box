@@ -55,7 +55,7 @@ types:
         index: 2
   ChatRole:
     typeId: 3
-    nextIndex: 4
+    nextIndex: 5
     fields:
       user:
         index: 0
@@ -65,6 +65,8 @@ types:
         index: 2
       tool:
         index: 3
+      ask:
+        index: 4
   ChatHistory:
     typeId: 5
     nextIndex: 10

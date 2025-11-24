@@ -49,9 +49,12 @@ Use this tool to send an SMS message to a specified contact when the user explic
   
     // Validate inputs
     if (contact.isEmpty || message.isEmpty) {
-      log('''Failed to Sending message check Input Message: -> $message
-  Also may this Problem is with Contact check this too: -> $contact ''');
-      return [ChatContent.text("failed to sending sms message: invalid contact or message")];
+      final error = ToolError.invalidInput(
+        contact.isEmpty ? 'contact' : 'message',
+        suggestion: 'Provide both a contact name and message content.',
+      );
+      log('SMS Error: ${error.toMessage()}');
+      return [ChatContent.text(error.toMessage())];
     }
   
     bool hasPermission = await smsSender.checkSmsPermission();
@@ -60,22 +63,24 @@ Use this tool to send an SMS message to a specified contact when the user explic
     if (!hasPermission) {
       hasPermission = await smsSender.requestSmsPermission();
       if (!hasPermission) {
-        return [
-          ChatContent.text(
-            "failed to sending sms message. SMS permission is denied",
-          ),
-        ];
+        final error = ToolError.permissionDenied(
+          'SMS sending',
+          suggestion: 'Request SMS permission in system settings and retry.',
+        );
+        log('SMS Error: ${error.toMessage()}');
+        return [ChatContent.text(error.toMessage())];
       }
     }
   
     // Resolve contact number (function now returns empty string instead of null when not found)
     final finalNumber = await findContactNumber(contact);
     if (finalNumber.isEmpty) {
-      return [
-        ChatContent.text(
-          "failed to sending sms message. couldn't find a phone number for the provided contact",
-        ),
-      ];
+      final error = ToolError.notFound(
+        'Contact "$contact"',
+        suggestion: 'Verify spelling/case or provide an exact phone number. Try a slight variation (e.g., "John" vs "john").',
+      );
+      log('SMS Error: ${error.toMessage()}');
+      return [ChatContent.text(error.toMessage())];
     }
   
     log('''Sending SMS with this Message: -> $message
@@ -91,21 +96,22 @@ Use this tool to send an SMS message to a specified contact when the user explic
           true;
   
       return success
-          ? [ChatContent.text("successfully sms sending to target done")]
+          ? [ChatContent.text("Successfully sent SMS to $contact.")]
           : [
               ChatContent.text(
-                "failed to sending sms message; may be an issue with the phone, provider, or SIM balance",
+                ToolError.executionFailed(
+                  'SMS send failed',
+                  suggestion: 'Check SIM availability, network connection, or provider balance.',
+                ).toMessage(),
               ),
             ];
     } catch (e, st) {
-      log(
-        'All task completed up to sending but SMS failing at send step. Error: $e\n$st',
+      final error = ToolError.executionFailed(
+        'SMS sending failed during transmission: $e',
+        suggestion: 'Verify SIM status, network connection, and provider support.',
       );
-      return [
-        ChatContent.text(
-          "failed to sending sms message; please check SIM, network or provider status",
-        ),
-      ];
+      log('SMS Error: ${error.toMessage()}\nStack trace: $st');
+      return [ChatContent.text(error.toMessage())];
     }
   }
 }
@@ -179,5 +185,5 @@ Future<String> findContactNumber(String query) async {
   }
 
   // Return empty string when nothing found (never null)
-  return 'contact not found , tell to user or recheck and if need adjust contact name like Case Sensetive or symbols , if you find maybe with a little adjust can find contact retry using tool too finding that but just 2 more time , if failed tell user that';
+  return '';
 }

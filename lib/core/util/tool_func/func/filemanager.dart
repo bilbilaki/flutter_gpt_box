@@ -141,10 +141,21 @@ Focus on user requests—do not perform unsolicited file operations.''';
       'list', 'tree', 'read', 'create', 'delete', 'search', 'copy', 'move'
     ];
     if (action == null) {
-      return [ChatContent.text(jsonEncode({'error': "'action' is a required parameter for fileManager."}))];
+      final error = ToolError.invalidInput(
+        'action',
+        suggestion: 'Provide one of: list, tree, read, create, delete, search, copy, move.',
+      );
+      log('FileManager Error: ${error.toMessage()}');
+      return [ChatContent.text(error.toMessage())];
     }
     if (!allowedActions.contains(action)) {
-      return [ChatContent.text(jsonEncode({'error': "'action' must be one of: ${allowedActions.join(', ')}."}))];
+      final error = ToolError.invalidArgument(
+        'action',
+        '"$action" is not supported',
+        suggestion: 'Use one of: ${allowedActions.join(", ")}.',
+      );
+      log('FileManager Error: ${error.toMessage()}');
+      return [ChatContent.text(error.toMessage())];
     }
 
     try {
@@ -152,23 +163,36 @@ Focus on user requests—do not perform unsolicited file operations.''';
       switch (action) {
         case 'list':
           final path = normalizePath(args['path'] as String?);
-          if (path == null) return [ChatContent.text(jsonEncode({'error': "'path' is required for the 'list' action."}))];
+          if (path == null) {
+            final error = ToolError.invalidInput('path', suggestion: 'Provide a directory path.');
+            return [ChatContent.text(error.toMessage())];
+          }
           final extensions = (args['extensions'] as List?)?.cast<String>();
-          log("Listing files in 'path'...");
+          log("Listing files in '$path'...");
           final files = await service.listFiles(path, extensions: extensions, includeContent: true);
           return [ChatContent.text(jsonEncode(files))];
 
         case 'tree':
           final path = normalizePath(args['path'] as String?);
-          if (path == null) return [ChatContent.text(jsonEncode({'error': "'path' is required for the 'tree' action."}))];
-          log("Generating file tree for 'path'...");
+          if (path == null) {
+            final error = ToolError.invalidInput('path', suggestion: 'Provide a directory path.');
+            return [ChatContent.text(error.toMessage())];
+          }
+          log("Generating file tree for '$path'...");
           final tree = await service.getFileTree(path);
-          return [ChatContent.text(jsonEncode(tree ?? {'error': 'Directory not found or inaccessible.'}))];
+          if (tree == null) {
+            final error = ToolError.notFound('Directory "$path"', suggestion: 'Verify the path exists and is accessible.');
+            return [ChatContent.text(error.toMessage())];
+          }
+          return [ChatContent.text(jsonEncode(tree))];
 
         case 'read':
           final ids = (args['fileIds'] as List?)?.cast<String>();
-          if (ids == null || ids.isEmpty) return [ChatContent.text(jsonEncode({'error': "'fileIds' is required for the 'read' action."}))];
-          log("Reading content for IDs: {ids.join(', ')}");
+          if (ids == null || ids.isEmpty) {
+            final error = ToolError.invalidInput('fileIds', suggestion: 'Provide an array of file IDs from a previous list or search.');
+            return [ChatContent.text(error.toMessage())];
+          }
+          log("Reading content for IDs: ${ids.join(', ')}");
           final contents = await service.getContentsByIds(ids, returnAsStringIfText: true);
           final result = contents.map((id, data) {
               if (data['contentAsString'] != null) {
@@ -191,12 +215,14 @@ Focus on user requests—do not perform unsolicited file operations.''';
             isDir = type == FileSystemEntityType.directory;
           }
           if (sourcePath == null || destPath == null) {
-            return [
-              ChatContent.text(jsonEncode({'error': "'sourcePath' and 'destPath' required for 'copy'."})),
-            ];
+            final error = ToolError.invalidInput(
+              sourcePath == null ? 'sourcePath' : 'destPath',
+              suggestion: 'Provide both source and destination paths.',
+            );
+            return [ChatContent.text(error.toMessage())];
           }
           log(
-            "Copying {isDir ? 'directory' : 'file'} from 'sourcePath' to 'destPath'...",
+            "Copying ${isDir ? 'directory' : 'file'} from '$sourcePath' to '$destPath'...",
           );
           final success = isDir
               ? await service.copyDirectory(sourcePath, destPath)
@@ -227,12 +253,14 @@ Focus on user requests—do not perform unsolicited file operations.''';
             isDir = type == FileSystemEntityType.directory;
           }
           if (sourcePath == null || destPath == null) {
-            return [
-              ChatContent.text(jsonEncode({'error': "'sourcePath' and 'destPath' required for 'move'."})),
-            ];
+            final error = ToolError.invalidInput(
+              sourcePath == null ? 'sourcePath' : 'destPath',
+              suggestion: 'Provide both source and destination paths.',
+            );
+            return [ChatContent.text(error.toMessage())];
           }
           log(
-            "Moving {isDir ? 'directory' : 'file'} from 'sourcePath' to 'destPath'...",
+            "Moving ${isDir ? 'directory' : 'file'} from '$sourcePath' to '$destPath'...",
           );
           final success = isDir
               ? await service.moveDirectory(sourcePath, destPath)
@@ -255,7 +283,13 @@ Focus on user requests—do not perform unsolicited file operations.''';
         case 'create':
           final path = normalizePath(args['path'] as String?);
           final content = args['content'] as String?;
-          if (path == null || content == null) return [ChatContent.text(jsonEncode({'error': "'path' and 'content' are required for the 'create' action."}))];
+          if (path == null || content == null) {
+            final error = ToolError.invalidInput(
+              path == null ? 'path' : 'content',
+              suggestion: 'Provide both a file path and content string.',
+            );
+            return [ChatContent.text(error.toMessage())];
+          }
 
           final uri = Uri.file(path);
           final name = uri.pathSegments.last;
@@ -263,11 +297,9 @@ Focus on user requests—do not perform unsolicited file operations.''';
 
           final file = File(path);
           if (await file.exists()) {
-            log("Warning: File at 'path' will be overwritten.");
-            // Optionally, you could return an error here instead of overwriting
-            // return [ChatContent.text(jsonEncode({'error': "File already exists at 'path'. Overwrite not allowed."}))];
+          log("Warning: File at '$path' will be overwritten.");
           }
-          log("Creating file at 'path'...");
+          log("Creating file at '$path'...");
           await file.parent.create(recursive: true);
           final bytes = utf8.encode(content);
           await file.writeAsBytes(bytes);
@@ -278,9 +310,8 @@ Focus on user requests—do not perform unsolicited file operations.''';
         case 'delete':
           final path = normalizePath(args['path'] as String?);
           if (path == null) {
-            return [
-              ChatContent.text(jsonEncode({'error': "'path' is required for the 'delete' action."})),
-            ];
+            final error = ToolError.invalidInput('path', suggestion: 'Provide a directory or file path.');
+            return [ChatContent.text(error.toMessage())];
           }
           final recursive =
               args['recursive'] as bool? ?? true; // Default to true for folders
@@ -338,18 +369,29 @@ Focus on user requests—do not perform unsolicited file operations.''';
 
         case 'search':
           final query = args['query'] as String?;
-          if (query == null) return [ChatContent.text(jsonEncode({'error': "'query' is required for the 'search' action."}))];
-          log("Searching for files matching 'query'...");
+          if (query == null || query.isEmpty) {
+            final error = ToolError.invalidInput('query', suggestion: 'Provide a search term (e.g., "report" or ".txt").');
+            return [ChatContent.text(error.toMessage())];
+          }
+          log("Searching for files matching '$query'...");
           final results = service.searchIndexedByName(query);
           return [ChatContent.text(jsonEncode(results))];
 
         default:
-          return [ChatContent.text(jsonEncode({'error': "Unknown action 'action'."}))];
+          final error = ToolError.invalidArgument(
+            'action',
+            '"$action" is not recognized',
+            suggestion: 'Use one of: ${allowedActions.join(", ")}.',
+          );
+          return [ChatContent.text(error.toMessage())];
       }
     } catch (e) {
-      log('File Manager Error: $e');
-      return [ChatContent.text(jsonEncode({'error': 'An error occurred: $e'}))];
+      final error = ToolError.executionFailed(
+        'File operation failed: $e',
+        suggestion: 'Verify the path, permissions, or file availability.',
+      );
+      log('File Manager Error: ${error.toMessage()}');
+      return [ChatContent.text(error.toMessage())];
     }
-    return null;
   }
 }

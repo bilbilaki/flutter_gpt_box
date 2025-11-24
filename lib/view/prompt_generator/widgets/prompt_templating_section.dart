@@ -214,7 +214,7 @@ class _PromptTemplatingSectionState extends State<PromptTemplatingSection> {
                 ),
               ),
             );
-          }).toList(),
+          }),
           const SizedBox(height: 12),
         ],
         Align(
