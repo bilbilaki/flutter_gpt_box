@@ -47,6 +47,8 @@ part 'func/filemanager.dart';
 part 'func/pdftool.dart';
 part 'func/webbuilder.dart';
 part 'func/python_project_builder.dart';
+part 'func/go_project_builder.dart';
+part 'func/type_script_builder.dart';
 abstract final class OpenAIFuncCalls {
   static const internalTools = [
     TfMemory.instance,
@@ -62,6 +64,7 @@ abstract final class OpenAIFuncCalls {
     TfZipManager.instance,
     TfWebBuilder.instance,
     TfPythonProjectBuilder.instance,
+    TfGoProjectBuilder.instance,
   ];
 
   static Future<Set<ChatCompletionTool>> get tools async {
