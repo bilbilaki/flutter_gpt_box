@@ -1,4 +1,5 @@
 part of '../main.dart';
+
 Widget buildSettingsMenuItem(
   BuildContext context,
   String title,

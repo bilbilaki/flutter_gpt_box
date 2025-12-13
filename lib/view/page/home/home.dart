@@ -67,6 +67,7 @@ part 'md_copy.dart';
 part 'trash.dart';
 part 'settings_drawer.dart';
 part 'bottom/chatmessage_translator.dart';
+
 //part '../../widget/v1.dart';
 final aiSettings = AiSettings();
 
@@ -78,7 +79,7 @@ final Pool appResourcePool = Pool(8); // limit to 8 concurrent heavy tasks
 // of the Scaffold in the widget tree (e.g., bottomNavigationBar content).
 final GlobalKey<ScaffoldState> homeScaffoldKey = GlobalKey<ScaffoldState>();
 
-bool modelUseFilePath=false;
+bool modelUseFilePath = false;
 const int kTtsSampleRate =
     24000; // OpenAI TTS default for pcm16. Adjust if your API returns a different rate.
 SettingStore get ss => SettingStore.instance;
@@ -197,6 +198,7 @@ class _HomePageState extends State<HomePage>
     super.didChangeDependencies();
     _homeBottomRN.notify();
   }
+
   @override
   Widget build(BuildContext context) {
     return ExitConfirm(
@@ -322,7 +324,4 @@ final class _Body extends StatelessWidget {
       );
     });
   }
-
-  
 }
-

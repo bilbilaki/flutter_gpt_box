@@ -62,7 +62,8 @@ class ModelPricingInfo {
   final double? inputCostPerSecond; // For audio models
   final double? outputCostPerSecond; // For audio models
   final double? inputCostPerQuery; // For rerank models (single double value)
-  final Map<String, dynamic>? searchContextCostPerQuery; // For models with detailed search costs (map)
+  final Map<String, dynamic>?
+  searchContextCostPerQuery; // For models with detailed search costs (map)
   final double? outputCostPerImage; // For image generation models
   final double? imageInput; // For vision models
   final double? imageOutput; // For vision models
@@ -87,7 +88,7 @@ class ModelPricingInfo {
   factory ModelPricingInfo.fromJson(Map<String, dynamic> json) {
     final pricing = json['pricing'] as Map<String, dynamic>?;
     final searchContextPricing = pricing?['search_context_cost_per_query'];
-    
+
     Map<String, dynamic>? parsedSearchContextPricing;
     double? parsedInputCostPerQuery;
 
@@ -98,28 +99,34 @@ class ModelPricingInfo {
       parsedInputCostPerQuery = searchContextPricing.toDouble();
     }
 
-
     return ModelPricingInfo(
       id: json['id'] as String,
       object: json['object'] as String,
       objectType: json['objectType'] as String?,
       ownedBy: json['owned_by'] as String,
       inputPrice: (pricing?['input'] as num?)?.toDouble(),
-      cachedInputPrice: (pricing?['cached_input'] as num?)?.toDouble() ??
+      cachedInputPrice:
+          (pricing?['cached_input'] as num?)?.toDouble() ??
           (pricing?['cached_input_above_32K'] as num?)?.toDouble() ??
           (pricing?['cached_input_above_128K'] as num?)?.toDouble() ??
           (pricing?['cached_input_above_256K'] as num?)?.toDouble(),
-      outputPrice: (pricing?['output'] as num?)?.toDouble() ??
+      outputPrice:
+          (pricing?['output'] as num?)?.toDouble() ??
           (pricing?['output_above_32K'] as num?)?.toDouble() ??
           (pricing?['output_above_128K'] as num?)?.toDouble() ??
           (pricing?['output_above_256K'] as num?)?.toDouble(),
-      inputCostPerSecond: (pricing?['input_cost_per_second'] as num?)?.toDouble() ??
+      inputCostPerSecond:
+          (pricing?['input_cost_per_second'] as num?)?.toDouble() ??
           (pricing?['audio_input'] as num?)?.toDouble(),
-      outputCostPerSecond: (pricing?['output_cost_per_second'] as num?)?.toDouble() ??
+      outputCostPerSecond:
+          (pricing?['output_cost_per_second'] as num?)?.toDouble() ??
           (pricing?['audio_output'] as num?)?.toDouble(),
-      inputCostPerQuery: (pricing?['input_cost_per_query'] as num?)?.toDouble() ?? parsedInputCostPerQuery,
+      inputCostPerQuery:
+          (pricing?['input_cost_per_query'] as num?)?.toDouble() ??
+          parsedInputCostPerQuery,
       searchContextCostPerQuery: parsedSearchContextPricing,
-      outputCostPerImage: (pricing?['output_cost_per_image'] as num?)?.toDouble(),
+      outputCostPerImage: (pricing?['output_cost_per_image'] as num?)
+          ?.toDouble(),
       imageInput: (pricing?['image_input'] as num?)?.toDouble(),
       imageOutput: (pricing?['image_output'] as num?)?.toDouble(),
     );
@@ -131,7 +138,9 @@ List<ModelPricingInfo> parseModelPricing(String jsonData) {
     json.decode(jsonData) as Map<String, dynamic>,
   );
   final List<dynamic> models = data['data'] as List<dynamic>;
-  return models.map((json) => ModelPricingInfo.fromJson(json as Map<String, dynamic>)).toList();
+  return models
+      .map((json) => ModelPricingInfo.fromJson(json as Map<String, dynamic>))
+      .toList();
 }
 
 /// The raw JSON data provided.
@@ -142,11 +151,12 @@ const String _modelPricingJsonData = r'''
 // Function to demonstrate parsing and accessing the data
 void main() {
   // Parse the model pricing data from the JSON string
-  List<ModelPricingInfo> parsedModels = parseModelPricing(_modelPricingJsonData);
+  List<ModelPricingInfo> parsedModels = parseModelPricing(
+    _modelPricingJsonData,
+  );
 
   print('--- Imported Model Pricing Information ---');
   print('Total models imported: ${parsedModels.length}\n');
-
 
   // Example 1: Accessing specific models and their detailed pricing
   final gpt4oMini = parsedModels.firstWhere((m) => m.id == 'gpt-4o-mini');
@@ -154,10 +164,13 @@ void main() {
   print('  Input Price: ${gpt4oMini.inputPrice ?? 'N/A'}');
   print('  Output Price: ${gpt4oMini.outputPrice ?? 'N/A'}');
   print('  Cached Input Price: ${gpt4oMini.cachedInputPrice ?? 'N/A'}');
-  print('  Search Context Pricing (Low): ${gpt4oMini.searchContextCostPerQuery?['search_context_size_low'] ?? 'N/A'}\n');
+  print(
+    '  Search Context Pricing (Low): ${gpt4oMini.searchContextCostPerQuery?['search_context_size_low'] ?? 'N/A'}\n',
+  );
 
-
-  final claudeOpus = parsedModels.firstWhere((m) => m.id == 'anthropic.claude-3-opus-20240229-v1:0');
+  final claudeOpus = parsedModels.firstWhere(
+    (m) => m.id == 'anthropic.claude-3-opus-20240229-v1:0',
+  );
   print('Model: ${claudeOpus.id} (Owned by: ${claudeOpus.ownedBy})');
   print('  Input Price: ${claudeOpus.inputPrice ?? 'N/A'}');
   print('  Output Price: ${claudeOpus.outputPrice ?? 'N/A'}');
@@ -167,14 +180,19 @@ void main() {
   print('Model: ${whisper1.id} (Owned by: ${whisper1.ownedBy})');
   print('  Input Cost Per Second: ${whisper1.inputCostPerSecond ?? 'N/A'}\n');
 
-  final cohereRerank = parsedModels.firstWhere((m) => m.id == 'cohere.rerank-v3-5:0');
+  final cohereRerank = parsedModels.firstWhere(
+    (m) => m.id == 'cohere.rerank-v3-5:0',
+  );
   print('Model: ${cohereRerank.id} (Owned by: ${cohereRerank.ownedBy})');
   print('  Input Cost Per Query: ${cohereRerank.inputCostPerQuery ?? 'N/A'}\n');
 
-
   // Example 2: Loop through a few models to show a general overview
   print('--- Sample of All Models and Their Prices ---');
-  for (int i = 0; i < (parsedModels.length > 5 ? 5 : parsedModels.length); i++) {
+  for (
+    int i = 0;
+    i < (parsedModels.length > 5 ? 5 : parsedModels.length);
+    i++
+  ) {
     final model = parsedModels[i];
     print('  ID: ${model.id}');
     print('    Owned By: ${model.ownedBy}');

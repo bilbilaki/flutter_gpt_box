@@ -88,15 +88,13 @@ class CodeElementBuilder extends MarkdownElementBuilder {
       }
     }
 
-    final autoWrapped = Stores.setting.softWrap.listenable().listenVal(
-      (val) {
-        if (val) return child;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: child,
-        );
-      },
-    );
+    final autoWrapped = Stores.setting.softWrap.listenable().listenVal((val) {
+      if (val) return child;
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: child,
+      );
+    });
 
     if (lineFeedCount <= maxLineFeedCount) {
       return autoWrapped;

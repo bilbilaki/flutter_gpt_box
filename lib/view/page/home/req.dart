@@ -51,25 +51,25 @@ Future<Iterable<ChatCompletionMessage>> _historyCarried(
 
   var count = 0;
   final msgs = <ChatCompletionMessage>[];
-    // Respect history length exactly; do not exceed configured limit
-    for (final item in workingChat.items.reversed) {
-  if (count > config.historyLen) break;
-  if (item.role.isSystem) continue;
+  // Respect history length exactly; do not exceed configured limit
+  for (final item in workingChat.items.reversed) {
+    if (count > config.historyLen) break;
+    if (item.role.isSystem) continue;
 
-  // NEW: skip huge tool outputs unless they are very recent
-  final isTool = item.role.isTool;
-  final rawLen = item.toMarkdown.length;
-  if (isTool && rawLen > 4000 && count > 2) {
-    continue;
+    // NEW: skip huge tool outputs unless they are very recent
+    final isTool = item.role.isTool;
+    final rawLen = item.toMarkdown.length;
+    if (isTool && rawLen > 4000 && count > 2) {
+      continue;
+    }
+
+    final msg = await item.toOpenAI();
+    msgs.add(msg);
+    count++;
   }
 
-  final msg = await item.toOpenAI();
-  msgs.add(msg);
-  count++;
-}
-
-     if (prompt != null) msgs.add(prompt);
-return msgs.reversed;
+  if (prompt != null) msgs.add(prompt);
+  return msgs.reversed;
 }
 
 /// Auto select model and send the request
@@ -95,8 +95,8 @@ void _onCreateRequest(BuildContext context, String chatId) async {
   _autoHideCtrl.autoHideEnabled = false;
 
   final func = switch ((chatType, _filesPicked.value)) {
-    (ChatType.text, _) =>_onCreateText,
-  //    ss.response == true ? _onCreateResponse : 
+    (ChatType.text, _) => _onCreateText,
+    //    ss.response == true ? _onCreateResponse :
     (ChatType.img, _) => _onCreateImg,
     (ChatType.audio, _) =>
       _onAudioModel, // audio generation (TTS-like) streaming
@@ -258,8 +258,7 @@ Future<void> _onCreateText(
         if (content != null) {
           // Append new chunk and re-segment once against accumulated buffer
           assistRawBuffer.write(content);
-          final parts =
-              splitDataUrisToChatContents(assistRawBuffer.toString());
+          final parts = splitDataUrisToChatContents(assistRawBuffer.toString());
           assistReply.content
             ..clear()
             ..addAll(parts);
@@ -345,12 +344,12 @@ Future<void> _onCreateImg(
     final client = HttpClient();
     final uri = Uri.parse('${cfg.url}/images/generations');
     final request = await client.postUrl(uri);
-    
+
     // Set headers
     request.headers.set('Content-Type', 'application/json');
     request.headers.set('Accept', 'application/json');
     request.headers.set('Authorization', 'Bearer ${cfg.key}');
-    
+
     // Prepare request body with b64_json format
     final body = jsonEncode({
       'model': imgModel,
@@ -358,24 +357,24 @@ Future<void> _onCreateImg(
       'response_format': 'b64_json',
     });
     request.write(body);
-    
+
     // Send request and get response
     final response = await request.close();
     final responseBody = await response.transform(utf8.decoder).join();
-    
+
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}: $responseBody');
     }
-    
+
     // Parse JSON response manually
     final Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
     final List<dynamic>? dataList = jsonResponse['data'];
-    
+
     if (dataList == null || dataList.isEmpty) {
       throw Exception('No data in response');
     }
-    
-  // Build response text with base64 images embedded
+
+    // Build response text with base64 images embedded
     final responseBuffer = StringBuffer();
     for (final item in dataList) {
       // Handle b64_json format
@@ -386,14 +385,14 @@ Future<void> _onCreateImg(
         responseBuffer.write(dataUri);
         Loggers.app.info('Image generated (base64)');
       }
-      
+
       // Also handle URL format as fallback
       final url = item['url'];
       if (url != null && url.toString().isNotEmpty) {
         responseBuffer.write(url.toString());
         Loggers.app.info('Image generated: $url');
       }
-      
+
       // Log revised prompt if available
       final revisedPrompt = item['revised_prompt'];
       if (revisedPrompt != null && revisedPrompt.toString().isNotEmpty) {
@@ -420,7 +419,7 @@ Future<void> _onCreateImg(
 
     // Show success message
     context.showSnackBar('Image generated successfully');
-    
+
     // Close HTTP client
     client.close();
   } catch (e, s) {
@@ -598,8 +597,6 @@ Future<bool> _ensureRecordPermission() async {
     return false;
   }
 }
-
-
 
 bool isImagePath(String path) {
   final ext = p.extension(path).toLowerCase();
@@ -804,8 +801,6 @@ Future<String> _saveBase64ToFile(
   });
 }
 
-
-
 Future<void> _onAudioModel(
   BuildContext context,
   String chatId,
@@ -823,8 +818,8 @@ Future<void> _onAudioModel(
 
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
-      final content = await contentFromPath(file);
-      questionContents.add(content);
+    final content = await contentFromPath(file);
+    questionContents.add(content);
   }
   final question = ChatHistoryItem.gen(
     content: questionContents,
@@ -857,7 +852,9 @@ Future<void> _onAudioModel(
           Cfg.current.audioModel ?? 'gpt-4o-mini-audio-preview',
         ),
         messages: msgs,
-        modalities: Cfg.current.audioModel==  'gpt-4o-mini-audio-preview'?[ChatCompletionModality.audio, ChatCompletionModality.text]:[ChatCompletionModality.audio],
+        modalities: Cfg.current.audioModel == 'gpt-4o-mini-audio-preview'
+            ? [ChatCompletionModality.audio, ChatCompletionModality.text]
+            : [ChatCompletionModality.audio],
         audio: ChatCompletionAudioOptions(
           voice: await getCurrentVoice(),
           format: ChatCompletionAudioFormat.pcm16,
@@ -953,11 +950,10 @@ Future<void> _onTtsModel(
 
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
-      final content = await contentFromPath(file);
-      questionContents.add(content);
+    final content = await contentFromPath(file);
+    questionContents.add(content);
+  }
 
-    }
-  
   final question = ChatHistoryItem.gen(
     content: questionContents,
     role: ChatRole.user,
@@ -1168,8 +1164,7 @@ Future<void> _onTtsModel(
                     }
                     _chatItemRNMap[finalAssist.id]?.notify();
                   }
-                } finally {
-                }
+                } finally {}
               },
               onError: (e, s) {
                 _onErr(e, s, chatId, 'TTS stream');
@@ -1201,8 +1196,6 @@ Future<void> _onTtsModel(
     _onErr(e, s, chatId, 'Catch audio stream');
   }
 }
-
-
 
 Future<void> _onCreateTextTranslated(
   BuildContext context,
@@ -1423,4 +1416,3 @@ Future<void> _onCreateTextTranslated(
     _onErr(e, s, chatId, 'Catch text stream');
   }
 }
-

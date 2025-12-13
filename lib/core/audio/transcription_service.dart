@@ -124,9 +124,7 @@ class TranscriptionService {
     final uri = _endpoint();
     final request = http.MultipartRequest('POST', uri);
 
-    request.headers.addAll({
-      'Authorization': 'Bearer ${Cfg.current.key}',
-    });
+    request.headers.addAll({'Authorization': 'Bearer ${Cfg.current.key}'});
 
     final fileName = path.basename(file.path);
     final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';

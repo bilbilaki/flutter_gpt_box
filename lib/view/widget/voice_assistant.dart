@@ -823,7 +823,6 @@
 
 // // --- End Placeholder Imports ---
 
-
 // /// Controller to manage a voice chat session from the UI.
 // /// It handles recording audio and interfacing with the backend logic.
 // class VoiceSessionController1 {
@@ -910,7 +909,6 @@
 // }) async {
 //   if (!_validChatCfg(context)) return;
 
-
 //   _autoHideCtrl.autoHideEnabled = false;
 
 //   // Add a user placeholder with the raw audio file to history immediately
@@ -918,7 +916,7 @@
 //   // 1) Start STT (Speech-to-Text) in the background
 //   final sttCompleter = Completer<String>();
 //   StreamSubscription? sttSub;
-  
+
 //   // 2) Start audio-in model stream in parallel
 
 //   StreamSubscription? modelSub;
@@ -1103,7 +1101,6 @@
 //   await File(path).writeAsBytes(bytes, flush: true);
 //   return path;
 // }
-
 
 // enum VoiceVisualizerState {
 //   idleCircles,

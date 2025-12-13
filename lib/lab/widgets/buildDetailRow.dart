@@ -1,4 +1,5 @@
 part of '../main.dart';
+
 Widget buildDetailRow(
   BuildContext context,
   String label,

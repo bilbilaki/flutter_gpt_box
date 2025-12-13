@@ -36,12 +36,9 @@ Future<void> screenshotElementTask(
   for (final url in urls) {
     onProgress(indrun, url);
 
-    await page.goto(
-      url,
-      wait: untilConf,
-    );
+    await page.goto(url, wait: untilConf);
 
-      final element = await page.$(selector);
+    final element = await page.$(selector);
     if (element == null) {
       indrun = indrun + 1;
       continue;
@@ -49,7 +46,9 @@ Future<void> screenshotElementTask(
 
     final String tit = await page.title ?? '';
     final bytes = await element.screenshot();
-    await File('$_savef/_element_${tit.toLowerCase().trim()}_$indrun.png').writeAsBytes(bytes);
+    await File(
+      '$_savef/_element_${tit.toLowerCase().trim()}_$indrun.png',
+    ).writeAsBytes(bytes);
     indrun = indrun + 1;
   }
 

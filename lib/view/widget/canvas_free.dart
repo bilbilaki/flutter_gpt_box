@@ -87,8 +87,8 @@ class _FreeCanvasPageState extends State<FreeCanvasPage>
   late String _jsonString;
 
   // ---------- Code ----------
-  late final  _codeCtrl = _controller;
-   late final String _codeText =_codeCtrl.text;
+  late final _codeCtrl = _controller;
+  late final String _codeText = _codeCtrl.text;
 
   @override
   void initState() {
@@ -465,7 +465,6 @@ class _FreeCanvasPageState extends State<FreeCanvasPage>
 
   Widget _buildCode() {
     return CodeEditorApp(_codeCtrl);
-   
   }
 }
 

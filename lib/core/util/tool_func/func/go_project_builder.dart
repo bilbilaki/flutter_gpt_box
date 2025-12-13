@@ -19,14 +19,14 @@ final class TfGoProjectBuilder extends ToolFunc {
   static const instance = TfGoProjectBuilder._();
 
   const TfGoProjectBuilder._()
-      : super(
-          name: 'goProjectBuilder',
-          parametersSchema: const {
-            'type': 'object',
-            'properties': {
-              'action': {
-                'type': 'string',
-                'description': '''
+    : super(
+        name: 'goProjectBuilder',
+        parametersSchema: const {
+          'type': 'object',
+          'properties': {
+            'action': {
+              'type': 'string',
+              'description': '''
 The operation to perform. Exactly one of:
 - 'scaffoldProject'  : Initialize a new Go project in the workspace.
 - 'setupModule'      : Initialize go.mod and optionally run "go get ./...".
@@ -42,116 +42,116 @@ The operation to perform. Exactly one of:
 - 'exportProject'    : Export the workspace to a user folder and optionally zip.
 - 'resetWorkspace'   : Wipe the workspace and start fresh (destructive).
 ''',
-              },
+            },
 
-              // Common file/dir params
-              'relPath': {
-                'type': 'string',
-                'description':
-                    'Relative path inside the workspace (e.g., "main.go", "cmd/api/main.go", "internal/handler/handler.go"). Used by writeFile/readFile/listDir/mkdirs/deletePath/showTree.',
-              },
-              'content': {
-                'type': 'string',
-                'description':
-                    'File content for writeFile. UTF-8 text or base64 (see "encoding"). Use for Go code, configs, etc.',
-              },
-              'encoding': {
-                'type': 'string',
-                'enum': ['utf8', 'base64'],
-                'description':
-                    'Encoding for writeFile/readFile content. Defaults to "utf8". Use "base64" for binary files.',
-              },
-              'recursive': {
-                'type': 'boolean',
-                'description':
-                    'For listDir/deletePath/showTree: if true, include nested structure. Defaults to false for listDir/deletePath, true for showTree.',
-              },
+            // Common file/dir params
+            'relPath': {
+              'type': 'string',
+              'description':
+                  'Relative path inside the workspace (e.g., "main.go", "cmd/api/main.go", "internal/handler/handler.go"). Used by writeFile/readFile/listDir/mkdirs/deletePath/showTree.',
+            },
+            'content': {
+              'type': 'string',
+              'description':
+                  'File content for writeFile. UTF-8 text or base64 (see "encoding"). Use for Go code, configs, etc.',
+            },
+            'encoding': {
+              'type': 'string',
+              'enum': ['utf8', 'base64'],
+              'description':
+                  'Encoding for writeFile/readFile content. Defaults to "utf8". Use "base64" for binary files.',
+            },
+            'recursive': {
+              'type': 'boolean',
+              'description':
+                  'For listDir/deletePath/showTree: if true, include nested structure. Defaults to false for listDir/deletePath, true for showTree.',
+            },
 
-              // Scaffold-related
-              'templateType': {
-                'type': 'string',
-                'description': '''
+            // Scaffold-related
+            'templateType': {
+              'type': 'string',
+              'description': '''
 Template to use for scaffoldProject. Suggested values:
 - 'go_http_minimal' : Minimal Go HTTP server with net/http.
 - 'go_api_clean'    : Slightly structured HTTP API (cmd/, internal/).
 - 'go_cli_basic'    : Simple CLI tool with main.go and basic flags.
 If omitted but "projectSchema" is provided, the schema is used instead of a built-in template.
 ''',
-              },
-              'moduleName': {
-                'type': 'string',
-                'description':
-                    'Go module path to use for go.mod (e.g., "github.com/user/app"). If omitted, a simple name like "example.com/app" is used.',
-              },
-
-              /// Folder tree schema for custom project structure
-              ///
-              /// {
-              ///   "name": "root",
-              ///   "children": [
-              ///     {"name": "main.go", "type": "file", "content": "..."},
-              ///     {
-              ///       "name": "cmd",
-              ///       "type": "dir",
-              ///       "children": [
-              ///         {"name": "api", "type": "dir", "children": [...]}
-              ///       ]
-              ///     }
-              ///   ]
-              /// }
-              'projectSchema': {
-                'type': 'object',
-                'description':
-                    'Optional folder tree schema for scaffoldProject. If provided, overrides templateType for structure/content. See description for schema shape.',
-              },
-
-              // Go module setup
-              'runGoGet': {
-                'type': 'boolean',
-                'description':
-                    'For setupModule: if true, runs "go get ./..." after "go mod init" to fetch dependencies (may be slower). Default false.',
-              },
-
-              // Run / test actions
-              'command': {
-                'type': 'string',
-                'description':
-                    'For runCommand: the shell command to execute in the workspace (e.g., "go run .", "go build ./...", "go test ./...").',
-              },
-              'timeoutMs': {
-                'type': 'integer',
-                'description':
-                    'Optional timeout in milliseconds to wait for command output (default ~5000). Increase for long-running tasks.',
-              },
-
-              'appAction': {
-                'type': 'string',
-                'enum': ['start', 'stop', 'status'],
-                'description':
-                    'For runApp: whether to start, stop, or query status of the Go app helper.',
-              },
-              'appCommand': {
-                'type': 'string',
-                'description':
-                    'Optional custom command for runApp "start" (e.g., "go run .", "go run ./cmd/api"). If omitted, a default is guessed based on scaffold.',
-              },
-
-              'testCommand': {
-                'type': 'string',
-                'description':
-                    'Optional override for runTests (default "go test ./..."). Example: "go test ./internal/...".',
-              },
-
-              // Export
-              'includeZip': {
-                'type': 'boolean',
-                'description':
-                    'For exportProject: if true (default), also create a ZIP archive of the exported project directory.',
-              },
             },
-            'required': ['action'],
+            'moduleName': {
+              'type': 'string',
+              'description':
+                  'Go module path to use for go.mod (e.g., "github.com/user/app"). If omitted, a simple name like "example.com/app" is used.',
+            },
+
+            /// Folder tree schema for custom project structure
+            ///
+            /// {
+            ///   "name": "root",
+            ///   "children": [
+            ///     {"name": "main.go", "type": "file", "content": "..."},
+            ///     {
+            ///       "name": "cmd",
+            ///       "type": "dir",
+            ///       "children": [
+            ///         {"name": "api", "type": "dir", "children": [...]}
+            ///       ]
+            ///     }
+            ///   ]
+            /// }
+            'projectSchema': {
+              'type': 'object',
+              'description':
+                  'Optional folder tree schema for scaffoldProject. If provided, overrides templateType for structure/content. See description for schema shape.',
+            },
+
+            // Go module setup
+            'runGoGet': {
+              'type': 'boolean',
+              'description':
+                  'For setupModule: if true, runs "go get ./..." after "go mod init" to fetch dependencies (may be slower). Default false.',
+            },
+
+            // Run / test actions
+            'command': {
+              'type': 'string',
+              'description':
+                  'For runCommand: the shell command to execute in the workspace (e.g., "go run .", "go build ./...", "go test ./...").',
+            },
+            'timeoutMs': {
+              'type': 'integer',
+              'description':
+                  'Optional timeout in milliseconds to wait for command output (default ~5000). Increase for long-running tasks.',
+            },
+
+            'appAction': {
+              'type': 'string',
+              'enum': ['start', 'stop', 'status'],
+              'description':
+                  'For runApp: whether to start, stop, or query status of the Go app helper.',
+            },
+            'appCommand': {
+              'type': 'string',
+              'description':
+                  'Optional custom command for runApp "start" (e.g., "go run .", "go run ./cmd/api"). If omitted, a default is guessed based on scaffold.',
+            },
+
+            'testCommand': {
+              'type': 'string',
+              'description':
+                  'Optional override for runTests (default "go test ./..."). Example: "go test ./internal/...".',
+            },
+
+            // Export
+            'includeZip': {
+              'type': 'boolean',
+              'description':
+                  'For exportProject: if true (default), also create a ZIP archive of the exported project directory.',
+            },
           },
-        );
+          'required': ['action'],
+        },
+      );
 
   @override
   String get l10nName => 'Go Project Builder';
@@ -255,7 +255,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
     final action = (args['action'] as String?)?.trim();
     if (action == null || action.isEmpty) {
-      return [ChatContent.text("Error: 'action' is required for goProjectBuilder.")];
+      return [
+        ChatContent.text("Error: 'action' is required for goProjectBuilder."),
+      ];
     }
 
     try {
@@ -309,7 +311,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     _Map args,
     OnToolLog log,
   ) async {
-    final templateType = (args['templateType'] as String?)?.trim().toLowerCase();
+    final templateType = (args['templateType'] as String?)
+        ?.trim()
+        .toLowerCase();
     final moduleName = (args['moduleName'] as String?)?.trim();
     final schema = args['projectSchema'] as Map<String, dynamic>?;
 
@@ -340,7 +344,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     return [
-      ChatContent.text('scaffoldProject OK (templateType: ${templateType ?? 'go_http_minimal'})'),
+      ChatContent.text(
+        'scaffoldProject OK (templateType: ${templateType ?? 'go_http_minimal'})',
+      ),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
     ];
   }
@@ -478,13 +484,18 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     final items = <String>[];
-    await for (final ent in dir.list(recursive: recursive, followLinks: false)) {
+    await for (final ent in dir.list(
+      recursive: recursive,
+      followLinks: false,
+    )) {
       final rp = ws.relative(ent.path);
       if (rp.isNotEmpty) items.add(rp);
     }
     items.sort();
 
-    log("[goProjectBuilder] listDir: '$relPath' (recursive=$recursive) -> ${items.length} items");
+    log(
+      "[goProjectBuilder] listDir: '$relPath' (recursive=$recursive) -> ${items.length} items",
+    );
     return [
       ChatContent.text('listDir OK'),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
@@ -492,11 +503,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     ];
   }
 
-  Future<_Ret?> _handleMkdirs(
-    _GoWorkspace ws,
-    _Map args,
-    OnToolLog log,
-  ) async {
+  Future<_Ret?> _handleMkdirs(_GoWorkspace ws, _Map args, OnToolLog log) async {
     final relPath = _sanitizeRelPath(args['relPath'] as String?);
     final recursive = args['recursive'] != false;
 
@@ -560,9 +567,18 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     final buf = StringBuffer();
-    await _buildTree(ws, dir, buf, prefix: '', isRoot: true, recursive: recursive);
+    await _buildTree(
+      ws,
+      dir,
+      buf,
+      prefix: '',
+      isRoot: true,
+      recursive: recursive,
+    );
     final treeStr = buf.toString();
-    log("[goProjectBuilder] showTree for '$relPath' (recursive=$recursive)\n$treeStr");
+    log(
+      "[goProjectBuilder] showTree for '$relPath' (recursive=$recursive)\n$treeStr",
+    );
 
     return [
       ChatContent.text('showTree OK'),
@@ -593,11 +609,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     ];
   }
 
-  Future<_Ret?> _handleRunApp(
-    _GoWorkspace ws,
-    _Map args,
-    OnToolLog log,
-  ) async {
+  Future<_Ret?> _handleRunApp(_GoWorkspace ws, _Map args, OnToolLog log) async {
     final action = (args['appAction'] as String?)?.trim().toLowerCase();
     if (action == null || action.isEmpty) {
       return [ChatContent.text("Error: 'appAction' is required for runApp.")];
@@ -642,21 +654,19 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   ) async {
     final explicit = (args['testCommand'] as String?)?.trim();
     if (explicit != null && explicit.isNotEmpty) {
-      return _handleRunCommand(
-        ws,
-        {'command': explicit, 'timeoutMs': args['timeoutMs']},
-        log,
-      );
+      return _handleRunCommand(ws, {
+        'command': explicit,
+        'timeoutMs': args['timeoutMs'],
+      }, log);
     }
 
     // Default
     final command = 'go test ./...';
     log('[goProjectBuilder] runTests default command: $command');
-    return _handleRunCommand(
-      ws,
-      {'command': command, 'timeoutMs': args['timeoutMs']},
-      log,
-    );
+    return _handleRunCommand(ws, {
+      'command': command,
+      'timeoutMs': args['timeoutMs'],
+    }, log);
   }
 
   Future<_Ret?> _handleExportProject(
@@ -666,10 +676,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   ) async {
     final includeZip = args['includeZip'] != false;
 
-    final exportDir = await _Export.exportWorkspace(
-      ws.root,
-      log: log,
-    );
+    final exportDir = await _Export.exportWorkspace(ws.root, log: log);
 
     String? zipPath;
     if (includeZip) {
@@ -684,10 +691,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     ];
   }
 
-  Future<_Ret?> _handleResetWorkspace(
-    _GoWorkspace ws,
-    OnToolLog log,
-  ) async {
+  Future<_Ret?> _handleResetWorkspace(_GoWorkspace ws, OnToolLog log) async {
     await ws.reset();
     log('[goProjectBuilder] workspace reset');
     return [
@@ -724,7 +728,8 @@ All operations are sandboxed under an internal workspace directory. Relative pat
         await dir.create(recursive: true);
         log('[goProjectBuilder] schema mkdir: $rel');
       }
-      final children = (node['children'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final children =
+          (node['children'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       for (final child in children) {
         await _materializeSchema(ws, child, log, prefix: rel);
       }
@@ -887,8 +892,14 @@ func main() {
 
       if (ent is Directory && recursive) {
         final childPrefix = prefix + (isLast ? '    ' : '│   ');
-        await _buildTree(ws, ent, buf,
-            prefix: childPrefix, isRoot: false, recursive: recursive);
+        await _buildTree(
+          ws,
+          ent,
+          buf,
+          prefix: childPrefix,
+          isRoot: false,
+          recursive: recursive,
+        );
       }
     }
   }
@@ -1012,10 +1023,10 @@ class _GoAppManager {
   String? _command;
 
   _GoAppStatus get status => _GoAppStatus(
-        isRunning: _proc != null,
-        command: _command,
-        cwd: _cwd?.path,
-      );
+    isRunning: _proc != null,
+    command: _command,
+    cwd: _cwd?.path,
+  );
 
   Future<_GoAppStatus> startIfNeeded(
     Directory cwd,
@@ -1038,14 +1049,18 @@ class _GoAppManager {
     _cwd = cwd;
     _command = command;
 
-    proc.stdout.transform(utf8.decoder).listen(
-      (data) => log('[goApp stdout] $data'),
-      onError: (e) => log('[goApp stdout error] $e'),
-    );
-    proc.stderr.transform(utf8.decoder).listen(
-      (data) => log('[goApp stderr] $data'),
-      onError: (e) => log('[goApp stderr error] $e'),
-    );
+    proc.stdout
+        .transform(utf8.decoder)
+        .listen(
+          (data) => log('[goApp stdout] $data'),
+          onError: (e) => log('[goApp stdout error] $e'),
+        );
+    proc.stderr
+        .transform(utf8.decoder)
+        .listen(
+          (data) => log('[goApp stderr] $data'),
+          onError: (e) => log('[goApp stderr error] $e'),
+        );
 
     proc.exitCode.then((code) {
       log('[goProjectBuilder] app process exited with code $code');
@@ -1074,11 +1089,7 @@ class _GoAppStatus {
   final String? command;
   final String? cwd;
 
-  _GoAppStatus({
-    required this.isRunning,
-    this.command,
-    this.cwd,
-  });
+  _GoAppStatus({required this.isRunning, this.command, this.cwd});
 
   String get statusText {
     if (!isRunning) return 'stopped';

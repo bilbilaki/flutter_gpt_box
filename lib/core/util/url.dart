@@ -18,8 +18,7 @@ abstract final class AppLink {
 enum UrlType {
   file,
   http,
-  base64,
-  ;
+  base64;
 
   static UrlType from(String url) {
     if (url.startsWith('http')) {

@@ -4,7 +4,7 @@ part of '../tool.dart';
 final class TfFileManager extends ToolFunc {
   static const instance = TfFileManager._();
 
-const TfFileManager._()
+  const TfFileManager._()
     : super(
         name: 'filemanager',
         parametersSchema: const {
@@ -131,19 +131,28 @@ Focus on user requests—do not perform unsolicited file operations.''';
 
   @override
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
-  // Import 'package:path/path.dart' as p; at the top of the file if not already imported
-  String? normalizePath(String? path) => path == null ? null : p.normalize(path);
+    // Import 'package:path/path.dart' as p; at the top of the file if not already imported
+    String? normalizePath(String? path) =>
+        path == null ? null : p.normalize(path);
     final service = FileIndexService.instance;
     await service.requestStoragePermissions(); // Always ensure permissions
 
     final action = args['action'] as String?;
     const allowedActions = [
-      'list', 'tree', 'read', 'create', 'delete', 'search', 'copy', 'move'
+      'list',
+      'tree',
+      'read',
+      'create',
+      'delete',
+      'search',
+      'copy',
+      'move',
     ];
     if (action == null) {
       final error = ToolError.invalidInput(
         'action',
-        suggestion: 'Provide one of: list, tree, read, create, delete, search, copy, move.',
+        suggestion:
+            'Provide one of: list, tree, read, create, delete, search, copy, move.',
       );
       log('FileManager Error: ${error.toMessage()}');
       return [ChatContent.text(error.toMessage())];
@@ -164,24 +173,37 @@ Focus on user requests—do not perform unsolicited file operations.''';
         case 'list':
           final path = normalizePath(args['path'] as String?);
           if (path == null) {
-            final error = ToolError.invalidInput('path', suggestion: 'Provide a directory path.');
+            final error = ToolError.invalidInput(
+              'path',
+              suggestion: 'Provide a directory path.',
+            );
             return [ChatContent.text(error.toMessage())];
           }
           final extensions = (args['extensions'] as List?)?.cast<String>();
           log("Listing files in '$path'...");
-          final files = await service.listFiles(path, extensions: extensions, includeContent: true);
+          final files = await service.listFiles(
+            path,
+            extensions: extensions,
+            includeContent: true,
+          );
           return [ChatContent.text(jsonEncode(files))];
 
         case 'tree':
           final path = normalizePath(args['path'] as String?);
           if (path == null) {
-            final error = ToolError.invalidInput('path', suggestion: 'Provide a directory path.');
+            final error = ToolError.invalidInput(
+              'path',
+              suggestion: 'Provide a directory path.',
+            );
             return [ChatContent.text(error.toMessage())];
           }
           log("Generating file tree for '$path'...");
           final tree = await service.getFileTree(path);
           if (tree == null) {
-            final error = ToolError.notFound('Directory "$path"', suggestion: 'Verify the path exists and is accessible.');
+            final error = ToolError.notFound(
+              'Directory "$path"',
+              suggestion: 'Verify the path exists and is accessible.',
+            );
             return [ChatContent.text(error.toMessage())];
           }
           return [ChatContent.text(jsonEncode(tree))];
@@ -189,18 +211,27 @@ Focus on user requests—do not perform unsolicited file operations.''';
         case 'read':
           final ids = (args['fileIds'] as List?)?.cast<String>();
           if (ids == null || ids.isEmpty) {
-            final error = ToolError.invalidInput('fileIds', suggestion: 'Provide an array of file IDs from a previous list or search.');
+            final error = ToolError.invalidInput(
+              'fileIds',
+              suggestion:
+                  'Provide an array of file IDs from a previous list or search.',
+            );
             return [ChatContent.text(error.toMessage())];
           }
           log("Reading content for IDs: ${ids.join(', ')}");
-          final contents = await service.getContentsByIds(ids, returnAsStringIfText: true);
+          final contents = await service.getContentsByIds(
+            ids,
+            returnAsStringIfText: true,
+          );
           final result = contents.map((id, data) {
-              if (data['contentAsString'] != null) {
-                return MapEntry(id, {'content': data['contentAsString']});
-              } else if (data['bytes'] != null) {
-                return MapEntry(id, {'content': '[Binary content of size ${data['size']} bytes]'});
-              }
-              return MapEntry(id, data);
+            if (data['contentAsString'] != null) {
+              return MapEntry(id, {'content': data['contentAsString']});
+            } else if (data['bytes'] != null) {
+              return MapEntry(id, {
+                'content': '[Binary content of size ${data['size']} bytes]',
+              });
+            }
+            return MapEntry(id, data);
           });
           return [ChatContent.text(jsonEncode(result))];
 
@@ -297,20 +328,27 @@ Focus on user requests—do not perform unsolicited file operations.''';
 
           final file = File(path);
           if (await file.exists()) {
-          log("Warning: File at '$path' will be overwritten.");
+            log("Warning: File at '$path' will be overwritten.");
           }
           log("Creating file at '$path'...");
           await file.parent.create(recursive: true);
           final bytes = utf8.encode(content);
           await file.writeAsBytes(bytes);
 
-          final fileId = await service.addGeneratedFile(name: name, bytes: Uint8List.fromList(bytes), fileExtension: extension);
+          final fileId = await service.addGeneratedFile(
+            name: name,
+            bytes: Uint8List.fromList(bytes),
+            fileExtension: extension,
+          );
           return [ChatContent.text("Successfully created file. ID: $fileId")];
 
         case 'delete':
           final path = normalizePath(args['path'] as String?);
           if (path == null) {
-            final error = ToolError.invalidInput('path', suggestion: 'Provide a directory or file path.');
+            final error = ToolError.invalidInput(
+              'path',
+              suggestion: 'Provide a directory or file path.',
+            );
             return [ChatContent.text(error.toMessage())];
           }
           final recursive =
@@ -370,7 +408,10 @@ Focus on user requests—do not perform unsolicited file operations.''';
         case 'search':
           final query = args['query'] as String?;
           if (query == null || query.isEmpty) {
-            final error = ToolError.invalidInput('query', suggestion: 'Provide a search term (e.g., "report" or ".txt").');
+            final error = ToolError.invalidInput(
+              'query',
+              suggestion: 'Provide a search term (e.g., "report" or ".txt").',
+            );
             return [ChatContent.text(error.toMessage())];
           }
           log("Searching for files matching '$query'...");

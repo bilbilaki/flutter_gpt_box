@@ -1,9 +1,7 @@
-
 // import 'package:flutter/material.dart';
 // import 'package:file_picker/file_picker.dart';
 // import 'dart:io';
 // import 'dart:async';
-
 
 // // Assuming TranslationService and ChunkingMethod enums are defined in chunker_service.dart
 // // And ContentDisplayBox is defined in lib/widgets/content_box.dart as provided below.
@@ -371,7 +369,7 @@
 //           margin: const EdgeInsets.symmetric(vertical: 8.0),
 //           color: Theme.of(context).colorScheme.surfaceContainerHigh,
 //         ),
-        
+
 //       ),
 //       home: Scaffold(
 //         appBar: AppBar(

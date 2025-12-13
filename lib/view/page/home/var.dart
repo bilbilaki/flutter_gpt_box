@@ -112,21 +112,29 @@ class _StreamingPlayer {
       }
 
       _player.onPlayerComplete.listen(handleComplete);
-      await completer.future.timeout(const Duration(seconds: 30), onTimeout: () {});
+      await completer.future.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {},
+      );
       // cleanup
-      try { await f.delete(); } catch (_) {}
+      try {
+        await f.delete();
+      } catch (_) {}
     } catch (_) {}
     _playing = false;
   }
 
   Future<void> stop() async {
     _stopped = true;
-    try { await _player.stop(); } catch (_) {}
+    try {
+      await _player.stop();
+    } catch (_) {}
     // cleanup tmp dir
-    try { if (_tmpDir.existsSync()) _tmpDir.deleteSync(recursive: true); } catch (_) {}
+    try {
+      if (_tmpDir.existsSync()) _tmpDir.deleteSync(recursive: true);
+    } catch (_) {}
   }
 }
-
 
 /// Returns the current local time as a [DateTime] object.
 DateTime getDeviceLocalTime() {

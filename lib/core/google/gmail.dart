@@ -1,7 +1,7 @@
 part of 'core.dart';
 
 Future<void> sendGmail() async {
-final  client = await getClient();
+  final client = await getClient();
 
   final gmailApi = gmail.GmailApi(client);
 

@@ -11,10 +11,7 @@ abstract final class GithubId {
     'vimbackground',
   };
 
-  static const contributors = {
-    'PaperCube',
-    'Integral',
-  };
+  static const contributors = {'PaperCube', 'Integral'};
 
   static final String markdownStr = () {
     final sb = StringBuffer();

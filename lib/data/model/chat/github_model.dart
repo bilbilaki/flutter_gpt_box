@@ -49,21 +49,20 @@ class GithubModelItem {
     String? description,
     String? summary,
     List<String>? tags,
-  }) =>
-      GithubModelItem(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        friendlyName: friendlyName ?? this.friendlyName,
-        modelVersion: modelVersion ?? this.modelVersion,
-        publisher: publisher ?? this.publisher,
-        modelFamily: modelFamily ?? this.modelFamily,
-        modelRegistry: modelRegistry ?? this.modelRegistry,
-        license: license ?? this.license,
-        task: task ?? this.task,
-        description: description ?? this.description,
-        summary: summary ?? this.summary,
-        tags: tags ?? this.tags,
-      );
+  }) => GithubModelItem(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    friendlyName: friendlyName ?? this.friendlyName,
+    modelVersion: modelVersion ?? this.modelVersion,
+    publisher: publisher ?? this.publisher,
+    modelFamily: modelFamily ?? this.modelFamily,
+    modelRegistry: modelRegistry ?? this.modelRegistry,
+    license: license ?? this.license,
+    task: task ?? this.task,
+    description: description ?? this.description,
+    summary: summary ?? this.summary,
+    tags: tags ?? this.tags,
+  );
 
   factory GithubModelItem.fromJson(Map<String, dynamic> json) =>
       _$GithubModelItemFromJson(json);
@@ -78,17 +77,13 @@ final class GithubModelsList {
   GithubModelsList({required this.models});
 
   factory GithubModelsList.fromJson(List<dynamic> json) {
-    final list = List.generate(
-      json.length,
-      (index) {
-        try {
-          return GithubModelItem.fromJson(json[index]);
-        } catch (_) {
-          return null;
-        }
-      },
-      growable: false,
-    );
+    final list = List.generate(json.length, (index) {
+      try {
+        return GithubModelItem.fromJson(json[index]);
+      } catch (_) {
+        return null;
+      }
+    }, growable: false);
     return GithubModelsList(models: list.whereType<GithubModelItem>().toList());
   }
 

@@ -18,11 +18,10 @@ Future<void> screencastTask(
   pup.Until untilConf,
   int maxWidth,
   int maxHeight,
-      int durationSeconds,
+  int durationSeconds,
 
   BuildContext context, {
   required Function(int, String) onProgress,
-
 }) async {
   final savefold = await selectDirectory();
   String _savef = savefold ?? "savedScreencast";
@@ -50,10 +49,7 @@ Future<void> screencastTask(
   for (final url in urls) {
     onProgress(indrun, url);
 
-    await page.goto(
-      url,
-      wait: untilConf,
-    );
+    await page.goto(url, wait: untilConf);
 
     // Collect frames via DevTools screencast
     image.Image? animation;
@@ -93,7 +89,10 @@ Future<void> screencastTask(
     await sub.cancel();
 
     final String tit = await page.title ?? '';
-        final sanitizedTitle = tit.toLowerCase().trim().replaceAll(RegExp(r"[^a-z0-9_\-]+"), "-");
+    final sanitizedTitle = tit.toLowerCase().trim().replaceAll(
+      RegExp(r"[^a-z0-9_\-]+"),
+      "-",
+    );
 
     final file = File('$_savef/_screencast_$sanitizedTitle-$indrun.gif');
     if (animation != null) {

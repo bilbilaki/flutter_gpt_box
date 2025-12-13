@@ -166,7 +166,6 @@ final class _ProfilePageState extends State<ProfilePage>
             onTap: () =>
                 _addVertexAIProfile(), // We will create this function next
           ),
-
         ],
       ),
     );
@@ -238,7 +237,7 @@ final class _ProfilePageState extends State<ProfilePage>
   //     );
   //   }
 
-// Replace your old _addVertexAIProfile function with this new, much better one.
+  // Replace your old _addVertexAIProfile function with this new, much better one.
 
   Future<void> _addVertexAIProfile() async {
     final nameCtrl = TextEditingController();
@@ -353,7 +352,7 @@ final class _ProfilePageState extends State<ProfilePage>
                           final newCfg = Cfg.current.copyWith(
                             id: shortid.generate(),
                             name: nameCtrl.text,
-                            
+
                             isVertex: true,
                             vertexProjectId: selectedProject!
                                 .projectId, // Use the ID from the selected project
@@ -396,19 +395,23 @@ final class _ProfilePageState extends State<ProfilePage>
           actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
         );
         if (result == null) return;
-if (result == "https://api.groq.com/openai/v1") {setState(() {
-  
- result ="https://api.groq.com/openai/v1/chat/completions";
-});}
-if (result == "https://generativelanguage.googleapis.com/v1beta") {
+        if (result == "https://api.groq.com/openai/v1") {
           setState(() {
-            result = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+            result = "https://api.groq.com/openai/v1/chat/completions";
+          });
+        }
+        if (result == "https://generativelanguage.googleapis.com/v1beta") {
+          setState(() {
+            result =
+                "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
           });
         }
 
-        final isApiUrl = ChatConfigX.apiUrlReg.hasMatch(result??result.toString());
+        final isApiUrl = ChatConfigX.apiUrlReg.hasMatch(
+          result ?? result.toString(),
+        );
 
-        final endsWithV1 = result?.endsWith('/v1')??false;
+        final endsWithV1 = result?.endsWith('/v1') ?? false;
         final isGithubModels = result == Urls.githubModels;
         final showDialog = !isApiUrl && (!endsWithV1 && !isGithubModels);
         if (showDialog) {
@@ -420,7 +423,7 @@ if (result == "https://generativelanguage.googleapis.com/v1beta") {
           if (sure != true) return;
         }
 
-        Cfg.setTo(cfg: Cfg.current.copyWith(url: result??result.toString()));
+        Cfg.setTo(cfg: Cfg.current.copyWith(url: result ?? result.toString()));
       },
     );
   }
@@ -643,7 +646,9 @@ if (result == "https://generativelanguage.googleapis.com/v1beta") {
               actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
               titleBuilder: (ctx) => IconButton(
                 tooltip: 'Prompt generator',
-                onPressed:() async { await _navigateToAdvancedPromptPage(context);},
+                onPressed: () async {
+                  await _navigateToAdvancedPromptPage(context);
+                },
                 icon: const Icon(Icons.auto_awesome, size: 18),
               ),
             );
@@ -693,19 +698,19 @@ if (result == "https://generativelanguage.googleapis.com/v1beta") {
   }
 
   Route<T> _fadeRoute<T>(Widget page) {
-  return PageRouteBuilder<T>(
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (_, anim, __, child) {
-      return FadeTransition(
-        opacity: anim.drive(CurveTween(curve: Curves.easeInOut)),
-        child: child,
-      );
-    },
-    transitionDuration: const Duration(milliseconds: 220),
-    reverseTransitionDuration: const Duration(milliseconds: 200),
-    opaque: true,
-    fullscreenDialog: true,
-  );
+    return PageRouteBuilder<T>(
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, anim, __, child) {
+        return FadeTransition(
+          opacity: anim.drive(CurveTween(curve: Curves.easeInOut)),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 220),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+      opaque: true,
+      fullscreenDialog: true,
+    );
   }
   // void _openPromptGenerator() {
   //   showDialog(

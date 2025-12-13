@@ -102,8 +102,7 @@ class _ConfigPageState extends State<ConfigPage> {
         ..outputFormat = _outputFormat.text
         ..modelId = _modelId.text
         ..systemPrompt = _systemPrompt.text
-                ..geminiPrompt = _geminiPrompt.text
-
+        ..geminiPrompt = _geminiPrompt.text
         ..temp = _temp;
 
       final box = Hive.box<TranslatorConfig>('app_config');
@@ -254,7 +253,7 @@ class _ConfigPageState extends State<ConfigPage> {
               ),
             ),
             _field(_systemPrompt, 'System Prompt', maxLines: 8),
-                        _field(_geminiPrompt, 'Gemini Ocr Prompt', maxLines: 8),
+            _field(_geminiPrompt, 'Gemini Ocr Prompt', maxLines: 8),
             const SizedBox(height: 80),
           ],
         ),

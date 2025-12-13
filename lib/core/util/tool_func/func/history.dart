@@ -3,7 +3,7 @@ part of '../tool.dart';
 final class TfHistory extends ToolFunc {
   static const instance = TfHistory._();
 
-const TfHistory._()
+  const TfHistory._()
     : super(
         name: 'history',
         parametersSchema: const {
@@ -87,8 +87,11 @@ Focus on user-driven history access—respect conversation flow.''';
     final chats = prop.take(count, keywords);
     final onlyTitles = args['onlyTitles'] as bool? ?? false;
     return chats
-        .map((e) => ChatContent.text(
-            onlyTitles ? e.name ?? l10n.untitled : e.toMarkdown))
+        .map(
+          (e) => ChatContent.text(
+            onlyTitles ? e.name ?? l10n.untitled : e.toMarkdown,
+          ),
+        )
         .toList();
   }
 }

@@ -61,10 +61,7 @@ class _ChatSearchDelegate extends SearchDelegate<ChatHistory> {
       ),
       error: (error, trace) {
         Loggers.app.warning(error, trace);
-        return ListTile(
-          title: Text(l10n.attention),
-          subtitle: Text('$error'),
-        );
+        return ListTile(title: Text(l10n.attention), subtitle: Text('$error'));
       },
       success: (data) {
         if (data == null || data.isEmpty) {

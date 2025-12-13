@@ -1,7 +1,7 @@
 part of 'core.dart';
 
 Future<void> addReminder() async {
-final  client = await getClient();
+  final client = await getClient();
   final calendarApi = calendar.CalendarApi(client);
 
   final event = calendar.Event(

@@ -33,8 +33,6 @@ final class _HomeBottomState extends State<_HomeBottom> {
     super.dispose();
   }
 
-
-
   Future<void> _startHoldRecord() async {
     if (_isRecording) return;
     if (!await _ensureRecordPermission()) {
@@ -74,7 +72,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
     final path = _recordingPath;
     if (path == null || !File(path).existsSync()) {
       context.showSnackBar('No audio captured');
-          _recordingPath = null;
+      _recordingPath = null;
 
       return;
     }
@@ -84,8 +82,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
     final chatId = _curChatId.value;
     final text = inputCtrl.text; // keep any current text
     _onAudioModel(context, chatId, text, [path]);
-        _recordingPath = null;
-
+    _recordingPath = null;
   }
 
   @override
@@ -129,66 +126,65 @@ final class _HomeBottomState extends State<_HomeBottom> {
       ],
     );
   }
-//final url = "https://www.google.com";
+  //final url = "https://www.google.com";
 
+  Widget _buildBottomFnsTwoRows() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                _switchChat(_newChat().id);
+                _historyRN.notify();
+                if (_curPage.value == HomePageEnum.history) {
+                  _switchPage(HomePageEnum.chat);
+                }
+              },
+              icon: const Icon(MingCute.add_fill, size: 17),
+            ),
+            IconButton(
+              onPressed: () => _onTapDeleteChat(_curChatId.value, context),
+              icon: const Icon(Icons.delete, size: 19),
+            ),
+            _buildFileBtn(),
+            _buildSettingsBtn(), // existing chat settings
+            _buildOpenSettingsDrawerBtn(), // new: open Hive-backed drawer
+            _buildRight(),
+            _buildFileSearchBtn(),
+            _buildPromptGeneratorPageBTN(),
+            _buildBatchTaskRunnerPageBTN(),
+          ],
+        ),
+        const SizedBox(height: 1),
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'Canvas',
+              icon: const Icon(Icons.edit_note_rounded, size: 19),
+              onPressed: () => _openCanvas(context, inputCtrl),
+            ),
+            IconButton(
+              tooltip: 'Translate Files',
+              icon: const Icon(Icons.translate, size: 19),
+              onPressed: () => _navigateToPage(context, ChunkerInterfaceand()),
+            ),
+            IconButton(
+              tooltip: 'X.Search',
+              icon: const Icon(Icons.one_x_mobiledata, size: 19),
+              onPressed: () => _navigateToPage(context, XAiSearchFantasy()),
+            ),
+            IconButton(
+              tooltip: 'Browser Automation',
+              icon: const Icon(Icons.auto_awesome_motion_sharp, size: 19),
+              onPressed: () => _navigateToPage(context, PDFGeneratorWidget()),
+            ),
 
-Widget _buildBottomFnsTwoRows() {
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          IconButton(
-            onPressed: () {
-              _switchChat(_newChat().id);
-              _historyRN.notify();
-              if (_curPage.value == HomePageEnum.history) {
-                _switchPage(HomePageEnum.chat);
-              }
-            },
-            icon: const Icon(MingCute.add_fill, size: 17),
-          ),
-          IconButton(
-            onPressed: () => _onTapDeleteChat(_curChatId.value, context),
-            icon: const Icon(Icons.delete, size: 19),
-          ),
-          _buildFileBtn(),
-          _buildSettingsBtn(), // existing chat settings
-          _buildOpenSettingsDrawerBtn(), // new: open Hive-backed drawer
-          _buildRight(),
-          _buildFileSearchBtn(),
-          _buildPromptGeneratorPageBTN(),
-          _buildBatchTaskRunnerPageBTN(),
-        ],
-      ),
-      const SizedBox(height: 1),
-      Row(
-        children: [
-          IconButton(
-            tooltip: 'Canvas',
-            icon: const Icon(Icons.edit_note_rounded, size: 19),
-            onPressed: () => _openCanvas(context, inputCtrl),
-          ),
-          IconButton(
-            tooltip: 'Translate Files',
-            icon: const Icon(Icons.translate, size: 19),
-            onPressed: () => _navigateToPage(context,ChunkerInterfaceand()),
-          ),
-                  IconButton(
-            tooltip: 'X.Search',
-            icon: const Icon(Icons.one_x_mobiledata, size: 19),
-            onPressed: () => _navigateToPage(context,XAiSearchFantasy()),
-          ),
-                            IconButton(
-            tooltip: 'Browser Automation',
-            icon: const Icon(Icons.auto_awesome_motion_sharp, size: 19),
-            onPressed: () => _navigateToPage(context,PDFGeneratorWidget()),
-          ),
-          
-         // IconButton(
-         //   tooltip: 'Voice mode',
-          //  onPressed: () {
+            // IconButton(
+            //   tooltip: 'Voice mode',
+            //  onPressed: () {
             //   Navigator.of(context).push(
             //     MaterialPageRoute(
             //       builder: (_) => VoiceAssistantScreen(
@@ -204,47 +200,53 @@ Widget _buildBottomFnsTwoRows() {
             //       ),
             //     ),
             //   );
-         //   },
+            //   },
             // icon: const Icon(Icons.record_voice_over, size: 20),
-        //  ),
-
-        
-          const Spacer(),
-          UIs.width7,
-          _buildSwitchChatType(),
-          UIs.width7,
-        ],
-      ),
-    ],
-  );
-}
+            //  ),
+            const Spacer(),
+            UIs.width7,
+            _buildSwitchChatType(),
+            UIs.width7,
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget _buildSettingsBtn() {
     return IconButton(
       onPressed: _onTapSetting,
-      icon:  Icon(Icons.settings, size: 17),
+      icon: Icon(Icons.settings, size: 17),
     );
   }
+
   Widget _buildFileSearchBtn() {
     return IconButton(
-      onPressed:()async{await _navigateToPage(context,FileSearchScreen());},
+      onPressed: () async {
+        await _navigateToPage(context, FileSearchScreen());
+      },
       icon: Icon(Icons.search, size: 17),
     );
   }
 
-   Widget _buildPromptGeneratorPageBTN() {
+  Widget _buildPromptGeneratorPageBTN() {
     return IconButton(
-      onPressed: () async{ await _navigateToPage(context,PromptGeneratorScreen());},
+      onPressed: () async {
+        await _navigateToPage(context, PromptGeneratorScreen());
+      },
       icon: Icon(Icons.auto_awesome_mosaic_sharp, size: 17),
     );
   }
-     Widget _buildBatchTaskRunnerPageBTN() {
+
+  Widget _buildBatchTaskRunnerPageBTN() {
     return IconButton(
-      onPressed: () async{ await _navigateToPage(context,AIBatchProcessorScreen());},
+      onPressed: () async {
+        await _navigateToPage(context, AIBatchProcessorScreen());
+      },
       icon: Icon(Icons.batch_prediction, size: 17),
     );
   }
-  
+
   Widget _buildOpenSettingsDrawerBtn() {
     return IconButton(
       tooltip: 'Open Settings Drawer',
@@ -258,7 +260,7 @@ Widget _buildBottomFnsTwoRows() {
         }
         state.openEndDrawer();
       },
-      icon:  Icon(Icons.tune, size: 17),
+      icon: Icon(Icons.tune, size: 17),
     );
   }
 
@@ -310,7 +312,6 @@ Widget _buildBottomFnsTwoRows() {
         //  //   ),
         //   ),
         // ),
-
         Input(
           controller: inputCtrl,
           label: l10n.message,
@@ -379,12 +380,12 @@ Widget _buildBottomFnsTwoRows() {
                         Btn.icon(
                           onTap: () =>
                               _onCreateRequest(context, _curChatId.value),
-                          icon:  Icon(Icons.send, size: 18),
+                          icon: Icon(Icons.send, size: 18),
                         ),
                       IconButton(
                         tooltip: 'Prompt generator',
                         onPressed: _openPromptGenerator,
-                        icon:  Icon(Icons.auto_awesome, size: 18),
+                        icon: Icon(Icons.auto_awesome, size: 18),
                       ),
                     ],
                   );
@@ -451,41 +452,39 @@ Widget _buildBottomFnsTwoRows() {
     }
   }
 
-  
-
-
-
-    Future<void> _navigateToPage(BuildContext context, Widget page) async {
+  Future<void> _navigateToPage(BuildContext context, Widget page) async {
     await Navigator.of(context).push<void>(
-      _fadeRoute( page),
+      _fadeRoute(page),
     ); // Replace AnotherPage with your desired page
   }
 
-  
   Future<void> _navigateToBatchTaskerPage(BuildContext context) async {
     await Navigator.of(context).push<void>(
-      _fadeRoute(   AIBatchProcessorScreen()),
+      _fadeRoute(AIBatchProcessorScreen()),
     ); // Replace AnotherPage with your desired page
   }
-// Future<void> _navigateToWebView(BuildContext context) async {
-//     await Navigator.of(context).push<void>(
-//       _fadeRoute( ()),
-//     ); // Replace AnotherPage with your desired page
-//   }
-Route<T> _fadeRoute<T>(Widget page) {
-  return PageRouteBuilder<T>(
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (_, anim, __, child) {
-      return FadeTransition(
-        opacity: anim.drive(CurveTween(curve: Curves.easeInOut)),
-        child: child,
-      );
-    },
-    transitionDuration: const Duration(milliseconds: 220),
-    reverseTransitionDuration: const Duration(milliseconds: 200),
-    opaque: true,
-    fullscreenDialog: true,
-  );}
+
+  // Future<void> _navigateToWebView(BuildContext context) async {
+  //     await Navigator.of(context).push<void>(
+  //       _fadeRoute( ()),
+  //     ); // Replace AnotherPage with your desired page
+  //   }
+  Route<T> _fadeRoute<T>(Widget page) {
+    return PageRouteBuilder<T>(
+      pageBuilder: (_, __, ___) => page,
+      transitionsBuilder: (_, anim, __, child) {
+        return FadeTransition(
+          opacity: anim.drive(CurveTween(curve: Curves.easeInOut)),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 220),
+      reverseTransitionDuration: const Duration(milliseconds: 200),
+      opaque: true,
+      fullscreenDialog: true,
+    );
+  }
+
   Widget _buildRoundRect(Widget child) {
     return Container(
       decoration: BoxDecoration(

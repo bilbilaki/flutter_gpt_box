@@ -8,21 +8,36 @@ import 'package:gpt_box/env.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart';
 
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:googleapis/drive/v3.dart' as drive; // Alias for Drive API
 
-// ... (your existing imports and _googleSignIn 
+// ... (your existing imports and _googleSignIn
 import 'package:http/io_client.dart';
 part 'gmail.dart';
 part 'calendar.dart';
 
-
 GoogleSignIn _googleSignIn = GoogleSignIn(
   params: GoogleSignInParams(
-    clientId: clientid,
-    clientSecret: clientsecret,
-    scopes: const ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/firebase.messaging', 'https://www.googleapis.com/auth/firebase', 'https://www.googleapis.com/auth/firebase.readonly', 'https://www.googleapis.com/auth/firebase.hosting', 'https://www.googleapis.com/auth/youtube.download', 'https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/calendar.calendarlist.readonly', 'https://www.googleapis.com/auth/calendar.events.freebusy', 'https://www.googleapis.com/auth/calendar.freebusy', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.appdata', 'https://www.googleapis.com/auth/generative-language.peruserquota', 'https://www.googleapis.com/auth/gmail.addons.current.action.compose', 'https://www.googleapis.com/auth/gmail.addons.current.message.action'],
+    clientId: '',
+    clientSecret: '',
+    scopes: const [
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/firebase.messaging',
+      'https://www.googleapis.com/auth/firebase',
+      'https://www.googleapis.com/auth/firebase.readonly',
+      'https://www.googleapis.com/auth/firebase.hosting',
+      'https://www.googleapis.com/auth/youtube.download',
+      'https://www.googleapis.com/auth/calendar.app.created',
+      'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+      'https://www.googleapis.com/auth/calendar.events.freebusy',
+      'https://www.googleapis.com/auth/calendar.freebusy',
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/drive.appdata',
+      'https://www.googleapis.com/auth/generative-language.peruserquota',
+      'https://www.googleapis.com/auth/gmail.addons.current.action.compose',
+      'https://www.googleapis.com/auth/gmail.addons.current.message.action',
+    ],
     redirectPort: 8000,
   ),
 );
@@ -41,9 +56,8 @@ GoogleSignIn _googleSignIn = GoogleSignIn(
 //   print('Signed out successfully');
 // }
 
-Future<_AuthenticatedClient> getClient()async {
-
-    final credentials = await _googleSignIn.signIn();
+Future<_AuthenticatedClient> getClient() async {
+  final credentials = await _googleSignIn.signIn();
 
   final goSighnIn = go.GoogleSignIn(
     signInOption: go.SignInOption.standard,
@@ -51,12 +65,9 @@ Future<_AuthenticatedClient> getClient()async {
     hostedDomain: 'localhost',
     clientId: credentials.idToken,
   );
-await  goSighnIn.signIn();
+  await goSighnIn.signIn();
   final auth = await goSighnIn.currentUser!.authHeaders;
-  final client = _AuthenticatedClient(
-    http.Client(),
-    auth,
-  );
+  final client = _AuthenticatedClient(http.Client(), auth);
 
   return client;
 }
@@ -74,7 +85,6 @@ class _AuthenticatedClient extends http.BaseClient {
     return _inner.send(request);
   }
 }
-
 
 // Secure Storage for persistence
 final _storage = FlutterSecureStorage();
@@ -106,7 +116,24 @@ Future<GoogleSignInCredentials?> _loadCredentials() async {
       accessToken: accessToken,
       refreshToken: refreshToken,
       idToken: idToken,
-      scopes: const ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/firebase.messaging', 'https://www.googleapis.com/auth/firebase', 'https://www.googleapis.com/auth/firebase.readonly', 'https://www.googleapis.com/auth/firebase.hosting', 'https://www.googleapis.com/auth/youtube.download', 'https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/calendar.calendarlist.readonly', 'https://www.googleapis.com/auth/calendar.events.freebusy', 'https://www.googleapis.com/auth/calendar.freebusy', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.appdata', 'https://www.googleapis.com/auth/generative-language.peruserquota', 'https://www.googleapis.com/auth/gmail.addons.current.action.compose', 'https://www.googleapis.com/auth/gmail.addons.current.message.action'], // Re-use the configured scopes
+      scopes: const [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/firebase.messaging',
+        'https://www.googleapis.com/auth/firebase',
+        'https://www.googleapis.com/auth/firebase.readonly',
+        'https://www.googleapis.com/auth/firebase.hosting',
+        'https://www.googleapis.com/auth/youtube.download',
+        'https://www.googleapis.com/auth/calendar.app.created',
+        'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+        'https://www.googleapis.com/auth/calendar.events.freebusy',
+        'https://www.googleapis.com/auth/calendar.freebusy',
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive.appdata',
+        'https://www.googleapis.com/auth/generative-language.peruserquota',
+        'https://www.googleapis.com/auth/gmail.addons.current.action.compose',
+        'https://www.googleapis.com/auth/gmail.addons.current.message.action',
+      ], // Re-use the configured scopes
       // Other fields might be needed depending on the exact GoogleSignInCredentials class
       // In this specific package, it seems to be just these tokens.
     );
@@ -116,6 +143,7 @@ Future<GoogleSignInCredentials?> _loadCredentials() async {
   print('No credentials found in storage.');
   return null;
 }
+
 Future<GoogleSignInCredentials?> _loadCredentialsForCloudSignIn() async {
   final accessToken = await _storage.read(key: 'accessToken');
   final refreshToken = await _storage.read(key: 'refreshToken');
@@ -140,7 +168,7 @@ Future<GoogleSignInCredentials?> _loadCredentialsForCloudSignIn() async {
         'https://www.googleapis.com/auth/gmail.addons.current.message.action',
 
         // ADD THIS NEW SCOPE FOR LISTING PROJECTS
-      //  'https://www.googleapis.com/auth/cloud-platform.read-only',
+        //  'https://www.googleapis.com/auth/cloud-platform.read-only',
       ], // Re-use the configured scopes
       // Other fields might be needed depending on the exact GoogleSignInCredentials class
       // In this specific package, it seems to be just these tokens.
@@ -157,7 +185,9 @@ Future<void> performSignIn() async {
     final credentials = await _googleSignIn.signIn();
     if (credentials != null) {
       _currentCredentials = credentials;
-      await _saveCredentials(credentials); // Save credentials after successful sign-in
+      await _saveCredentials(
+        credentials,
+      ); // Save credentials after successful sign-in
       print('Signed in successfully: ${credentials.accessToken}');
     } else {
       print('Sign in failed');
@@ -174,16 +204,21 @@ Future<void> performSignOut() async {
   print('Signed out successfully');
 }
 
-
 // Modified getClient to manage persistence and token refreshing
-Future<_AuthenticatedClient?> getAuthenticatedClient({bool useforgemini=false}) async {
- useforgemini? _currentCredentials= await _loadCredentialsForCloudSignIn() :_currentCredentials ??= await _loadCredentials();
+Future<_AuthenticatedClient?> getAuthenticatedClient({
+  bool useforgemini = false,
+}) async {
+  useforgemini
+      ? _currentCredentials = await _loadCredentialsForCloudSignIn()
+      : _currentCredentials ??= await _loadCredentials();
 
   if (_currentCredentials == null) {
     // If not in storage, try silent sign-in (might refresh token)
     _currentCredentials = await _googleSignIn.signIn();
     if (_currentCredentials != null) {
-      await _saveCredentials(_currentCredentials!); // Save refreshed credentials
+      await _saveCredentials(
+        _currentCredentials!,
+      ); // Save refreshed credentials
     }
   }
 
@@ -196,12 +231,12 @@ Future<_AuthenticatedClient?> getAuthenticatedClient({bool useforgemini=false}) 
   // Construct auth headers
   final authHeaders = {
     'Authorization': 'Bearer ${_currentCredentials!.accessToken}',
-    'X-Goog-AuthUser': '0' // Or other values if specific multi-user handling is needed
+    'X-Goog-AuthUser':
+        '0', // Or other values if specific multi-user handling is needed
   };
 
   return _AuthenticatedClient(http.Client(), authHeaders);
 }
-
 
 class GoogleCloudProject {
   final String projectId; // e.g., "my-cool-project-12345"
@@ -216,7 +251,6 @@ class GoogleCloudProject {
     );
   }
 }
-
 
 Future<List<GoogleCloudProject>> fetchUserGoogleCloudProjects() async {
   final client = await getAuthenticatedClient(useforgemini: true);

@@ -1,4 +1,5 @@
 part of '../main.dart';
+
 Widget buildFlowListItem(BuildContext context, String title, CurrentView view) {
   bool isSelected = currentView == view;
   return GestureDetector(

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_code_crafter/code_crafter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +30,7 @@ import 'package:highlight/languages/bash.dart' as lang_bash;
 
 class CodeEditorApp extends StatefulWidget {
   final CodeCrafterController codeCrafterController;
-  const CodeEditorApp( this.codeCrafterController,{super.key});
+  const CodeEditorApp(this.codeCrafterController, {super.key});
 
   @override
   State<CodeEditorApp> createState() => _CodeEditorAppState();
@@ -119,7 +118,6 @@ class _CodeEditorAppState extends State<CodeEditorApp> {
     _focusNode.dispose();
     super.dispose();
   }
-
 
   String _starterText(String lang) {
     switch (lang) {
@@ -531,7 +529,7 @@ done
         break;
       case 'Claude':
         if (apiKey.isEmpty || (model == null || model.isEmpty)) return null;
-        m = Claude(apiKey: apiKey, model: model,);
+        m = Claude(apiKey: apiKey, model: model, version: '');
         break;
       case 'Grok':
         if (apiKey.isEmpty || (model == null || model.isEmpty)) return null;
@@ -779,7 +777,6 @@ done
     } else {
       final exe = sp.getString(_kLspExecutable);
       if (exe == null || exe.isEmpty) return null;
-
 
       return null;
     }

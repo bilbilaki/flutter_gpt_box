@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gpt_box/view/prompt_generator/models/prompt_settings.dart';
 import 'package:gpt_box/view/prompt_generator/services/prompt_builder.dart';
+
 class FormatTypeSelector extends StatelessWidget {
   final PromptFormatType selectedType;
   final ValueChanged<PromptFormatType> onChanged;

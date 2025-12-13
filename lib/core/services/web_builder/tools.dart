@@ -1,10 +1,10 @@
 import 'dart:io';
 
 /// Creates multiple empty files in batch under a specified directory.
-/// 
+///
 /// [baseDirectoryPath] - The base directory path where files will be created
 /// [fileNames] - List of file names to create as empty files
-/// 
+///
 /// Returns a list of created File objects on success
 Future<List<File>> createEmptyFilesBatch(
   String baseDirectoryPath,
@@ -21,7 +21,7 @@ Future<List<File>> createEmptyFilesBatch(
     final fileFutures = fileNames.map((fileName) async {
       final filePath = '${baseDir.path}${Platform.pathSeparator}$fileName';
       final file = File(filePath);
-      
+
       // Check if file already exists to avoid overwriting
       if (!await file.exists()) {
         await file.create(recursive: true);
@@ -38,12 +38,12 @@ Future<List<File>> createEmptyFilesBatch(
 }
 
 /// Writes or appends content to multiple files in batch.
-/// 
+///
 /// [baseDirectoryPath] - The base directory path where files are located
 /// [fileNames] - List of file names to write/append content to
 /// [content] - The content to write or append to all files
 /// [isAppend] - If true, appends content; if false, replaces file content (default: false)
-/// 
+///
 /// Returns a list of modified File objects on success
 Future<List<File>> writeContentToFilesBatch(
   String baseDirectoryPath,
@@ -61,19 +61,19 @@ Future<List<File>> writeContentToFilesBatch(
     final fileFutures = fileNames.map((fileName) async {
       final filePath = '${baseDir.path}${Platform.pathSeparator}$fileName';
       final file = File(filePath);
-      
+
       // Create file if it doesn't exist
       if (!await file.exists()) {
         await file.create(recursive: true);
       }
-      
+
       // Write or append based on isAppend flag
       if (isAppend) {
         await file.writeAsString(content, mode: FileMode.append);
       } else {
         await file.writeAsString(content, mode: FileMode.write);
       }
-      
+
       return file;
     }).toList();
 
@@ -85,15 +85,12 @@ Future<List<File>> writeContentToFilesBatch(
 }
 
 /// Generates a directory tree structure up to a specified depth.
-/// 
+///
 /// [directoryPath] - The root directory path to start traversing from
 /// [depth] - Maximum depth to traverse (0 means only root directory)
-/// 
+///
 /// Returns a formatted string representation of the directory tree
-Future<String> getDirectoryTree(
-  String directoryPath, {
-  int depth = 3,
-}) async {
+Future<String> getDirectoryTree(String directoryPath, {int depth = 3}) async {
   try {
     final baseDir = Directory(directoryPath);
     if (!await baseDir.exists()) {
@@ -102,9 +99,9 @@ Future<String> getDirectoryTree(
 
     final buffer = StringBuffer();
     buffer.writeln(baseDir.path);
-    
+
     await _buildTree(baseDir, buffer, depth, '', true);
-    
+
     return buffer.toString();
   } catch (e) {
     throw Exception('Failed to generate directory tree: $e');
@@ -123,7 +120,7 @@ Future<void> _buildTree(
 
   try {
     final entities = await dir.list().toList();
-    
+
     // Sort entities: directories first, then files
     entities.sort((a, b) {
       final aIsDir = a is Directory ? 1 : 0;
@@ -155,6 +152,3 @@ Future<void> _buildTree(
     buffer.writeln('$prefix[Error accessing directory]');
   }
 }
-
-
-

@@ -201,7 +201,7 @@ class FullScreenImageViewer extends StatelessWidget {
         acceptedTypeGroups: acceptedTypeGroups,
       );
       final defPath = await _getTargetDirectory('');
-      final String path = patht?.path??defPath.path;
+      final String path = patht?.path ?? defPath.path;
       if (path == '') {
         // User canceled the file selection
         if (!context.mounted) return;

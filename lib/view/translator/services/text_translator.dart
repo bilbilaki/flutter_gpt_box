@@ -7,10 +7,7 @@ import '../../../data/res/openai.dart';
 class TranslationService {
   OpenAIClient? _client;
   void setApiKey() {
-    _client = OpenAIClient(
-      apiKey: Cfg.current.key,
-      baseUrl: Cfg.current.url,
-    );
+    _client = OpenAIClient(apiKey: Cfg.current.key, baseUrl: Cfg.current.url);
   }
 
   Future<String> _translateTextChunk(String text, String targetLanguage) async {

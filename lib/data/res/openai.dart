@@ -23,13 +23,15 @@ abstract final class Cfg {
   static ChatConfig get currentTasker => vn.value;
 
   static ChatConfig get currentAlter => vn.value;
- static bool isVertex( bool yesorno ) { 
- yesorno ? true:false;
- return yesorno;
- }
-  static String vertexProjectId(String projid){
-return projid;
+  static bool isVertex(bool yesorno) {
+    yesorno ? true : false;
+    return yesorno;
   }
+
+  static String vertexProjectId(String projid) {
+    return projid;
+  }
+
   static String vertexLocation(String location) {
     return location;
   }
@@ -65,31 +67,32 @@ return projid;
   static RegExp? _alterModelsUseMcpReExp;
   static RegExp? _taskerModelsUseMcpReExp;
 
-  static bool isMcpCompatible({String? model,String? modelAlter,String? taskerModel}) {
+  static bool isMcpCompatible({
+    String? model,
+    String? modelAlter,
+    String? taskerModel,
+  }) {
     model ??= current.model;
     modelAlter ??= currentAlter.model;
-     taskerModel  ??= currentAlter.model;
+    taskerModel ??= currentAlter.model;
 
     if (model.isEmpty) return false;
     return _modelsUseMcpReExp?.hasMatch(model) ?? false;
-    
   }
-  static bool isMcpCompatibleAlter({String? modelAlter}) {
 
+  static bool isMcpCompatibleAlter({String? modelAlter}) {
     modelAlter ??= currentAlter.model;
 
     if (modelAlter.isEmpty) return false;
     return _alterModelsUseMcpReExp?.hasMatch(modelAlter) ?? false;
-    
   }
-static bool isMcpCompatibleTasker({String? taskerModel}) {
-     taskerModel  ??= currentAlter.model;
+
+  static bool isMcpCompatibleTasker({String? taskerModel}) {
+    taskerModel ??= currentAlter.model;
 
     if (taskerModel.isEmpty) return false;
     return _taskerModelsUseMcpReExp?.hasMatch(taskerModel) ?? false;
-    
   }
-
 
   /// Update models list
   /// - [force] force update, ignore cache
@@ -139,7 +142,6 @@ static bool isMcpCompatibleTasker({String? taskerModel}) {
       );
       return;
     }
-
 
     final selected = await context.showPickSingleDialog(
       items: Cfg.models.value ?? [],
@@ -230,8 +232,7 @@ static bool isMcpCompatibleTasker({String? taskerModel}) {
       final val = prop.get();
       _modelsUseMcpReExp = RegExp(val);
       _alterModelsUseMcpReExp = RegExp(val);
-            _taskerModelsUseMcpReExp = RegExp(val);
-
+      _taskerModelsUseMcpReExp = RegExp(val);
     }
 
     setExp();

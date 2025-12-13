@@ -1,12 +1,6 @@
-
 import 'package:path/path.dart' as p;
 
-enum AppFileType {
-  image,
-  audio,
-  directdoc,
-  undirectdoc,
-}
+enum AppFileType { image, audio, directdoc, undirectdoc }
 
 AppFileType getAppFileType(String filePath) {
   final ext = p.extension(filePath).toLowerCase();
@@ -19,7 +13,7 @@ AppFileType getAppFileType(String filePath) {
     '.gif',
     '.bmp',
     '.heic',
-    '.heif'
+    '.heif',
   ];
   const audioExtensions = [
     '.wav',
@@ -29,7 +23,7 @@ AppFileType getAppFileType(String filePath) {
     '.flac',
     '.ogg',
     '.oga',
-    '.webm'
+    '.webm',
   ];
   const directDocExtensions = ['.txt', '.csv', '.md'];
 

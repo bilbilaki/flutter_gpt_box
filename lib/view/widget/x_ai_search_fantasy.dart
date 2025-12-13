@@ -17,15 +17,19 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
   List<String> _citations = [];
   bool _isLoading = false;
   String _error = '';
-  
+
   // Search settings
   String _selectedSearchTool = 'web_search';
   bool _enableImageUnderstanding = false;
   bool _enableVideoUnderstanding = false;
-  final TextEditingController _allowedDomainsController = TextEditingController();
-  final TextEditingController _excludedDomainsController = TextEditingController();
-  final TextEditingController _allowedHandlesController = TextEditingController();
-  final TextEditingController _excludedHandlesController = TextEditingController();
+  final TextEditingController _allowedDomainsController =
+      TextEditingController();
+  final TextEditingController _excludedDomainsController =
+      TextEditingController();
+  final TextEditingController _allowedHandlesController =
+      TextEditingController();
+  final TextEditingController _excludedHandlesController =
+      TextEditingController();
   final TextEditingController _fromDateController = TextEditingController();
   final TextEditingController _toDateController = TextEditingController();
 
@@ -46,7 +50,8 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
 
     setState(() {
       _isLoading = true;
-      _loading = 'Initiating Agentic Search with ${_selectedSearchTool == 'web_search' ? 'Web Search' : 'X Search'}...';
+      _loading =
+          'Initiating Agentic Search with ${_selectedSearchTool == 'web_search' ? 'Web Search' : 'X Search'}...';
       _error = '';
       _result = '';
       _citations = [];
@@ -60,7 +65,7 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
 
     // Build tool configuration
     final Map<String, dynamic> toolConfig = {'type': _selectedSearchTool};
-    
+
     if (_selectedSearchTool == 'web_search') {
       // Web search parameters
       if (_allowedDomainsController.text.isNotEmpty) {
@@ -113,10 +118,7 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
     final body = jsonEncode({
       'model': 'grok-4-fast',
       'input': [
-        {
-          'role': 'user',
-          'content': query,
-        }
+        {'role': 'user', 'content': query},
       ],
       'tools': [toolConfig],
     });
@@ -125,27 +127,32 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
       final response = await http.post(url, headers: headers, body: body);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         // Extract content from response
         String content = '';
         List<String> citations = [];
-        
+
         // Parse the actual xAI response structure
-        if (data['output'] != null && data['output'] is List && data['output'].isNotEmpty) {
+        if (data['output'] != null &&
+            data['output'] is List &&
+            data['output'].isNotEmpty) {
           // Find the message in output array
           for (var item in data['output']) {
             if (item['type'] == 'message' && item['content'] != null) {
               // Extract text from content array
               if (item['content'] is List) {
                 for (var contentItem in item['content']) {
-                  if (contentItem['type'] == 'output_text' && contentItem['text'] != null) {
+                  if (contentItem['type'] == 'output_text' &&
+                      contentItem['text'] != null) {
                     content = contentItem['text'].toString();
                   }
-                  
+
                   // Extract citations from annotations
-                  if (contentItem['annotations'] != null && contentItem['annotations'] is List) {
+                  if (contentItem['annotations'] != null &&
+                      contentItem['annotations'] is List) {
                     for (var annotation in contentItem['annotations']) {
-                      if (annotation['type'] == 'url_citation' && annotation['url'] != null) {
+                      if (annotation['type'] == 'url_citation' &&
+                          annotation['url'] != null) {
                         citations.add(annotation['url'].toString());
                       }
                     }
@@ -156,13 +163,14 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
             }
           }
         }
-        
+
         // Fallback parsing if the structure is different
         if (content.isEmpty) {
           if (data['choices'] != null && data['choices'].isNotEmpty) {
             content = data['choices'][0]['message']['content'].toString();
           } else {
-            content = 'Response received but could not parse content. Status: ${data['status']}';
+            content =
+                'Response received but could not parse content. Status: ${data['status']}';
           }
         }
 
@@ -219,7 +227,10 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
             color: _cardColor,
             child: Row(
               children: [
-                const Text('Search Tool: ', style: TextStyle(color: _textColor)),
+                const Text(
+                  'Search Tool: ',
+                  style: TextStyle(color: _textColor),
+                ),
                 const SizedBox(width: 8),
                 SegmentedButton<String>(
                   segments: const [
@@ -260,7 +271,10 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                           ? 'Enter search query (e.g., "What is xAI?")'
                           : 'Enter X search query (e.g., "Latest news about xAI")',
                       hintStyle: const TextStyle(color: Colors.grey),
-                      prefixIcon: const Icon(Icons.search, color: _primaryColor),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: _primaryColor,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: const BorderSide(color: _primaryColor),
@@ -272,7 +286,9 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : () => _performSearch(_controller.text),
+                  onPressed: _isLoading
+                      ? null
+                      : () => _performSearch(_controller.text),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryColor,
                     foregroundColor: _backgroundColor,
@@ -284,7 +300,9 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(_backgroundColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              _backgroundColor,
+                            ),
                           ),
                         )
                       : const Icon(Icons.send, color: _backgroundColor),
@@ -304,11 +322,17 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                   const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(_primaryColor)),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(_loading, style: const TextStyle(color: _textColor)),
+                    child: Text(
+                      _loading,
+                      style: const TextStyle(color: _textColor),
+                    ),
                   ),
                 ],
               ),
@@ -323,7 +347,10 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                   const Icon(Icons.error_outline, color: _accentColor),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(_error, style: const TextStyle(color: _accentColor)),
+                    child: Text(
+                      _error,
+                      style: const TextStyle(color: _accentColor),
+                    ),
                   ),
                 ],
               ),
@@ -336,7 +363,9 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _selectedSearchTool == 'web_search' ? Icons.public : Icons.clear,
+                          _selectedSearchTool == 'web_search'
+                              ? Icons.public
+                              : Icons.clear,
                           size: 64,
                           color: Colors.grey,
                         ),
@@ -345,7 +374,10 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                           _selectedSearchTool == 'web_search'
                               ? 'Ready for Web Search\nAsk anything and get answers from the web'
                               : 'Ready for X Search\nSearch posts and conversations on X',
-                          style: TextStyle(color: Colors.grey[400], fontSize: 16),
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -365,13 +397,30 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                               children: [
                                 const Row(
                                   children: [
-                                    Icon(Icons.check_circle, color: _primaryColor),
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: _primaryColor,
+                                    ),
                                     SizedBox(width: 8),
-                                    Text('Search Results', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _textColor)),
+                                    Text(
+                                      'Search Results',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: _textColor,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                SelectableText(_result, style: const TextStyle(color: _textColor, height: 1.6, fontSize: 15)),
+                                SelectableText(
+                                  _result,
+                                  style: const TextStyle(
+                                    color: _textColor,
+                                    height: 1.6,
+                                    fontSize: 15,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -388,42 +437,77 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.link, color: _primaryColor),
+                                    const Icon(
+                                      Icons.link,
+                                      color: _primaryColor,
+                                    ),
                                     const SizedBox(width: 8),
-                                    const Text('Citations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _textColor)),
+                                    const Text(
+                                      'Citations',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: _textColor,
+                                      ),
+                                    ),
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: _primaryColor.withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: Text('${_citations.length}', style: const TextStyle(color: _primaryColor, fontWeight: FontWeight.bold)),
+                                      child: Text(
+                                        '${_citations.length}',
+                                        style: const TextStyle(
+                                          color: _primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                ..._citations.asMap().entries.map((entry) => Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 4),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text('${entry.key + 1}. ', style: const TextStyle(color: Colors.grey)),
-                                          Expanded(
-                                            child: GestureDetector(
-                                              onTap: () => _launchUrl(entry.value),
-                                              child: Text(
-                                                entry.value,
-                                                style: const TextStyle(
-                                                  color: _primaryColor,
-                                                  decoration: TextDecoration.underline,
+                                ..._citations
+                                    .asMap()
+                                    .entries
+                                    .map(
+                                      (entry) => Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 4,
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${entry.key + 1}. ',
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    _launchUrl(entry.value),
+                                                child: Text(
+                                                  entry.value,
+                                                  style: const TextStyle(
+                                                    color: _primaryColor,
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    )).toList(),
+                                    )
+                                    .toList(),
                               ],
                             ),
                           ),
@@ -442,14 +526,23 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _cardColor,
-        title: const Text('Search Settings', style: TextStyle(color: _textColor)),
+        title: const Text(
+          'Search Settings',
+          style: TextStyle(color: _textColor),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (_selectedSearchTool == 'web_search') ...[
-                const Text('Web Search Settings', style: TextStyle(color: _textColor, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Web Search Settings',
+                  style: TextStyle(
+                    color: _textColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _allowedDomainsController,
@@ -480,8 +573,14 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                 ),
                 const SizedBox(height: 12),
                 SwitchListTile(
-                  title: const Text('Enable Image Understanding', style: TextStyle(color: _textColor)),
-                  subtitle: const Text('Process and analyze images (increases token usage)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  title: const Text(
+                    'Enable Image Understanding',
+                    style: TextStyle(color: _textColor),
+                  ),
+                  subtitle: const Text(
+                    'Process and analyze images (increases token usage)',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                   value: _enableImageUnderstanding,
                   onChanged: (value) {
                     setState(() {
@@ -492,7 +591,13 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                   },
                 ),
               ] else ...[
-                const Text('X Search Settings', style: TextStyle(color: _textColor, fontWeight: FontWeight.bold)),
+                const Text(
+                  'X Search Settings',
+                  style: TextStyle(
+                    color: _textColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _allowedHandlesController,
@@ -551,8 +656,14 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                 ),
                 const SizedBox(height: 12),
                 SwitchListTile(
-                  title: const Text('Enable Image Understanding', style: TextStyle(color: _textColor)),
-                  subtitle: const Text('Process and analyze images (increases token usage)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  title: const Text(
+                    'Enable Image Understanding',
+                    style: TextStyle(color: _textColor),
+                  ),
+                  subtitle: const Text(
+                    'Process and analyze images (increases token usage)',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                   value: _enableImageUnderstanding,
                   onChanged: (value) {
                     setState(() {
@@ -563,8 +674,14 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                   },
                 ),
                 SwitchListTile(
-                  title: const Text('Enable Video Understanding', style: TextStyle(color: _textColor)),
-                  subtitle: const Text('Process and analyze videos (increases token usage)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  title: const Text(
+                    'Enable Video Understanding',
+                    style: TextStyle(color: _textColor),
+                  ),
+                  subtitle: const Text(
+                    'Process and analyze videos (increases token usage)',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                   value: _enableVideoUnderstanding,
                   onChanged: (value) {
                     setState(() {

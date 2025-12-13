@@ -9,7 +9,10 @@ final class _TrashSheetHeader extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return _TrashSheet();
   }
 
@@ -51,10 +54,7 @@ final class _TrashSheetState extends State<_TrashSheet> {
   Widget _buildItem(ChatHistory item, String key) {
     final lastTime = item.lastTime?.simple();
     final subtitle = lastTime != null
-        ? Text(
-            lastTime,
-            style: TextStyle(color: Colors.grey, fontSize: 12),
-          )
+        ? Text(lastTime, style: TextStyle(color: Colors.grey, fontSize: 12))
         : null;
     return SizedBox(
       width: 200,

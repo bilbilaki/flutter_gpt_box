@@ -15,7 +15,7 @@ Widget _buildWebdav(BuildContext context) {
           title: Text(l10n.auto),
           trailing: StoreSwitch(
             prop: PrefProps.webdavSync,
-            validator: (p0) async{
+            validator: (p0) async {
               final res = await isNeedSignDrive();
               if (res) {
                 context.showSnackBar(
@@ -67,7 +67,10 @@ Future<void> _onTapWebdavDl(BuildContext context) async {
     );
     if (fileName?.first.id == null) return;
 
-   final file= await downloadAppDataFromDrive('${fileName?.first.id}','${fileName?.first.name}');
+    final file = await downloadAppDataFromDrive(
+      '${fileName?.first.id}',
+      '${fileName?.first.name}',
+    );
     final dlFile = await File('${file?.path}').readAsString();
     final dlBak = await compute(Backup.fromJsonString, dlFile);
     await dlBak.merge(force: true);
@@ -86,8 +89,8 @@ Future<void> _onTapWebdavUp(BuildContext context) async {
   try {
     final content = await Backup.backup();
     await File(Paths.bak).writeAsString(content);
-  final  byte = File(Paths.bak).readAsBytesSync();
-    await uploadAppDataToDrive( Paths.bakName, byte);
+    final byte = File(Paths.bak).readAsBytesSync();
+    await uploadAppDataToDrive(Paths.bakName, byte);
 
     context.showSnackBar(libL10n.success);
   } catch (e, s) {
@@ -98,24 +101,20 @@ Future<void> _onTapWebdavUp(BuildContext context) async {
 }
 
 Future<void> _onTapWebdavSetting(BuildContext context) async {
-  final urlCtrl = TextEditingController(
-    text: PrefProps.webdavUrl.get(),
-  );
-  final userCtrl = TextEditingController(
-    text: PrefProps.webdavUser.get(),
-  );
-  final pwdCtrl = TextEditingController(
-    text: PrefProps.webdavPwd.get(),
-  );
+  final urlCtrl = TextEditingController(text: PrefProps.webdavUrl.get());
+  final userCtrl = TextEditingController(text: PrefProps.webdavUser.get());
+  final pwdCtrl = TextEditingController(text: PrefProps.webdavPwd.get());
 
   void onSubmit() async {
-    final (_, err) = await context.showLoadingDialog(fn: () async {
-      Webdav.shared.client = WebdavClient.basicAuth(
-        url: urlCtrl.text,
-        user: userCtrl.text,
-        pwd: pwdCtrl.text,
-      );
-    });
+    final (_, err) = await context.showLoadingDialog(
+      fn: () async {
+        Webdav.shared.client = WebdavClient.basicAuth(
+          url: urlCtrl.text,
+          user: userCtrl.text,
+          pwd: pwdCtrl.text,
+        );
+      },
+    );
     if (err != null) return;
     PrefProps.webdavUrl.set(urlCtrl.text);
     PrefProps.webdavUser.set(userCtrl.text);

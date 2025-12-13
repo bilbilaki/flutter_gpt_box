@@ -20,14 +20,14 @@ final class TfNodeProjectBuilder extends ToolFunc {
   static const instance = TfNodeProjectBuilder._();
 
   const TfNodeProjectBuilder._()
-      : super(
-          name: 'nodeProjectBuilder',
-          parametersSchema: const {
-            'type': 'object',
-            'properties': {
-              'action': {
-                'type': 'string',
-                'description': '''
+    : super(
+        name: 'nodeProjectBuilder',
+        parametersSchema: const {
+          'type': 'object',
+          'properties': {
+            'action': {
+              'type': 'string',
+              'description': '''
 The operation to perform. Exactly one of:
 - 'scaffoldProject'  : Initialize a new Node/TypeScript project in the workspace.
 - 'setupPackage'     : Initialize package.json and optionally install dependencies/devDependencies.
@@ -43,135 +43,135 @@ The operation to perform. Exactly one of:
 - 'exportProject'    : Export the workspace to a user folder and optionally zip.
 - 'resetWorkspace'   : Wipe the workspace and start fresh (destructive).
 ''',
-              },
+            },
 
-              // Common file/dir params
-              'relPath': {
-                'type': 'string',
-                'description':
-                    'Relative path inside the workspace (e.g., "index.ts", "src/app.ts", "tests/app.test.ts"). Used by writeFile/readFile/listDir/mkdirs/deletePath/showTree.',
-              },
-              'content': {
-                'type': 'string',
-                'description':
-                    'File content for writeFile. UTF-8 text or base64 (see "encoding"). Use for JS/TS code, configs, etc.',
-              },
-              'encoding': {
-                'type': 'string',
-                'enum': ['utf8', 'base64'],
-                'description':
-                    'Encoding for writeFile/readFile content. Defaults to "utf8". Use "base64" for binary files.',
-              },
-              'recursive': {
-                'type': 'boolean',
-                'description':
-                    'For listDir/deletePath/showTree: if true, include nested structure. Defaults to false for listDir/deletePath, true for showTree.',
-              },
+            // Common file/dir params
+            'relPath': {
+              'type': 'string',
+              'description':
+                  'Relative path inside the workspace (e.g., "index.ts", "src/app.ts", "tests/app.test.ts"). Used by writeFile/readFile/listDir/mkdirs/deletePath/showTree.',
+            },
+            'content': {
+              'type': 'string',
+              'description':
+                  'File content for writeFile. UTF-8 text or base64 (see "encoding"). Use for JS/TS code, configs, etc.',
+            },
+            'encoding': {
+              'type': 'string',
+              'enum': ['utf8', 'base64'],
+              'description':
+                  'Encoding for writeFile/readFile content. Defaults to "utf8". Use "base64" for binary files.',
+            },
+            'recursive': {
+              'type': 'boolean',
+              'description':
+                  'For listDir/deletePath/showTree: if true, include nested structure. Defaults to false for listDir/deletePath, true for showTree.',
+            },
 
-              // Scaffold-related
-              'templateType': {
-                'type': 'string',
-                'description': '''
+            // Scaffold-related
+            'templateType': {
+              'type': 'string',
+              'description': '''
 Template to use for scaffoldProject. Suggested values:
 - 'node_express_ts_minimal' : Minimal Express HTTP API in TypeScript.
 - 'node_ts_basic'          : Basic TypeScript app with ts-node / tsconfig.
 - 'node_js_cli_basic'      : Simple Node CLI tool in plain JS.
 If omitted but "projectSchema" is provided, the schema is used instead of a built-in template.
 ''',
-              },
-              'projectName': {
-                'type': 'string',
-                'description':
-                    'Logical project name, used in scaffold template files (e.g., package.json name, README title). Optional; defaults to "my_node_app".',
-              },
-
-              /// Folder tree schema for custom project structure
-              ///
-              /// {
-              ///   "name": "root",
-              ///   "children": [
-              ///     {"name": "index.ts", "type": "file", "content": "..."},
-              ///     {
-              ///       "name": "src",
-              ///       "type": "dir",
-              ///       "children": [
-              ///         {"name": "app.ts", "type": "file", "content": "..."}
-              ///       ]
-              ///     }
-              ///   ]
-              /// }
-              'projectSchema': {
-                'type': 'object',
-                'description':
-                    'Optional folder tree schema for scaffoldProject. If provided, overrides templateType for structure/content. See description for schema shape.',
-              },
-
-              // Scaffold options
-              'autoSetupPackage': {
-                'type': 'boolean',
-                'description':
-                    'For scaffoldProject: if true (default), automatically calls setupPackage after scaffolding to install dependencies based on template (like setupModule in Go builder). Defaults to true.',
-              },
-
-              // Node package setup
-              'initWithNpm': {
-                'type': 'boolean',
-                'description':
-                    'For setupPackage: if true (default), runs "npm init -y" before installing dependencies.',
-              },
-              'dependencies': {
-                'type': 'array',
-                'items': {'type': 'string'},
-                'description':
-                    'For setupPackage: optional list of runtime dependencies to install via "npm install". Example: ["express", "cors"].',
-              },
-              'devDependencies': {
-                'type': 'array',
-                'items': {'type': 'string'},
-                'description':
-                    'For setupPackage: optional list of dev dependencies to install via "npm install -D". Example: ["typescript", "ts-node", "@types/node"].',
-              },
-
-              // Run / test actions
-              'command': {
-                'type': 'string',
-                'description':
-                    'For runCommand: the shell command to execute in the workspace (e.g., "npm run dev", "node index.js", "npm test").',
-              },
-              'timeoutMs': {
-                'type': 'integer',
-                'description':
-                    'Optional timeout in milliseconds to wait for command output (default ~5000). Increase for long-running tasks.',
-              },
-
-              'appAction': {
-                'type': 'string',
-                'enum': ['start', 'stop', 'status'],
-                'description':
-                    'For runApp: whether to start, stop, or query status of the Node app helper (e.g., dev server).',
-              },
-              'appCommand': {
-                'type': 'string',
-                'description':
-                    'Optional custom command for runApp "start" (e.g., "npm run dev", "node index.js"). If omitted, a default is guessed based on scaffold (prefers npm scripts).',
-              },
-
-              'testCommand': {
-                'type': 'string',
-                'description':
-                    'Optional override for runTests (default "npm test" if package.json has a test script, else "npm run test" and similar fallbacks). Example: "npm run test:unit".',
-              },
-
-              // Export
-              'includeZip': {
-                'type': 'boolean',
-                'description':
-                    'For exportProject: if true (default), also create a ZIP archive of the exported project directory.',
-              },
             },
-            'required': ['action'],
+            'projectName': {
+              'type': 'string',
+              'description':
+                  'Logical project name, used in scaffold template files (e.g., package.json name, README title). Optional; defaults to "my_node_app".',
+            },
+
+            /// Folder tree schema for custom project structure
+            ///
+            /// {
+            ///   "name": "root",
+            ///   "children": [
+            ///     {"name": "index.ts", "type": "file", "content": "..."},
+            ///     {
+            ///       "name": "src",
+            ///       "type": "dir",
+            ///       "children": [
+            ///         {"name": "app.ts", "type": "file", "content": "..."}
+            ///       ]
+            ///     }
+            ///   ]
+            /// }
+            'projectSchema': {
+              'type': 'object',
+              'description':
+                  'Optional folder tree schema for scaffoldProject. If provided, overrides templateType for structure/content. See description for schema shape.',
+            },
+
+            // Scaffold options
+            'autoSetupPackage': {
+              'type': 'boolean',
+              'description':
+                  'For scaffoldProject: if true (default), automatically calls setupPackage after scaffolding to install dependencies based on template (like setupModule in Go builder). Defaults to true.',
+            },
+
+            // Node package setup
+            'initWithNpm': {
+              'type': 'boolean',
+              'description':
+                  'For setupPackage: if true (default), runs "npm init -y" before installing dependencies.',
+            },
+            'dependencies': {
+              'type': 'array',
+              'items': {'type': 'string'},
+              'description':
+                  'For setupPackage: optional list of runtime dependencies to install via "npm install". Example: ["express", "cors"].',
+            },
+            'devDependencies': {
+              'type': 'array',
+              'items': {'type': 'string'},
+              'description':
+                  'For setupPackage: optional list of dev dependencies to install via "npm install -D". Example: ["typescript", "ts-node", "@types/node"].',
+            },
+
+            // Run / test actions
+            'command': {
+              'type': 'string',
+              'description':
+                  'For runCommand: the shell command to execute in the workspace (e.g., "npm run dev", "node index.js", "npm test").',
+            },
+            'timeoutMs': {
+              'type': 'integer',
+              'description':
+                  'Optional timeout in milliseconds to wait for command output (default ~5000). Increase for long-running tasks.',
+            },
+
+            'appAction': {
+              'type': 'string',
+              'enum': ['start', 'stop', 'status'],
+              'description':
+                  'For runApp: whether to start, stop, or query status of the Node app helper (e.g., dev server).',
+            },
+            'appCommand': {
+              'type': 'string',
+              'description':
+                  'Optional custom command for runApp "start" (e.g., "npm run dev", "node index.js"). If omitted, a default is guessed based on scaffold (prefers npm scripts).',
+            },
+
+            'testCommand': {
+              'type': 'string',
+              'description':
+                  'Optional override for runTests (default "npm test" if package.json has a test script, else "npm run test" and similar fallbacks). Example: "npm run test:unit".',
+            },
+
+            // Export
+            'includeZip': {
+              'type': 'boolean',
+              'description':
+                  'For exportProject: if true (default), also create a ZIP archive of the exported project directory.',
+            },
           },
-        );
+          'required': ['action'],
+        },
+      );
 
   @override
   String get l10nName => 'Node / TypeScript Project Builder';
@@ -277,12 +277,16 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
     final action = (args['action'] as String?)?.trim();
     if (action == null || action.isEmpty) {
-      return [ChatContent.text("Error: 'action' is required for nodeProjectBuilder.")];
+      return [
+        ChatContent.text("Error: 'action' is required for nodeProjectBuilder."),
+      ];
     }
 
     try {
       final ws = await _NodeWorkspace.ensure();
-      log('[nodeProjectBuilder] workspaceRoot: ${ws.root.path}, action: $action');
+      log(
+        '[nodeProjectBuilder] workspaceRoot: ${ws.root.path}, action: $action',
+      );
 
       switch (action) {
         case 'scaffoldProject':
@@ -331,8 +335,11 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     _Map args,
     OnToolLog log,
   ) async {
-    final templateType = (args['templateType'] as String?)?.trim().toLowerCase();
-    final projectName = (args['projectName'] as String?)?.trim().isNotEmpty == true
+    final templateType = (args['templateType'] as String?)
+        ?.trim()
+        .toLowerCase();
+    final projectName =
+        (args['projectName'] as String?)?.trim().isNotEmpty == true
         ? (args['projectName'] as String).trim()
         : 'my_node_app';
     final schema = args['projectSchema'] as Map<String, dynamic>?;
@@ -365,7 +372,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     final msgs = <ChatContent>[
-      ChatContent.text('scaffoldProject OK (templateType: ${templateType ?? 'node_express_ts_minimal'})'),
+      ChatContent.text(
+        'scaffoldProject OK (templateType: ${templateType ?? 'node_express_ts_minimal'})',
+      ),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
     ];
 
@@ -388,8 +397,10 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     OnToolLog log,
   ) async {
     final initWithNpm = args['initWithNpm'] != false; // default true
-    final deps = (args['dependencies'] as List?)?.cast<String>() ?? const <String>[];
-    final devDeps = (args['devDependencies'] as List?)?.cast<String>() ?? const <String>[];
+    final deps =
+        (args['dependencies'] as List?)?.cast<String>() ?? const <String>[];
+    final devDeps =
+        (args['devDependencies'] as List?)?.cast<String>() ?? const <String>[];
 
     // npm init -y if requested or if package.json is missing
     final pkgFile = ws.resolve('package.json');
@@ -415,12 +426,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     if (deps.isNotEmpty) {
       final depCmd = 'npm install ${deps.join(' ')}';
       log('[nodeProjectBuilder] setupPackage: $depCmd');
-      depsRes = await _runShell(
-        ws,
-        depCmd,
-        timeoutMs: 600000,
-        log: log,
-      );
+      depsRes = await _runShell(ws, depCmd, timeoutMs: 600000, log: log);
       if (depsRes.exitCode != 0) {
         return [
           ChatContent.text('setupPackage FAILED (dependencies)'),
@@ -435,12 +441,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     if (devDeps.isNotEmpty) {
       final devCmd = 'npm install -D ${devDeps.join(' ')}';
       log('[nodeProjectBuilder] setupPackage: $devCmd');
-      devDepsRes = await _runShell(
-        ws,
-        devCmd,
-        timeoutMs: 600000,
-        log: log,
-      );
+      devDepsRes = await _runShell(ws, devCmd, timeoutMs: 600000, log: log);
       if (devDepsRes.exitCode != 0) {
         return [
           ChatContent.text('setupPackage FAILED (devDependencies)'),
@@ -455,10 +456,16 @@ All operations are sandboxed under an internal workspace directory. Relative pat
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
     ];
     if (depsRes != null) {
-      msgs.add(ChatContent.text('dependencies install:\n${depsRes.toDisplayString()}'));
+      msgs.add(
+        ChatContent.text('dependencies install:\n${depsRes.toDisplayString()}'),
+      );
     }
     if (devDepsRes != null) {
-      msgs.add(ChatContent.text('devDependencies install:\n${devDepsRes.toDisplayString()}'));
+      msgs.add(
+        ChatContent.text(
+          'devDependencies install:\n${devDepsRes.toDisplayString()}',
+        ),
+      );
     }
     return msgs;
   }
@@ -544,13 +551,18 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     final items = <String>[];
-    await for (final ent in dir.list(recursive: recursive, followLinks: false)) {
+    await for (final ent in dir.list(
+      recursive: recursive,
+      followLinks: false,
+    )) {
       final rp = ws.relative(ent.path);
       if (rp.isNotEmpty) items.add(rp);
     }
     items.sort();
 
-    log("[nodeProjectBuilder] listDir: '$relPath' (recursive=$recursive) -> ${items.length} items");
+    log(
+      "[nodeProjectBuilder] listDir: '$relPath' (recursive=$recursive) -> ${items.length} items",
+    );
     return [
       ChatContent.text('listDir OK'),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
@@ -603,7 +615,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
         return [ChatContent.text("Error: Path not found: '$relPath'")];
       }
       await dir.delete(recursive: recursive);
-      log("[nodeProjectBuilder] deleteDir: '$relPath' (recursive=$recursive) OK");
+      log(
+        "[nodeProjectBuilder] deleteDir: '$relPath' (recursive=$recursive) OK",
+      );
     }
 
     return [
@@ -626,9 +640,18 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     final buf = StringBuffer();
-    await _buildTree(ws, dir, buf, prefix: '', isRoot: true, recursive: recursive);
+    await _buildTree(
+      ws,
+      dir,
+      buf,
+      prefix: '',
+      isRoot: true,
+      recursive: recursive,
+    );
     final treeStr = buf.toString();
-    log("[nodeProjectBuilder] showTree for '$relPath' (recursive=$recursive)\n$treeStr");
+    log(
+      "[nodeProjectBuilder] showTree for '$relPath' (recursive=$recursive)\n$treeStr",
+    );
 
     return [
       ChatContent.text('showTree OK'),
@@ -708,11 +731,10 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   ) async {
     final explicit = (args['testCommand'] as String?)?.trim();
     if (explicit != null && explicit.isNotEmpty) {
-      return _handleRunCommand(
-        ws,
-        {'command': explicit, 'timeoutMs': args['timeoutMs']},
-        log,
-      );
+      return _handleRunCommand(ws, {
+        'command': explicit,
+        'timeoutMs': args['timeoutMs'],
+      }, log);
     }
 
     // Default heuristics: prefer "npm test" if package.json has a test script.
@@ -724,11 +746,10 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     log('[nodeProjectBuilder] runTests default command: $command');
-    return _handleRunCommand(
-      ws,
-      {'command': command, 'timeoutMs': args['timeoutMs']},
-      log,
-    );
+    return _handleRunCommand(ws, {
+      'command': command,
+      'timeoutMs': args['timeoutMs'],
+    }, log);
   }
 
   Future<_Ret?> _handleExportProject(
@@ -738,10 +759,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   ) async {
     final includeZip = args['includeZip'] != false;
 
-    final exportDir = await _Export.exportWorkspace(
-      ws.root,
-      log: log,
-    );
+    final exportDir = await _Export.exportWorkspace(ws.root, log: log);
 
     String? zipPath;
     if (includeZip) {
@@ -756,10 +774,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     ];
   }
 
-  Future<_Ret?> _handleResetWorkspace(
-    _NodeWorkspace ws,
-    OnToolLog log,
-  ) async {
+  Future<_Ret?> _handleResetWorkspace(_NodeWorkspace ws, OnToolLog log) async {
     await ws.reset();
     log('[nodeProjectBuilder] workspace reset');
     return [
@@ -775,10 +790,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     var s = rel.replaceAll('\\', '/');
     while (s.startsWith('/')) s = s.substring(1);
     if (s.contains('..')) {
-      s = s
-          .split('/')
-          .where((seg) => seg != '..' && seg.isNotEmpty)
-          .join('/');
+      s = s.split('/').where((seg) => seg != '..' && seg.isNotEmpty).join('/');
     }
     return s.trim();
   }
@@ -799,7 +811,8 @@ All operations are sandboxed under an internal workspace directory. Relative pat
         await dir.create(recursive: true);
         log('[nodeProjectBuilder] schema mkdir: $rel');
       }
-      final children = (node['children'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final children =
+          (node['children'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       for (final child in children) {
         await _materializeSchema(ws, child, log, prefix: rel);
       }
@@ -868,7 +881,8 @@ All operations are sandboxed under an internal workspace directory. Relative pat
 
     // vitest config
     final vitestConfig = ws.resolve('vitest.config.ts');
-    await vitestConfig.writeAsString('''import { defineConfig } from 'vitest/config';
+    await vitestConfig.writeAsString(
+      '''import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -876,13 +890,15 @@ export default defineConfig({
     globals: true,
   },
 });
-''');
+''',
+    );
 
     final srcDir = ws.resolveDir('src');
     await srcDir.create(recursive: true);
 
     final indexTs = ws.resolve('src/index.ts');
-    await indexTs.writeAsString('''import express, { Request, Response } from 'express';
+    await indexTs.writeAsString(
+      '''import express, { Request, Response } from 'express';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -898,20 +914,23 @@ app.get('/health', (req: Request, res: Response) => {
 app.listen(port, () => {
   console.log(`Server listening on port \${port}`);
 });
-''');
+''',
+    );
 
     // Test example
     final testsDir = ws.resolveDir('src/__tests__');
     await testsDir.create(recursive: true);
     final healthTest = ws.resolve('src/__tests__/health.test.ts');
-    await healthTest.writeAsString('''import { describe, it, expect } from 'vitest';
+    await healthTest.writeAsString(
+      '''import { describe, it, expect } from 'vitest';
 
 describe('Health', () => {
   it('should pass', () => {
     expect(true).toBe(true);
   });
 });
-''');
+''',
+    );
 
     // Basic README
     final readme = ws.resolve('README.md');
@@ -946,7 +965,9 @@ build/
 .vitest/
 ''');
 
-    log('[nodeProjectBuilder] scaffolded node_express_ts_minimal "$projectName"');
+    log(
+      '[nodeProjectBuilder] scaffolded node_express_ts_minimal "$projectName"',
+    );
   }
 
   Future<void> _scaffoldNodeTsBasic(
@@ -998,7 +1019,8 @@ build/
 
     // vitest config
     final vitestConfig = ws.resolve('vitest.config.ts');
-    await vitestConfig.writeAsString('''import { defineConfig } from 'vitest/config';
+    await vitestConfig.writeAsString(
+      '''import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -1006,7 +1028,8 @@ export default defineConfig({
     globals: true,
   },
 });
-''');
+''',
+    );
 
     final srcDir = ws.resolveDir('src');
     await srcDir.create(recursive: true);
@@ -1024,14 +1047,16 @@ main();
     final testsDir = ws.resolveDir('src/__tests__');
     await testsDir.create(recursive: true);
     final basicTest = ws.resolve('src/__tests__/basic.test.ts');
-    await basicTest.writeAsString('''import { describe, it, expect } from 'vitest';
+    await basicTest.writeAsString(
+      '''import { describe, it, expect } from 'vitest';
 
 describe('Basic', () => {
   it('should pass', () => {
     expect(1 + 1).toBe(2);
   });
 });
-''');
+''',
+    );
 
     final readme = ws.resolve('README.md');
     await readme.writeAsString('''# $projectName
@@ -1095,7 +1120,8 @@ build/
 
     // vitest config
     final vitestConfig = ws.resolve('vitest.config.ts');
-    await vitestConfig.writeAsString('''import { defineConfig } from 'vitest/config';
+    await vitestConfig.writeAsString(
+      '''import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -1103,7 +1129,8 @@ export default defineConfig({
     globals: true,
   },
 });
-''');
+''',
+    );
 
     final binDir = ws.resolveDir('bin');
     await binDir.create(recursive: true);
@@ -1124,14 +1151,16 @@ main();
     final testsDir = ws.resolveDir('test');
     await testsDir.create(recursive: true);
     final cliTest = ws.resolve('test/cli.test.js');
-    await cliTest.writeAsString('''import { describe, it, expect } from 'vitest';
+    await cliTest.writeAsString(
+      '''import { describe, it, expect } from 'vitest';
 
 describe('CLI', () => {
   it('should pass basic test', () => {
     expect(true).toBe(true);
   });
 });
-''');
+''',
+    );
 
     final readme = ws.resolve('README.md');
     await readme.writeAsString('''# $projectName
@@ -1194,8 +1223,14 @@ Simple Node.js CLI with modern tooling.
 
       if (ent is Directory && recursive) {
         final childPrefix = prefix + (isLast ? '    ' : '│   ');
-        await _buildTree(ws, ent, buf,
-            prefix: childPrefix, isRoot: false, recursive: recursive);
+        await _buildTree(
+          ws,
+          ent,
+          buf,
+          prefix: childPrefix,
+          isRoot: false,
+          recursive: recursive,
+        );
       }
     }
   }
@@ -1313,10 +1348,10 @@ class _NodeAppManager {
   String? _command;
 
   _NodeAppStatus get status => _NodeAppStatus(
-        isRunning: _proc != null,
-        command: _command,
-        cwd: _cwd?.path,
-      );
+    isRunning: _proc != null,
+    command: _command,
+    cwd: _cwd?.path,
+  );
 
   Future<_NodeAppStatus> startIfNeeded(
     Directory cwd,
@@ -1339,14 +1374,18 @@ class _NodeAppManager {
     _cwd = cwd;
     _command = command;
 
-    proc.stdout.transform(utf8.decoder).listen(
-      (data) => log('[nodeApp stdout] $data'),
-      onError: (e) => log('[nodeApp stdout error] $e'),
-    );
-    proc.stderr.transform(utf8.decoder).listen(
-      (data) => log('[nodeApp stderr] $data'),
-      onError: (e) => log('[nodeApp stderr error] $e'),
-    );
+    proc.stdout
+        .transform(utf8.decoder)
+        .listen(
+          (data) => log('[nodeApp stdout] $data'),
+          onError: (e) => log('[nodeApp stdout error] $e'),
+        );
+    proc.stderr
+        .transform(utf8.decoder)
+        .listen(
+          (data) => log('[nodeApp stderr] $data'),
+          onError: (e) => log('[nodeApp stderr error] $e'),
+        );
 
     proc.exitCode.then((code) {
       log('[nodeProjectBuilder] app process exited with code $code');
@@ -1375,11 +1414,7 @@ class _NodeAppStatus {
   final String? command;
   final String? cwd;
 
-  _NodeAppStatus({
-    required this.isRunning,
-    this.command,
-    this.cwd,
-  });
+  _NodeAppStatus({required this.isRunning, this.command, this.cwd});
 
   String get statusText {
     if (!isRunning) return 'stopped';

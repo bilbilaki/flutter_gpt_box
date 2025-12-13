@@ -19,7 +19,8 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'select_tool_category',
-      description: 'Select a category of browser automation tools to use based on the user task.',
+      description:
+          'Select a category of browser automation tools to use based on the user task.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -63,11 +64,11 @@ class AgentTools {
       // Note: BuildContext should be passed from the calling widget
       return await browser.initializeBrowserSession(null);
     },
-    'close_browser_session': (Map<String, dynamic> args) async => 
+    'close_browser_session': (Map<String, dynamic> args) async =>
         await browser.closeBrowserSession(),
-    'create_new_page': (Map<String, dynamic> args) async => 
+    'create_new_page': (Map<String, dynamic> args) async =>
         await browser.createNewPage(),
-    'get_session_status': (Map<String, dynamic> args) => 
+    'get_session_status': (Map<String, dynamic> args) =>
         browser.getSessionStatus(),
   };
 
@@ -82,17 +83,16 @@ class AgentTools {
   ];
 
   Map<String, Function> get navigationToolMap => {
-    'load_url': (Map<String, dynamic> args) async => 
+    'load_url': (Map<String, dynamic> args) async =>
         await browser.loadUrl(args['url']),
-    'reload_page': (Map<String, dynamic> args) async => 
+    'reload_page': (Map<String, dynamic> args) async =>
         await browser.reloadPage(waitUntil: args['wait_until'] ?? true),
-    'go_back': (Map<String, dynamic> args) async => 
-        await browser.goBack(),
-    'go_forward': (Map<String, dynamic> args) async => 
+    'go_back': (Map<String, dynamic> args) async => await browser.goBack(),
+    'go_forward': (Map<String, dynamic> args) async =>
         await browser.goForward(),
-    'get_current_url': (Map<String, dynamic> args) async => 
+    'get_current_url': (Map<String, dynamic> args) async =>
         await browser.getCurrentUrl(),
-    'get_page_title': (Map<String, dynamic> args) async => 
+    'get_page_title': (Map<String, dynamic> args) async =>
         await browser.getPageTitle(),
   };
 
@@ -109,19 +109,19 @@ class AgentTools {
   ];
 
   Map<String, Function> get elementInteractionToolMap => {
-    'click_element': (Map<String, dynamic> args) async => 
+    'click_element': (Map<String, dynamic> args) async =>
         await browser.clickElement(args['selector']),
-    'type_in_element': (Map<String, dynamic> args) async => 
+    'type_in_element': (Map<String, dynamic> args) async =>
         await browser.typeInElement(args['selector'], args['text']),
-    'hover_element': (Map<String, dynamic> args) async => 
+    'hover_element': (Map<String, dynamic> args) async =>
         await browser.hoverElement(args['selector']),
-    'focus_element': (Map<String, dynamic> args) async => 
+    'focus_element': (Map<String, dynamic> args) async =>
         await browser.focusElement(args['selector']),
-    'clear_input': (Map<String, dynamic> args) async => 
+    'clear_input': (Map<String, dynamic> args) async =>
         await browser.clearInput(args['selector']),
-    'set_checkbox': (Map<String, dynamic> args) async => 
+    'set_checkbox': (Map<String, dynamic> args) async =>
         await browser.setCheckbox(args['selector'], args['checked']),
-    'press_key': (Map<String, dynamic> args) async => 
+    'press_key': (Map<String, dynamic> args) async =>
         await browser.pressKey(args['key']),
     'type_text': (Map<String, dynamic> args) async {
       final delayMs = args['delay_ms'] as int?;
@@ -144,26 +144,26 @@ class AgentTools {
   ];
 
   Map<String, Function> get elementInspectionToolMap => {
-    'read_text_content': (Map<String, dynamic> args) async => 
+    'read_text_content': (Map<String, dynamic> args) async =>
         await browser.readTextContent(selector: args['selector']),
-    'get_element_value': (Map<String, dynamic> args) async => 
+    'get_element_value': (Map<String, dynamic> args) async =>
         await browser.getElementValue(args['selector']),
-    'get_element_attributes': (Map<String, dynamic> args) async => 
+    'get_element_attributes': (Map<String, dynamic> args) async =>
         await browser.getElementAttributes(
-          args['selector'], 
+          args['selector'],
           List<String>.from(args['attributes']),
         ),
-    'element_exists': (Map<String, dynamic> args) async => 
+    'element_exists': (Map<String, dynamic> args) async =>
         await browser.elementExists(args['selector']),
-    'count_elements': (Map<String, dynamic> args) async => 
+    'count_elements': (Map<String, dynamic> args) async =>
         await browser.countElements(args['selector']),
-    'get_interactive_elements': (Map<String, dynamic> args) async => 
+    'get_interactive_elements': (Map<String, dynamic> args) async =>
         await browser.getInteractiveElements(),
-    'get_texts_of_all_elements': (Map<String, dynamic> args) async => 
+    'get_texts_of_all_elements': (Map<String, dynamic> args) async =>
         await browser.getTextsOfAllElements(args['selector']),
-    'get_all_links': (Map<String, dynamic> args) async => 
+    'get_all_links': (Map<String, dynamic> args) async =>
         await browser.getAllLinks(),
-    'get_all_form_inputs': (Map<String, dynamic> args) async => 
+    'get_all_form_inputs': (Map<String, dynamic> args) async =>
         await browser.getAllFormInputs(),
   };
 
@@ -174,13 +174,13 @@ class AgentTools {
   ];
 
   Map<String, Function> get formToolMap => {
-    'select_dropdown_option': (Map<String, dynamic> args) async => 
+    'select_dropdown_option': (Map<String, dynamic> args) async =>
         await browser.selectDropdownOption(
           args['selector'],
           args['value_or_text'],
           byValue: args['by_value'] ?? true,
         ),
-    'submit_form': (Map<String, dynamic> args) async => 
+    'submit_form': (Map<String, dynamic> args) async =>
         await browser.submitForm(args['selector']),
   };
 
@@ -193,21 +193,21 @@ class AgentTools {
   ];
 
   Map<String, Function> get scrollingToolMap => {
-    'scroll_into_view': (Map<String, dynamic> args) async => 
+    'scroll_into_view': (Map<String, dynamic> args) async =>
         await browser.scrollIntoView(
           args['selector'],
           smooth: args['smooth'] ?? true,
           block: args['block'] ?? 'center',
         ),
-    'scroll_page': (Map<String, dynamic> args) async => 
+    'scroll_page': (Map<String, dynamic> args) async =>
         await browser.scrollPage(
           args['x'] ?? 0,
           args['y'] ?? 0,
           smooth: args['smooth'] ?? true,
         ),
-    'scroll_to_top': (Map<String, dynamic> args) async => 
+    'scroll_to_top': (Map<String, dynamic> args) async =>
         await browser.scrollToTop(),
-    'scroll_to_bottom': (Map<String, dynamic> args) async => 
+    'scroll_to_bottom': (Map<String, dynamic> args) async =>
         await browser.scrollToBottom(),
   };
 
@@ -225,17 +225,15 @@ class AgentTools {
     'wait_for_navigation': (Map<String, dynamic> args) async {
       return await browser.waitForNavigation();
     },
-    'is_page_loading': (Map<String, dynamic> args) async => 
+    'is_page_loading': (Map<String, dynamic> args) async =>
         await browser.isPageLoading(),
   };
 
   // -- Specialist 8: Screenshot Tools --
-  List<ChatCompletionTool> get screenshotTools => [
-    takeScreenshotTool,
-  ];
+  List<ChatCompletionTool> get screenshotTools => [takeScreenshotTool];
 
   Map<String, Function> get screenshotToolMap => {
-    'take_screenshot': (Map<String, dynamic> args) async => 
+    'take_screenshot': (Map<String, dynamic> args) async =>
         await browser.takeScreenshot(
           selector: args['selector'],
           filePath: args['file_path'],
@@ -254,24 +252,23 @@ class AgentTools {
   ];
 
   Map<String, Function> get advancedToolMap => {
-    'evaluate_javascript': (Map<String, dynamic> args) async => 
+    'evaluate_javascript': (Map<String, dynamic> args) async =>
         await browser.evaluateJavaScript(args['script']),
-    'get_page_html': (Map<String, dynamic> args) async => 
+    'get_page_html': (Map<String, dynamic> args) async =>
         await browser.getPageHTML(),
-    'get_viewport_size': (Map<String, dynamic> args) async => 
+    'get_viewport_size': (Map<String, dynamic> args) async =>
         await browser.getViewportSize(),
-    'set_viewport_size': (Map<String, dynamic> args) async => 
+    'set_viewport_size': (Map<String, dynamic> args) async =>
         await browser.setViewportSize(args['width'], args['height']),
-    'set_cookie': (Map<String, dynamic> args) async => 
-        await browser.setCookie(
-          args['name'],
-          args['value'],
-          domain: args['domain'],
-          path: args['path'],
-        ),
-    'get_cookies': (Map<String, dynamic> args) async => 
+    'set_cookie': (Map<String, dynamic> args) async => await browser.setCookie(
+      args['name'],
+      args['value'],
+      domain: args['domain'],
+      path: args['path'],
+    ),
+    'get_cookies': (Map<String, dynamic> args) async =>
         await browser.getCookies(),
-    'delete_cookie': (Map<String, dynamic> args) async => 
+    'delete_cookie': (Map<String, dynamic> args) async =>
         await browser.deleteCookie(args['name']),
   };
 
@@ -313,11 +310,9 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'initialize_browser_session',
-      description: 'Initialize a new browser session. Must be called before any other browser operations.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      description:
+          'Initialize a new browser session. Must be called before any other browser operations.',
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -326,10 +321,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'close_browser_session',
       description: 'Close the current browser session and free resources.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -338,10 +330,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'create_new_page',
       description: 'Create a new page/tab in the current browser session.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -350,10 +339,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'get_session_status',
       description: 'Get the current status of the browser session.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -368,7 +354,8 @@ class AgentTools {
         'properties': {
           'url': {
             'type': 'string',
-            'description': 'The URL to navigate to (must include http:// or https://).',
+            'description':
+                'The URL to navigate to (must include http:// or https://).',
           },
         },
         'required': ['url'],
@@ -386,7 +373,8 @@ class AgentTools {
         'properties': {
           'wait_until': {
             'type': 'boolean',
-            'description': 'Whether to wait until the page is fully loaded. Default: true.',
+            'description':
+                'Whether to wait until the page is fully loaded. Default: true.',
           },
         },
       },
@@ -398,10 +386,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'go_back',
       description: 'Navigate back in browser history.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -410,10 +395,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'go_forward',
       description: 'Navigate forward in browser history.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -422,10 +404,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'get_current_url',
       description: 'Get the current page URL.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -434,10 +413,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'get_page_title',
       description: 'Get the title of the current page.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -452,7 +428,8 @@ class AgentTools {
         'properties': {
           'selector': {
             'type': 'string',
-            'description': 'CSS selector for the element to click (e.g., "#submit-button", ".login-btn").',
+            'description':
+                'CSS selector for the element to click (e.g., "#submit-button", ".login-btn").',
           },
         },
         'required': ['selector'],
@@ -464,13 +441,15 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'type_in_element',
-      description: 'Type text into an input field or textarea using a CSS selector.',
+      description:
+          'Type text into an input field or textarea using a CSS selector.',
       parameters: {
         'type': 'object',
         'properties': {
           'selector': {
             'type': 'string',
-            'description': 'CSS selector for the input element (e.g., "#email", "input[name=\'username\']").',
+            'description':
+                'CSS selector for the input element (e.g., "#email", "input[name=\'username\']").',
           },
           'text': {
             'type': 'string',
@@ -550,7 +529,8 @@ class AgentTools {
           },
           'checked': {
             'type': 'boolean',
-            'description': 'Whether to check (true) or uncheck (false) the element.',
+            'description':
+                'Whether to check (true) or uncheck (false) the element.',
           },
         },
         'required': ['selector', 'checked'],
@@ -562,13 +542,15 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'press_key',
-      description: 'Simulate pressing a keyboard key (e.g., "Enter", "Tab", "Escape").',
+      description:
+          'Simulate pressing a keyboard key (e.g., "Enter", "Tab", "Escape").',
       parameters: {
         'type': 'object',
         'properties': {
           'key': {
             'type': 'string',
-            'description': 'The key to press (e.g., "Enter", "Tab", "Escape", "ArrowDown").',
+            'description':
+                'The key to press (e.g., "Enter", "Tab", "Escape", "ArrowDown").',
           },
         },
         'required': ['key'],
@@ -580,17 +562,16 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'type_text',
-      description: 'Type text character by character with realistic delays (simulates human typing).',
+      description:
+          'Type text character by character with realistic delays (simulates human typing).',
       parameters: {
         'type': 'object',
         'properties': {
-          'text': {
-            'type': 'string',
-            'description': 'The text to type.',
-          },
+          'text': {'type': 'string', 'description': 'The text to type.'},
           'delay_ms': {
             'type': 'integer',
-            'description': 'Delay in milliseconds between each character. Default: 100ms.',
+            'description':
+                'Delay in milliseconds between each character. Default: 100ms.',
           },
         },
         'required': ['text'],
@@ -603,13 +584,15 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'read_text_content',
-      description: 'Read the visible text content of the page or a specific element.',
+      description:
+          'Read the visible text content of the page or a specific element.',
       parameters: {
         'type': 'object',
         'properties': {
           'selector': {
             'type': 'string',
-            'description': 'Optional CSS selector for a specific element. If omitted, reads the entire page body.',
+            'description':
+                'Optional CSS selector for a specific element. If omitted, reads the entire page body.',
           },
         },
       },
@@ -620,7 +603,8 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'get_element_value',
-      description: 'Get the value of an input, textarea, or selected option in a select element.',
+      description:
+          'Get the value of an input, textarea, or selected option in a select element.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -638,7 +622,8 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'get_element_attributes',
-      description: 'Get specific attributes of an element (e.g., href, src, alt, class).',
+      description:
+          'Get specific attributes of an element (e.g., href, src, alt, class).',
       parameters: {
         'type': 'object',
         'properties': {
@@ -648,7 +633,8 @@ class AgentTools {
           },
           'attributes': {
             'type': 'array',
-            'description': 'List of attribute names to retrieve (e.g., ["href", "class", "id"]).',
+            'description':
+                'List of attribute names to retrieve (e.g., ["href", "class", "id"]).',
             'items': {'type': 'string'},
           },
         },
@@ -697,11 +683,9 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'get_interactive_elements',
-      description: 'Get all interactive elements (buttons, links, inputs) on the page with their properties.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      description:
+          'Get all interactive elements (buttons, links, inputs) on the page with their properties.',
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -727,11 +711,9 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'get_all_links',
-      description: 'Get all links (anchor tags) on the page with their text and href attributes.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      description:
+          'Get all links (anchor tags) on the page with their text and href attributes.',
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -739,11 +721,9 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'get_all_form_inputs',
-      description: 'Get all form inputs (input, select, textarea) with their properties.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      description:
+          'Get all form inputs (input, select, textarea) with their properties.',
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -752,7 +732,8 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'select_dropdown_option',
-      description: 'Select an option in a dropdown (select element) by value or visible text.',
+      description:
+          'Select an option in a dropdown (select element) by value or visible text.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -766,7 +747,8 @@ class AgentTools {
           },
           'by_value': {
             'type': 'boolean',
-            'description': 'Whether to select by value (true) or by visible text (false). Default: true.',
+            'description':
+                'Whether to select by value (true) or by visible text (false). Default: true.',
           },
         },
         'required': ['selector', 'value_or_text'],
@@ -778,13 +760,15 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'submit_form',
-      description: 'Submit a form containing the specified element, or submit a form element directly.',
+      description:
+          'Submit a form containing the specified element, or submit a form element directly.',
       parameters: {
         'type': 'object',
         'properties': {
           'selector': {
             'type': 'string',
-            'description': 'CSS selector for the form or an element within the form.',
+            'description':
+                'CSS selector for the form or an element within the form.',
           },
         },
         'required': ['selector'],
@@ -811,7 +795,8 @@ class AgentTools {
           },
           'block': {
             'type': 'string',
-            'description': 'Vertical alignment (start, center, end, nearest). Default: center.',
+            'description':
+                'Vertical alignment (start, center, end, nearest). Default: center.',
           },
         },
         'required': ['selector'],
@@ -829,11 +814,13 @@ class AgentTools {
         'properties': {
           'x': {
             'type': 'integer',
-            'description': 'Horizontal pixels to scroll (positive = right, negative = left).',
+            'description':
+                'Horizontal pixels to scroll (positive = right, negative = left).',
           },
           'y': {
             'type': 'integer',
-            'description': 'Vertical pixels to scroll (positive = down, negative = up).',
+            'description':
+                'Vertical pixels to scroll (positive = down, negative = up).',
           },
           'smooth': {
             'type': 'boolean',
@@ -850,10 +837,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'scroll_to_top',
       description: 'Scroll to the top of the page.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -862,10 +846,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'scroll_to_bottom',
       description: 'Scroll to the bottom of the page.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -874,7 +855,8 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'wait_for_element',
-      description: 'Wait for an element to appear and become visible on the page. Timeout is 1000 seconds.',
+      description:
+          'Wait for an element to appear and become visible on the page. Timeout is 1000 seconds.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -892,11 +874,9 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'wait_for_navigation',
-      description: 'Wait for page navigation to complete (useful after clicking links or submitting forms). Timeout is 1000 seconds.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      description:
+          'Wait for page navigation to complete (useful after clicking links or submitting forms). Timeout is 1000 seconds.',
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -905,10 +885,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'is_page_loading',
       description: 'Check if the page is currently loading.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -917,13 +894,15 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'take_screenshot',
-      description: 'Take a screenshot of the current page or a specific element.',
+      description:
+          'Take a screenshot of the current page or a specific element.',
       parameters: {
         'type': 'object',
         'properties': {
           'selector': {
             'type': 'string',
-            'description': 'Optional CSS selector for a specific element. If omitted, captures the full page.',
+            'description':
+                'Optional CSS selector for a specific element. If omitted, captures the full page.',
           },
           'file_path': {
             'type': 'string',
@@ -939,13 +918,15 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'evaluate_javascript',
-      description: 'Execute arbitrary JavaScript code in the browser context and get the result.',
+      description:
+          'Execute arbitrary JavaScript code in the browser context and get the result.',
       parameters: {
         'type': 'object',
         'properties': {
           'script': {
             'type': 'string',
-            'description': 'The JavaScript code to execute. Must return a serializable value.',
+            'description':
+                'The JavaScript code to execute. Must return a serializable value.',
           },
         },
         'required': ['script'],
@@ -958,10 +939,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'get_page_html',
       description: 'Get the complete HTML source code of the current page.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -970,10 +948,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'get_viewport_size',
       description: 'Get the current viewport dimensions (width and height).',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 
@@ -981,7 +956,8 @@ class AgentTools {
     type: ChatCompletionToolType.function,
     function: FunctionObject(
       name: 'set_viewport_size',
-      description: 'Set the viewport dimensions (useful for responsive testing).',
+      description:
+          'Set the viewport dimensions (useful for responsive testing).',
       parameters: {
         'type': 'object',
         'properties': {
@@ -1007,22 +983,13 @@ class AgentTools {
       parameters: {
         'type': 'object',
         'properties': {
-          'name': {
-            'type': 'string',
-            'description': 'Cookie name.',
-          },
-          'value': {
-            'type': 'string',
-            'description': 'Cookie value.',
-          },
+          'name': {'type': 'string', 'description': 'Cookie name.'},
+          'value': {'type': 'string', 'description': 'Cookie value.'},
           'domain': {
             'type': 'string',
             'description': 'Optional cookie domain.',
           },
-          'path': {
-            'type': 'string',
-            'description': 'Optional cookie path.',
-          },
+          'path': {'type': 'string', 'description': 'Optional cookie path.'},
         },
         'required': ['name', 'value'],
       },
@@ -1034,10 +1001,7 @@ class AgentTools {
     function: FunctionObject(
       name: 'get_cookies',
       description: 'Get all cookies for the current page.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      parameters: {'type': 'object', 'properties': {}},
     ),
   );
 

@@ -5,7 +5,6 @@ import 'package:openai_dart/openai_dart.dart' as openai;
 import 'package:path/path.dart' as p;
 import 'package:record/record.dart';
 
-
 final AudioRecorder _audioRecorder = AudioRecorder();
 
 Future<bool> ensureRecordPermission() async {
@@ -89,7 +88,7 @@ String mimeFromExt(String path) {
       return 'image/heic';
     case '.heif':
       return 'image/heif';
-       case '.pdf':
+    case '.pdf':
       return 'application/pdf';
     default:
       return 'application/octet-stream';
@@ -134,12 +133,21 @@ Future<String> imagePathToDataUrl(String path) async {
   return 'data:$mime;base64,$b64';
 }
 
-Future<openai.ChatCompletionMessageContentPart> contentFromPath(String path) async {
+Future<openai.ChatCompletionMessageContentPart> contentFromPath(
+  String path,
+) async {
   if (isImagePath(path)) {
     final dataUrl = await imagePathToDataUrl(path);
-    return openai.ChatCompletionMessageContentPart.image(imageUrl: openai.ChatCompletionMessageImageUrl(url: dataUrl));
+    return openai.ChatCompletionMessageContentPart.image(
+      imageUrl: openai.ChatCompletionMessageImageUrl(url: dataUrl),
+    );
   }
-  return openai.ChatCompletionMessageContentPart.audio(inputAudio: openai.ChatCompletionMessageInputAudio(data: await saveBase64ToFile(path),format: openai.ChatCompletionMessageInputAudioFormat.wav));
+  return openai.ChatCompletionMessageContentPart.audio(
+    inputAudio: openai.ChatCompletionMessageInputAudio(
+      data: await saveBase64ToFile(path),
+      format: openai.ChatCompletionMessageInputAudioFormat.wav,
+    ),
+  );
 }
 
 Future<String> saveBase64ToFile(
@@ -158,7 +166,7 @@ Future<String> saveBase64ToFile(
 }
 
 Future<String?> ensureAudioInputPath(List<String> files) async {
-  final audio = isAudioPath(files.first) == true ? files.first: null;
+  final audio = isAudioPath(files.first) == true ? files.first : null;
   if (audio != null) return audio;
   // fallback quick record if nothing provided
   return await quickRecordWav();

@@ -2,11 +2,11 @@ part of '../page/home/home.dart';
 
 // ignore: must_be_immutable
 class AudioPlayerTile extends StatefulWidget {
-   Uint8List bytes;
-   bool autoPlay;
-   File? file;
+  Uint8List bytes;
+  bool autoPlay;
+  File? file;
 
-   AudioPlayerTile({
+  AudioPlayerTile({
     super.key,
     required this.bytes,
     this.autoPlay = false,
@@ -87,7 +87,6 @@ class _AudioPlayerTileState extends State<AudioPlayerTile> {
       setState(() {
         _playerState = PlayerState.playing;
       });
-
     } else if (_playerState == PlayerState.playing) {
       await _player.pause();
       setState(() {
@@ -119,10 +118,10 @@ class _AudioPlayerTileState extends State<AudioPlayerTile> {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      margin:  EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding:  EdgeInsets.all(12.0),
+        padding: EdgeInsets.all(12.0),
         child: Row(
           children: [
             IconButton(
@@ -130,32 +129,32 @@ class _AudioPlayerTileState extends State<AudioPlayerTile> {
                 _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
               ),
               iconSize: 48,
-             // color: theme.primaryColor,
+              // color: theme.primaryColor,
               onPressed: _play,
             ),
-             SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SiriWaveform.ios9(
                     controller: _siriController,
-                    options:  IOS9SiriWaveformOptions(
+                    options: IOS9SiriWaveformOptions(
                       height: 60,
                       width: double.infinity,
                     ),
                   ),
-                   SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         _formatDuration(_position),
-                       // style: theme.textTheme.bodySmall,
+                        // style: theme.textTheme.bodySmall,
                       ),
                       Text(
                         _formatDuration(_duration),
-                    //    style: theme.textTheme.bodySmall,
+                        //    style: theme.textTheme.bodySmall,
                       ),
                     ],
                   ),

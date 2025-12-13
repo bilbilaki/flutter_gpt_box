@@ -1,4 +1,5 @@
-part of '../main.dart';  
+part of '../main.dart';
+
 Widget buildMainContent(BuildContext context) {
   switch (currentView) {
     case CurrentView.templates:

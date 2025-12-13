@@ -127,7 +127,7 @@ final class ChatHistoryItem {
     this.inputTokens, // Initialize new parameter
     this.outputTokens, // Initialize new parameter
     this.totalTokens,
-    this.nanobenana // Initialize new parameter
+    this.nanobenana, // Initialize new parameter
   }) : content = [ChatContent.noid(type: type, raw: raw)],
        createdAt = createdAt ?? DateTime.now(),
        id = shortid.generate();
@@ -208,16 +208,14 @@ enum ChatRole {
   bool get isAssist => this == assist;
   bool get isSystem => this == system;
   bool get isTool => this == tool;
-    bool get isAsk => this == ask;
-
+  bool get isAsk => this == ask;
 
   String get localized => switch (this) {
     user => Stores.setting.avatar.get(),
     assist => '🤖',
     system => '⚙️',
     tool => '🛠️',
-        ask => '🤖🛠️',
-
+    ask => '🤖🛠️',
   };
 
   Color get color {
@@ -226,8 +224,7 @@ enum ChatRole {
       assist => UIs.primaryColor.withBlue(233),
       system => UIs.primaryColor.withRed(233),
       tool => UIs.primaryColor.withBlue(33),
-ask => UIs.primaryColor.withBlue(300),
-
+      ask => UIs.primaryColor.withBlue(300),
     };
     return c.withValues(alpha: 0.6);
   }

@@ -25,8 +25,9 @@ part 'widgets/learning_and_socials_view.dart';
 part 'widgets/support_view.dart';
 part 'widgets/valid.dart';
 part 'widgets/main_base.dart';
+
 // part 'widgets/database_view.dart'; --- IGNORE ---
- CurrentView currentView = CurrentView.templates; // Initial view
+CurrentView currentView = CurrentView.templates; // Initial view
 late Function setState; // State updater function
 void main() {
   runApp(const MyApp());
@@ -47,13 +48,19 @@ class BuildShipHomeFake extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                buildMainAppBar(context), // Dynamic AppBar based on current view
+                buildMainAppBar(
+                  context,
+                ), // Dynamic AppBar based on current view
                 Expanded(
                   child: buildMainContent(context), // Dynamic main content
                 ),
                 // Logs panel only visible for flow editor views
-                if (currentView == CurrentView.autoIndexFlow || currentView == CurrentView.helloWorldFlow)
-                  _buildLogsPanel(context, showNoLogs: currentView == CurrentView.helloWorldFlow),
+                if (currentView == CurrentView.autoIndexFlow ||
+                    currentView == CurrentView.helloWorldFlow)
+                  _buildLogsPanel(
+                    context,
+                    showNoLogs: currentView == CurrentView.helloWorldFlow,
+                  ),
               ],
             ),
           ),
@@ -61,10 +68,4 @@ class BuildShipHomeFake extends StatelessWidget {
       ),
     );
   }
-
-
 }
-
-
-
-

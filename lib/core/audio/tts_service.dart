@@ -101,7 +101,7 @@ class TtsService {
 
         final dataStr = dataLines.join('\n');
         if (dataStr == '[DONE]') {
-          yield  TtsChunk(bytes: Uint8List(0), done: true);
+          yield TtsChunk(bytes: Uint8List(0), done: true);
           return;
         }
 
@@ -126,7 +126,7 @@ class TtsService {
         }
       }
     }
-    yield  TtsChunk(bytes: Uint8List(0), done: true);
+    yield TtsChunk(bytes: Uint8List(0), done: true);
   }
 
   void dispose() => _client.close();

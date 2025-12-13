@@ -42,7 +42,10 @@ class MyApp extends StatelessWidget {
           ),
         ),
         textTheme: const TextTheme(
-          titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          titleLarge: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
           bodyMedium: TextStyle(color: Colors.white70),
           labelLarge: TextStyle(color: Colors.white),
         ),
@@ -52,14 +55,14 @@ class MyApp extends StatelessWidget {
           deleteIconColor: Colors.white,
         ),
         radioTheme: RadioThemeData(
-          fillColor: WidgetStateProperty.resolveWith<Color?>(
-            (Set<WidgetState> states) {
-              if (states.contains(WidgetState.selected)) {
-                return Colors.blueAccent;
-              }
-              return Colors.white70;
-            },
-          ),
+          fillColor: WidgetStateProperty.resolveWith<Color?>((
+            Set<WidgetState> states,
+          ) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.blueAccent;
+            }
+            return Colors.white70;
+          }),
         ),
         sliderTheme: SliderThemeData(
           activeTrackColor: Colors.blueAccent,

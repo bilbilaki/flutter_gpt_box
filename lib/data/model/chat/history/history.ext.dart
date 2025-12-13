@@ -16,15 +16,15 @@ extension ChatHistoryX on ChatHistory {
   }
 
   static ChatHistory get example => ChatHistory.noid(
-        name: l10n.help,
-        items: [
-          ChatHistoryItem.single(
-            role: ChatRole.system,
-            type: ChatContentType.text,
-            raw: l10n.initChatHelp(Urls.repoIssue, Urls.unilinkDoc),
-          ),
-        ],
-      );
+    name: l10n.help,
+    items: [
+      ChatHistoryItem.single(
+        role: ChatRole.system,
+        type: ChatContentType.text,
+        raw: l10n.initChatHelp(Urls.repoIssue, Urls.unilinkDoc),
+      ),
+    ],
+  );
 
   bool get isInitHelp =>
       name == l10n.help &&
@@ -56,9 +56,7 @@ extension ChatHistoryX on ChatHistory {
 
   bool containsKeywords(List<String> keywords) {
     return items.any(
-      (e) => e.content.any(
-        (e) => keywords.any((e) => e.contains(e)),
-      ),
+      (e) => e.content.any((e) => keywords.any((e) => e.contains(e))),
     );
   }
 }
@@ -66,13 +64,15 @@ extension ChatHistoryX on ChatHistory {
 extension ChatHistoryItemX on ChatHistoryItem {
   String get toMarkdown {
     return content
-        .map((e) => switch (e.type) {
-              ChatContentType.text => e.raw,
-              ChatContentType.image => '![$id](${e.raw})',
-              ChatContentType.audio => '[$id](${e.raw})',
-              ChatContentType.file => '[$id](${e.raw})',
-          ChatContentType.nanobenana => '![$id](${e.raw})',
-            })
+        .map(
+          (e) => switch (e.type) {
+            ChatContentType.text => e.raw,
+            ChatContentType.image => '![$id](${e.raw})',
+            ChatContentType.audio => '[$id](${e.raw})',
+            ChatContentType.file => '[$id](${e.raw})',
+            ChatContentType.nanobenana => '![$id](${e.raw})',
+          },
+        )
         .join('\n');
   }
 
@@ -140,7 +140,8 @@ extension ChatContentX on ChatContent {
         return OaiContent.text(text: raw);
       case ChatContentType.image:
         return OaiContent.image(
-            imageUrl: ChatCompletionMessageImageUrl(url: raw));
+          imageUrl: ChatCompletionMessageImageUrl(url: raw),
+        );
       case ChatContentType.file:
         final file = File(raw);
         final cachedMime = _cachedMimeMap[raw];
@@ -153,7 +154,8 @@ extension ChatContentX on ChatContent {
           final b64 = await _getBase64(file, mime);
           if (b64 != null) {
             return OaiContent.image(
-                imageUrl: ChatCompletionMessageImageUrl(url: b64));
+              imageUrl: ChatCompletionMessageImageUrl(url: b64),
+            );
           }
         }
         return OaiContent.text(text: raw);
@@ -162,11 +164,7 @@ extension ChatContentX on ChatContent {
     }
   }
 
-  ChatContent copyWith({
-    ChatContentType? type,
-    String? raw,
-    String? id,
-  }) {
+  ChatContent copyWith({ChatContentType? type, String? raw, String? id}) {
     return ChatContent(
       type: type ?? this.type,
       raw: raw ?? this.raw,

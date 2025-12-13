@@ -24,10 +24,7 @@ class ProgressTrackerSection extends StatelessWidget {
           children: [
             const Text(
               'Progress Tracker',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             // Progress Stats
@@ -36,7 +33,10 @@ class ProgressTrackerSection extends StatelessWidget {
               children: [
                 _buildStatColumn('Total URLs', totalUrls.toString()),
                 _buildStatColumn('Completed', completedUrls.toString()),
-                _buildStatColumn('Remaining', (totalUrls - completedUrls).toString()),
+                _buildStatColumn(
+                  'Remaining',
+                  (totalUrls - completedUrls).toString(),
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -110,13 +110,7 @@ class ProgressTrackerSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
   }

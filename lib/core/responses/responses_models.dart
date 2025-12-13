@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 /// Generic Responses API request for our use-cases.
 class ResponsesRequest {
   final String model;

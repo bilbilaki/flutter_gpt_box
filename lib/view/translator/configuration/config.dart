@@ -1,6 +1,4 @@
-
 enum ChunkingMethod { lines, words, regex, characters }
-
 
 /*
 You are an advanced translator. Your sole task is to translate the given input text into $target_language.  

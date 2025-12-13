@@ -2,7 +2,7 @@ import 'dart:async'; // Import for Future.wait
 import 'file.dart';
 import 'service.dart';
 import 'models.dart';
-import 'app.dart'; // Import app.dart to access _cleanAIResponse
+// Import app.dart to access _cleanAIResponse
 
 class BatchProcessor {
   final AIService _aiService;

@@ -3,7 +3,7 @@ part of '../tool.dart';
 final class TfHttpReq extends ToolFunc {
   static const instance = TfHttpReq._();
 
- const TfHttpReq._()
+  const TfHttpReq._()
     : super(
         name: 'httpReq',
         parametersSchema: const {
@@ -118,12 +118,7 @@ Focus on user-requested web access—respect limits and ethics.''';
       data: body,
     );
 
-    const mimesBin = [
-      'application/octet-stream',
-      'image/',
-      'video/',
-      'audio/',
-    ];
+    const mimesBin = ['application/octet-stream', 'image/', 'video/', 'audio/'];
 
     const mimesString = [
       'text/',

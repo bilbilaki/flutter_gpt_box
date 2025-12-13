@@ -11,7 +11,6 @@ import 'dart:convert';
 
 import 'package:gpt_box/view/prompt_generator/models/prompt_settings.dart';
 
-
 class PromptGeneratorScreen extends StatefulWidget {
   const PromptGeneratorScreen({super.key});
 
@@ -40,8 +39,6 @@ class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
     _openAiApiKeyController.dispose();
     super.dispose();
   }
-
-
 
   Future<void> _loadSavedPrompts() async {
     final prefs = await SharedPreferences.getInstance();
@@ -137,12 +134,10 @@ class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
     setState(() {
       _aiResponse = 'Sending prompt to AI...';
     });
-    final PromptBuilder builder = PromptBuilder(
-      _settings,
-    );
+    final PromptBuilder builder = PromptBuilder(_settings);
     final String? response = await builder.sendPromptToAI();
     setState(() {
-      _aiResponse = response??'failed to get response';
+      _aiResponse = response ?? 'failed to get response';
     });
   }
 
@@ -402,5 +397,4 @@ class _PromptGeneratorScreenState extends State<PromptGeneratorScreen> {
       ),
     );
   }
-
 }

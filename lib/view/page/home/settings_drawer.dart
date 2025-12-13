@@ -13,9 +13,15 @@ class _AiSettingsDrawerHiveState extends State<AiSettingsDrawerHive> {
   @override
   Widget build(BuildContext context) {
     final openAIVoiceOptions = const [
-      'alloy', 'ash', 'echo', 'ballad', 'sage', 'coral', 'shimmer',
+      'alloy',
+      'ash',
+      'echo',
+      'ballad',
+      'sage',
+      'coral',
+      'shimmer',
     ];
-UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
+    UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
     return Drawer(
       width: 320,
       backgroundColor: UIs.colorSeed,
@@ -30,26 +36,34 @@ UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Run settings',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(color: Colors.white)),
+                Text(
+                  'Run settings',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: Colors.white),
+                ),
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.push_pin_outlined,
-                          size: 20, color: Colors.white54),
+                      icon: const Icon(
+                        Icons.push_pin_outlined,
+                        size: 20,
+                        color: Colors.white54,
+                      ),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Pin feature not yet implemented')),
+                            content: Text('Pin feature not yet implemented'),
+                          ),
                         );
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close,
-                          size: 20, color: Colors.white54),
+                      icon: const Icon(
+                        Icons.close,
+                        size: 20,
+                        color: Colors.white54,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -134,8 +148,7 @@ UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
                   children: [
                     _SwitchRow(
                       label: 'Structured Output',
-                      valueListenable:
-                          ss.structuredOutputEnabled.listenable(),
+                      valueListenable: ss.structuredOutputEnabled.listenable(),
                       onChanged: ss.structuredOutputEnabled.set,
                     ),
                     _SwitchRow(
@@ -145,14 +158,13 @@ UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
                     ),
                     _SwitchRow(
                       label: 'Function Calling',
-                      valueListenable:
-                          ss.functionCallingEnabled.listenable(),
+                      valueListenable: ss.functionCallingEnabled.listenable(),
                       onChanged: ss.functionCallingEnabled.set,
                     ),
                     _SwitchRow(
                       label: 'Grounding with Google Search',
-                      valueListenable:
-                          ss.groundingWithSearchEnabled.listenable(),
+                      valueListenable: ss.groundingWithSearchEnabled
+                          .listenable(),
                       onChanged: ss.groundingWithSearchEnabled.set,
                     ),
                     _SwitchRow(
@@ -196,7 +208,9 @@ UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
                       foregroundColor: Colors.white,
                       backgroundColor: Colors.red.shade700,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -262,15 +276,19 @@ class _DropdownRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
               const SizedBox(height: 4),
               DropdownButtonFormField<String>(
                 value: cur,
                 dropdownColor: Colors.grey[800],
                 decoration: InputDecoration(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: const BorderSide(color: Colors.white10),
@@ -287,11 +305,15 @@ class _DropdownRow extends StatelessWidget {
                   ),
                 ),
                 items: options
-                    .map((e) => DropdownMenuItem(
-                          value: e,
-                          child:
-                              Text(e, style: const TextStyle(color: Colors.white)),
-                        ))
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(
+                          e,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: onChanged,
               ),
@@ -327,44 +349,44 @@ class _SliderRow extends StatelessWidget {
     required this.value,
     required this.min,
     required this.max,
-  })  : divisions = 1,
-        onChanged = null,
-        valueListenable = null;
+  }) : divisions = 1,
+       onChanged = null,
+       valueListenable = null;
 
   @override
   Widget build(BuildContext context) {
     Padding child(double v) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(label,
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 13)),
-                  Text(
-                    v == v.roundToDouble()
-                        ? v.toInt().toString()
-                        : v.toStringAsFixed(2),
-                    style:
-                        const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ],
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
-              Slider(
-                value: v.clamp(min, max),
-                min: min,
-                max: max,
-                divisions: divisions,
-                onChanged: onChanged,
-                activeColor: Theme.of(context).colorScheme.primary,
-                inactiveColor: Colors.white10,
+              Text(
+                v == v.roundToDouble()
+                    ? v.toInt().toString()
+                    : v.toStringAsFixed(2),
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ],
           ),
-        );
+          Slider(
+            value: v.clamp(min, max),
+            min: min,
+            max: max,
+            divisions: divisions,
+            onChanged: onChanged,
+            activeColor: Theme.of(context).colorScheme.primary,
+            inactiveColor: Colors.white10,
+          ),
+        ],
+      ),
+    );
 
     if (valueListenable != null) {
       return ValueListenableBuilder(
@@ -415,7 +437,6 @@ class _Expansion extends StatelessWidget {
   final List<Widget> children;
 
   const _Expansion({required this.title, required this.children});
-
 
   @override
   Widget build(BuildContext context) {

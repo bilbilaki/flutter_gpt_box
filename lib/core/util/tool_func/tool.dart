@@ -29,7 +29,6 @@ import 'package:sms_sender_background/sms_sender.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_static/shelf_static.dart';
-import 'package:telegram/telegram.dart';
 import '../../../env.dart';
 part 'type.dart';
 part 'func/iface.dart';
@@ -49,6 +48,7 @@ part 'func/webbuilder.dart';
 part 'func/python_project_builder.dart';
 part 'func/go_project_builder.dart';
 part 'func/type_script_builder.dart';
+
 abstract final class OpenAIFuncCalls {
   static const internalTools = [
     TfMemory.instance,

@@ -124,7 +124,6 @@ extension _AppLink on AppLink {
     //     return true;
     //   default:
     //     if (isWeb && path == '/') return true;
-        return false;
-    }
+    return false;
   }
-
+}

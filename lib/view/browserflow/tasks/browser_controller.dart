@@ -6,10 +6,10 @@ import 'package:puppeteer/puppeteer.dart' as pup;
 import '../utils/browser_utils.dart';
 
 /// A controller for browser automation with persistent session management.
-/// 
+///
 /// This controller maintains a single browser session that stays open until
 /// explicitly closed, allowing for sequential operations across multiple actions.
-/// 
+///
 /// Key features:
 /// - Persistent browser sessions
 /// - Puppeteer-based automation
@@ -54,8 +54,6 @@ class BrowserController {
             '--no-first-run',
             '--no-zygote',
             '--disable-gpu',
-
-
           ],
         );
       } else {
@@ -72,7 +70,6 @@ class BrowserController {
           return "BuildContext required for Android browser initialization";
         }
       }
-        
 
       _page = await _browser!.newPage();
       _isSessionActive = true;
@@ -88,7 +85,8 @@ class BrowserController {
   }
 
   // Check if session is active
-  bool get isSessionActive => _isSessionActive && _browser != null && _page != null;
+  bool get isSessionActive =>
+      _isSessionActive && _browser != null && _page != null;
 
   // Get current session ID
   String? get sessionId => _sessionId;
@@ -167,7 +165,8 @@ class BrowserController {
         ? "document.querySelector('$selector')"
         : "document.body";
 
-    final js = """
+    final js =
+        """
       (function() {
         try {
           const element = $target;
@@ -180,7 +179,7 @@ class BrowserController {
         }
       })();
     """;
-    
+
     final result = await _evaluateJS(js);
     return result.replaceAll('"', '').trim();
   }
@@ -245,7 +244,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         // Find element by AI ID stored in dataset
@@ -272,7 +272,8 @@ class BrowserController {
     }
 
     final escapedText = jsonEncode(text);
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('[data-ai-id="$aiId"]');
@@ -301,7 +302,8 @@ class BrowserController {
 
     final timeoutMs = 1000000; // 1000 seconds in milliseconds
 
-    final js = """
+    final js =
+        """
     (function() {
       return new Promise((resolve) => {
         const startTime = Date.now();
@@ -343,7 +345,8 @@ class BrowserController {
     }
 
     final escapedText = jsonEncode(text);
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -382,7 +385,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -415,7 +419,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -450,7 +455,8 @@ class BrowserController {
     }
 
     final escapedValueOrText = jsonEncode(valueOrText);
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const select = document.querySelector('$selector');
@@ -490,7 +496,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         let element = document.querySelector('$selector');
@@ -530,7 +537,8 @@ class BrowserController {
     }
 
     final escapedAttributes = jsonEncode(attributes);
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -571,7 +579,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -601,7 +610,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         window.scrollBy({ 
@@ -628,7 +638,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final wrappedJs = """
+    final wrappedJs =
+        """
     (function() {
       try {
         $script
@@ -654,7 +665,8 @@ class BrowserController {
       return [];
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const elements = document.querySelectorAll('$selector');
@@ -693,7 +705,8 @@ class BrowserController {
     try {
       if (selector != null) {
         // Use JavaScript to get element and take screenshot
-        final js = """
+        final js =
+            """
         (function() {
           const element = document.querySelector('$selector');
           if (element) {
@@ -737,7 +750,8 @@ class BrowserController {
       return false;
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -762,7 +776,8 @@ class BrowserController {
       return 0;
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         return document.querySelectorAll('$selector').length;
@@ -813,7 +828,11 @@ class BrowserController {
     }
 
     try {
-      await _page!.reload(wait: waitUntil ? pup.Until.domContentLoaded: pup.Until.domContentLoaded);
+      await _page!.reload(
+        wait: waitUntil
+            ? pup.Until.domContentLoaded
+            : pup.Until.domContentLoaded,
+      );
       return "Page reloaded successfully";
     } catch (e) {
       return "Error reloading page: $e";
@@ -856,7 +875,8 @@ class BrowserController {
 
     try {
       // Use JavaScript to hover over element
-      final js = """
+      final js =
+          """
       (function() {
         const element = document.querySelector('$selector');
         if (element) {
@@ -885,7 +905,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -911,7 +932,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -940,7 +962,8 @@ class BrowserController {
       return "Browser session not active.";
     }
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const element = document.querySelector('$selector');
@@ -1062,7 +1085,12 @@ class BrowserController {
   }
 
   /// Sets a cookie for the current page using JavaScript.
-  Future<String> setCookie(String name, String value, {String? domain, String? path}) async {
+  Future<String> setCookie(
+    String name,
+    String value, {
+    String? domain,
+    String? path,
+  }) async {
     if (!isSessionActive) {
       return "Browser session not active.";
     }
@@ -1072,7 +1100,8 @@ class BrowserController {
     final escapedDomain = domain != null ? jsonEncode(domain) : 'null';
     final escapedPath = path != null ? jsonEncode(path) : 'null';
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const cookieStr = $escapedName + '=' + $escapedValue;
@@ -1139,7 +1168,8 @@ class BrowserController {
 
     final escapedName = jsonEncode(name);
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         document.cookie = $escapedName + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
@@ -1162,7 +1192,8 @@ class BrowserController {
 
     final escapedKey = jsonEncode(key);
 
-    final js = """
+    final js =
+        """
     (function() {
       try {
         const event = new KeyboardEvent('keydown', {
@@ -1191,7 +1222,8 @@ class BrowserController {
 
     final delayMs = delay?.inMilliseconds ?? 100;
 
-    final js = """
+    final js =
+        """
     (function() {
       return new Promise((resolve) => {
         const text = ${jsonEncode(text)};
@@ -1328,7 +1360,9 @@ class BrowserController {
     }
 
     try {
-      await _page!.setViewport(pup.DeviceViewport(width: width, height: height));
+      await _page!.setViewport(
+        pup.DeviceViewport(width: width, height: height),
+      );
       return "Successfully set viewport size to ${width}x$height";
     } catch (e) {
       return "Error setting viewport size: $e";

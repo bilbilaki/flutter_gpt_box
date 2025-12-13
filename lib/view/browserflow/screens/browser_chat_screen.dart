@@ -27,13 +27,13 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
 
   void _initializeOrchestrator() {
     try {
-      _orchestrator = AgentOrchestrator(
-        client: Cfg.client,
-      );
+      _orchestrator = AgentOrchestrator(client: Cfg.client);
       setState(() {
         _isInitialized = true;
       });
-      _addSystemMessage('Browser automation agent ready. You can start giving commands.');
+      _addSystemMessage(
+        'Browser automation agent ready. You can start giving commands.',
+      );
     } catch (e) {
       _addSystemMessage('Error initializing agent: $e');
     }
@@ -49,34 +49,32 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
 
   void _addSystemMessage(String text) {
     setState(() {
-      _messages.add(ChatMessage(
-        text: text,
-        isUser: false,
-        isSystem: true,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(
+          text: text,
+          isUser: false,
+          isSystem: true,
+          timestamp: DateTime.now(),
+        ),
+      );
     });
     _scrollToBottom();
   }
 
   void _addUserMessage(String text) {
     setState(() {
-      _messages.add(ChatMessage(
-        text: text,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(text: text, isUser: true, timestamp: DateTime.now()),
+      );
     });
     _scrollToBottom();
   }
 
   void _addAgentMessage(String text) {
     setState(() {
-      _messages.add(ChatMessage(
-        text: text,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(text: text, isUser: false, timestamp: DateTime.now()),
+      );
     });
     _scrollToBottom();
   }
@@ -123,10 +121,7 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
         backgroundColor: const Color(0xFF0A0A0A),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(
-            color: Color(0xFFFF00FF),
-            width: 2,
-          ),
+          side: const BorderSide(color: Color(0xFFFF00FF), width: 2),
         ),
         title: const Text(
           'Clear History',
@@ -171,10 +166,7 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
         backgroundColor: const Color(0xFF0A0A0A),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(
-            color: Color(0xFF00FFFF),
-            width: 2,
-          ),
+          side: const BorderSide(color: Color(0xFF00FFFF), width: 2),
         ),
         title: const Text(
           'Session Status',
@@ -191,7 +183,9 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
               _buildStatusRow(
                 'Browser Session',
                 status['browserSession']['isActive'] ? 'Active' : 'Inactive',
-                status['browserSession']['isActive'] ? const Color(0xFF00FF41) : const Color(0xFFFF0000),
+                status['browserSession']['isActive']
+                    ? const Color(0xFF00FF41)
+                    : const Color(0xFFFF0000),
               ),
               const SizedBox(height: 8),
               _buildStatusRow(
@@ -217,10 +211,7 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'OK',
-              style: TextStyle(color: Color(0xFF00FF41)),
-            ),
+            child: const Text('OK', style: TextStyle(color: Color(0xFF00FF41))),
           ),
         ],
       ),
@@ -241,10 +232,7 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              color: valueColor,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(color: valueColor, fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -269,27 +257,32 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
           children: [
             _QuickActionChip(
               label: 'Open Google',
-              onTap: () => _messageController.text = 'Initialize browser and go to https://google.com',
+              onTap: () => _messageController.text =
+                  'Initialize browser and go to https://google.com',
             ),
             const SizedBox(width: 8),
             _QuickActionChip(
               label: 'Take Screenshot',
-              onTap: () => _messageController.text = 'Take a screenshot of the current page',
+              onTap: () => _messageController.text =
+                  'Take a screenshot of the current page',
             ),
             const SizedBox(width: 8),
             _QuickActionChip(
               label: 'Read Page',
-              onTap: () => _messageController.text = 'Read all the text content on the page',
+              onTap: () => _messageController.text =
+                  'Read all the text content on the page',
             ),
             const SizedBox(width: 8),
             _QuickActionChip(
               label: 'Get Links',
-              onTap: () => _messageController.text = 'Get all the links on the page',
+              onTap: () =>
+                  _messageController.text = 'Get all the links on the page',
             ),
             const SizedBox(width: 8),
             _QuickActionChip(
               label: 'Close Browser',
-              onTap: () => _messageController.text = 'Close the browser session',
+              onTap: () =>
+                  _messageController.text = 'Close the browser session',
             ),
           ],
         ),
@@ -400,7 +393,9 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00FF41)),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFF00FF41),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -478,7 +473,9 @@ class _BrowserChatScreenState extends State<BrowserChatScreen> {
                 ),
                 const SizedBox(width: 8),
                 FloatingActionButton(
-                  onPressed: (_isProcessing || !_isInitialized) ? null : _sendMessage,
+                  onPressed: (_isProcessing || !_isInitialized)
+                      ? null
+                      : _sendMessage,
                   backgroundColor: const Color(0xFF00FF41),
                   foregroundColor: const Color(0xFF000000),
                   child: const Icon(Icons.send),
@@ -583,7 +580,9 @@ class _MessageBubble extends StatelessWidget {
               message.text,
               style: TextStyle(
                 fontSize: 15,
-                color: message.isUser ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
+                color: message.isUser
+                    ? const Color(0xFF000000)
+                    : const Color(0xFFFFFFFF),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -612,10 +611,7 @@ class _QuickActionChip extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _QuickActionChip({
-    required this.label,
-    required this.onTap,
-  });
+  const _QuickActionChip({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -629,10 +625,7 @@ class _QuickActionChip extends StatelessWidget {
       ),
       onPressed: onTap,
       backgroundColor: const Color(0xFF1A1A1A),
-      side: const BorderSide(
-        color: Color(0xFF00FF41),
-        width: 1.5,
-      ),
+      side: const BorderSide(color: Color(0xFF00FF41), width: 1.5),
       shadowColor: const Color(0xFF00FF41).withOpacity(0.5),
       elevation: 4,
     );

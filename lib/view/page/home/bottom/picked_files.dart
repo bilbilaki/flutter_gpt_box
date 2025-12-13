@@ -1,7 +1,7 @@
 part of '../home.dart';
 
 class _PickedFilesPreview extends StatelessWidget {
-   _PickedFilesPreview();
+  _PickedFilesPreview();
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,8 @@ class _PickedFilesPreview extends StatelessWidget {
           itemCount: files.length,
           separatorBuilder: (_, __) => UIs.width7,
           itemBuilder: (context, index) {
-            final fileIdentifier = files[index]; // This string can now be base64 data or a regular path/name
+            final fileIdentifier =
+                files[index]; // This string can now be base64 data or a regular path/name
             return _buildFileItem(context, fileIdentifier);
           },
         ),
@@ -28,7 +29,8 @@ class _PickedFilesPreview extends StatelessWidget {
   Widget _buildFileItem(BuildContext context, String fileIdentifier) {
     Uint8List? decodedBytes;
     String? displayFileName;
-    bool isImageCandidate = false; // Flag if it successfully decoded from base64
+    bool isImageCandidate =
+        false; // Flag if it successfully decoded from base64
 
     try {
       // Attempt to decode the string as base64
@@ -94,7 +96,8 @@ class _PickedFilesPreview extends StatelessWidget {
           InkWell(
             onTap: () {
               _filesPicked.value.remove(fileIdentifier);
-              _filesPicked.notifyListeners(); // Use notifyListeners instead of notify()
+              _filesPicked
+                  .notifyListeners(); // Use notifyListeners instead of notify()
             },
             borderRadius: BorderRadius.circular(10),
             child: Container(
@@ -104,11 +107,7 @@ class _PickedFilesPreview extends StatelessWidget {
                 color: Colors.black.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.close,
-                size: 10,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.close, size: 10, color: Colors.white),
             ),
           ),
         ],

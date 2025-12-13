@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:hive_ce/hive.dart';
 
@@ -155,20 +153,20 @@ class DownloadItem extends HiveObject {
 
   DownloadItem({
     required this.taskId,
-     this.url,
-     this.filename,
-     this.savedPath,
-     this.status,
-     this.progress,
-     this.expectedFileSize,
-     this.networkSpeedBytesPerSec,
-     this.timeRemainingSeconds,
-     this.group,
-     this.openAfterComplete,
-     this.createdAt,
-     this.finishedAt,
-     this.displayName,
-     this.metaData,
+    this.url,
+    this.filename,
+    this.savedPath,
+    this.status,
+    this.progress,
+    this.expectedFileSize,
+    this.networkSpeedBytesPerSec,
+    this.timeRemainingSeconds,
+    this.group,
+    this.openAfterComplete,
+    this.createdAt,
+    this.finishedAt,
+    this.displayName,
+    this.metaData,
   });
 
   Map<String, dynamic> toJson() => {

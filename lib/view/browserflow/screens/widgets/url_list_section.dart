@@ -31,10 +31,7 @@ class URLListSection extends StatelessWidget {
               children: [
                 const Text(
                   'URLs to Process',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 TextButton.icon(
                   onPressed: isRunning ? null : onClearAll,
@@ -51,9 +48,7 @@ class URLListSection extends StatelessWidget {
               itemBuilder: (context, index) {
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    child: Text('${index + 1}'),
-                  ),
+                  leading: CircleAvatar(child: Text('${index + 1}')),
                   title: Text(urls[index]),
                   trailing: IconButton(
                     onPressed: isRunning ? null : () => onRemoveUrl(index),

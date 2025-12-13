@@ -8,9 +8,7 @@ void _askConfirm(BuildContext context, List<ChatHistory> chats) {
       width: 300,
       child: Column(
         children: [
-          Text(
-            l10n.sureRestoreFmt('${chats.length} ${l10n.chat}'),
-          ),
+          Text(l10n.sureRestoreFmt('${chats.length} ${l10n.chat}')),
           StatefulBuilder(
             builder: (_, setState) {
               return CheckboxListTile(
@@ -19,7 +17,7 @@ void _askConfirm(BuildContext context, List<ChatHistory> chats) {
                 title: Text(l10n.skipSameTitle),
               );
             },
-          )
+          ),
         ],
       ),
     ),

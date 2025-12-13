@@ -40,15 +40,14 @@ Future<void> screenshotFullPageTask(
       await page.emulate(device);
     }
 
-    await page.goto(
-      url,
-      wait: untilConf,
-    );
+    await page.goto(url, wait: untilConf);
 
     final String tit = await page.title ?? '';
     var screenshot = await page.screenshot(fullPage: true);
 
-    await File('$_savef/_screenshot_${tit.toLowerCase().trim()}_$indrun.png').writeAsBytes(screenshot);
+    await File(
+      '$_savef/_screenshot_${tit.toLowerCase().trim()}_$indrun.png',
+    ).writeAsBytes(screenshot);
     indrun = indrun + 1;
   }
 

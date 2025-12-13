@@ -1,6 +1,5 @@
 part of '../main.dart';
 
-
 class FlowStep {
   final String label;
   final IconData icon;

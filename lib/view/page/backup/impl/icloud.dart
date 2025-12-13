@@ -7,10 +7,12 @@ Widget _buildIcloud(BuildContext context) {
       title: const Text('iCloud'),
       trailing: StoreSwitch(
         prop: PrefProps.webdavSync,
-        validator: (p0) async{
-        final res= await isNeedSignDrive();
+        validator: (p0) async {
+          final res = await isNeedSignDrive();
           if (res) {
-            context.showSnackBar('You should first sign in with your google account');
+            context.showSnackBar(
+              'You should first sign in with your google account',
+            );
             return false;
           }
           return true;

@@ -10,7 +10,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:gpt_box/view/widget/image_base64_viewer.dart';
 import 'dart:convert';
 import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
-import 'package:before_after/before_after.dart';
 
 final class ChatRoleTitle extends StatelessWidget {
   final ChatRole role;

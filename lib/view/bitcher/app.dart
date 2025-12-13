@@ -551,7 +551,7 @@ class _AIBatchProcessorScreenState extends State<AIBatchProcessorScreen> {
                             SnackBar(
                               content: Text('AI response copied!'),
                               backgroundColor: Colors.grey[800],
-                           //   contentTextStyle: TextStyle(color: Colors.white),
+                              //   contentTextStyle: TextStyle(color: Colors.white),
                             ),
                           );
                         },
@@ -626,9 +626,7 @@ class _AIBatchProcessorScreenState extends State<AIBatchProcessorScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                 
-                ],
+                children: [],
               ),
             ),
           ),

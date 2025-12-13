@@ -83,6 +83,7 @@ Translate input to this  :
 ''';
     temp = 0.1;
     geminiApi = '';
-    geminiPrompt = 'Extract all text content from the following document. This includes printed text, handwritten notes, and text within images. Preserve the original structure, paragraphs, and line breaks as best as possible. Output the result as plain text.';
+    geminiPrompt =
+        'Extract all text content from the following document. This includes printed text, handwritten notes, and text within images. Preserve the original structure, paragraphs, and line breaks as best as possible. Output the result as plain text.';
   }
 }

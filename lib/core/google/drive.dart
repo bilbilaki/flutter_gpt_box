@@ -13,11 +13,13 @@ Future<drive.DriveApi?> getDriveApi() async {
   }
   return drive.DriveApi(authenticatedClient);
 }
-Future<bool> isNeedSignDrive()async{
-final answer=  await getDriveApi();
 
-return answer==null?true:false;
+Future<bool> isNeedSignDrive() async {
+  final answer = await getDriveApi();
+
+  return answer == null ? true : false;
 }
+
 // --- Upload Backup Data ---
 Future<void> uploadAppDataToDrive(String fileName, List<int> data) async {
   try {

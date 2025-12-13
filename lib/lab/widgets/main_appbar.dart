@@ -166,4 +166,5 @@ PreferredSizeWidget buildMainAppBar(BuildContext context) {
   // Default AppBar for other views or as a fallback
   return AppBar(title: Text(title), actions: actions);
 }
-  // e
+
+// e

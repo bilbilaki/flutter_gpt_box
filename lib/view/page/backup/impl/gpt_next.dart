@@ -13,15 +13,11 @@ void _onTapRestoreGPTNext(BuildContext context) async {
   final picked = await Pfs.pickFileString();
   if (picked == null) return;
 
-  final (chats, err) = await context.showLoadingDialog(fn: () async {
-    return await compute(
-      (params) async {
+  final (chats, err) = await context.showLoadingDialog(
+    fn: () async {
+      return await compute((params) async {
         final obj = json.decode(params) as Map<String, dynamic>;
-        final {
-          'chat-next-web-store': {
-            'sessions': List sessions,
-          }
-        } = obj;
+        final {'chat-next-web-store': {'sessions': List sessions}} = obj;
         final chats = <ChatHistory>[];
 
         /// Use for-loop for exception handling
@@ -32,10 +28,9 @@ void _onTapRestoreGPTNext(BuildContext context) async {
           } catch (_) {}
         }
         return chats;
-      },
-      picked,
-    );
-  });
+      }, picked);
+    },
+  );
 
   if (err != null || chats == null) return;
   _askConfirm(context, chats);

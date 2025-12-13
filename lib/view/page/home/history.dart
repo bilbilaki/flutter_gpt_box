@@ -24,19 +24,14 @@ class _HistoryPageState extends State<_HistoryPage>
   Widget get _buildBody {
     return CustomScrollView(
       controller: _historyScrollCtrl,
-      slivers: [
-        _buildTrash,
-        _buildHisotry,
-      ],
+      slivers: [_buildTrash, _buildHisotry],
     );
   }
 
   Widget get _buildTrash {
     return Stores.trash.historiesVN.listenVal((vals) {
       if (vals.isEmpty) return SliverToBoxAdapter(child: UIs.placeholder);
-      return SliverPersistentHeader(
-        delegate: _TrashSheetHeader(),
-      );
+      return SliverPersistentHeader(delegate: _TrashSheetHeader());
     });
   }
 
@@ -46,15 +41,15 @@ class _HistoryPageState extends State<_HistoryPage>
       final chatsWithoutFolder = allHistories.entries
           .where((e) => e.value.folderId == null)
           .toList();
-      
+
       // Sort: pinned first, then by time
       chatsWithoutFolder.sort((a, b) {
         final aPinned = a.value.isPinned ?? false;
         final bPinned = b.value.isPinned ?? false;
-        
+
         if (aPinned && !bPinned) return -1;
         if (!aPinned && bPinned) return 1;
-        
+
         final now = DateTime.now();
         final aTime = a.value.items.lastOrNull?.createdAt ?? now;
         final bTime = b.value.items.lastOrNull?.createdAt ?? now;
@@ -83,15 +78,15 @@ class _HistoryPageState extends State<_HistoryPage>
         final folderChats = allHistories.entries
             .where((e) => e.value.folderId == folder.id)
             .toList();
-        
+
         // Sort folder chats
         folderChats.sort((a, b) {
           final aPinned = a.value.isPinned ?? false;
           final bPinned = b.value.isPinned ?? false;
-          
+
           if (aPinned && !bPinned) return -1;
           if (!aPinned && bPinned) return 1;
-          
+
           final now = DateTime.now();
           final aTime = a.value.items.lastOrNull?.createdAt ?? now;
           final bTime = b.value.items.lastOrNull?.createdAt ?? now;
@@ -99,7 +94,7 @@ class _HistoryPageState extends State<_HistoryPage>
         });
 
         items.add(_buildFolderHeader(folder, folderChats.length));
-        
+
         if (folder.isExpanded ?? true) {
           for (final entry in folderChats) {
             items.add(_buildHistoryListItem(entry.key).cardx);
@@ -122,7 +117,7 @@ class _HistoryPageState extends State<_HistoryPage>
             ),
           ),
         );
-        
+
         for (final entry in chatsWithoutFolder) {
           items.add(_buildHistoryListItem(entry.key).cardx);
         }
@@ -146,9 +141,7 @@ class _HistoryPageState extends State<_HistoryPage>
       builder: (context, _) {
         return ListTile(
           leading: Icon(
-            folder.isExpanded ?? true
-                ? Icons.folder_open
-                : Icons.folder,
+            folder.isExpanded ?? true ? Icons.folder_open : Icons.folder,
             color: folder.colorIndicator != null
                 ? _getColorFromString(folder.colorIndicator!)
                 : null,
@@ -282,9 +275,7 @@ class _HistoryPageState extends State<_HistoryPage>
     return Container(
       decoration: indicatorColor != null
           ? BoxDecoration(
-              border: Border(
-                left: BorderSide(color: indicatorColor, width: 4),
-              ),
+              border: Border(left: BorderSide(color: indicatorColor, width: 4)),
             )
           : null,
       child: ListTile(
@@ -404,7 +395,10 @@ class _HistoryPageState extends State<_HistoryPage>
                     children: [
                       const Icon(Icons.delete, size: 18, color: Colors.red),
                       const SizedBox(width: 8),
-                      Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+                      Text(
+                        l10n.delete,
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ],
                   ),
                 ),

@@ -973,7 +973,6 @@ class PdfCreationHelper {
     }
   }
 
-
   Future<String?> signPdfNewAndIndex({
     required String pfxId,
     required String pfxPassword,

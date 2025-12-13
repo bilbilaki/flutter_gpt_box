@@ -5,33 +5,45 @@ import 'dart:math';
 
 /// Defines the color palette for the application, based on the provided UI images.
 class AppColors {
-  static const Color primaryBackground = Color(0xFF140D17); // Dark purple background
-  static const Color cardBackground = Color(0xFF201625); // Darker card background for unselected
-  static const Color selectedCardBackground = Color(0xFF2E2333); // Lighter card background for selected
+  static const Color primaryBackground = Color(
+    0xFF140D17,
+  ); // Dark purple background
+  static const Color cardBackground = Color(
+    0xFF201625,
+  ); // Darker card background for unselected
+  static const Color selectedCardBackground = Color(
+    0xFF2E2333,
+  ); // Lighter card background for selected
   static const Color accentRed = Color(0xFFDA2A39); // Red for the close button
-  static const Color buttonPrimary = Color(0xFFB1A2BB); // Light gray/purple for the confirm button
-  static const Color buttonText = Color(0xFF201625); // Dark purple text for buttons
+  static const Color buttonPrimary = Color(
+    0xFFB1A2BB,
+  ); // Light gray/purple for the confirm button
+  static const Color buttonText = Color(
+    0xFF201625,
+  ); // Dark purple text for buttons
   static const Color textLight = Color(0xFFF0F0F0); // General white/light text
-  static const Color textSecondary = Color(0xFFA0A0A0); // Gray text for subtitles/hints
+  static const Color textSecondary = Color(
+    0xFFA0A0A0,
+  ); // Gray text for subtitles/hints
 }
 
 /// Represents the major screen states in the application flow.
 enum ScreenState {
-  voiceSelection,     // Initial screen to choose a voice
-  connecting,         // Screen showing connection in progress
-  listeningIdle,      // Waiting for user to speak (Tap to interrupt)
-  listeningSpeaking,  // User is speaking (Finish speaking to send)
-  thinking,           // AI is processing/thinking (Start speaking)
-  thoughtBubble,      // AI is speaking (Thought bubble)
+  voiceSelection, // Initial screen to choose a voice
+  connecting, // Screen showing connection in progress
+  listeningIdle, // Waiting for user to speak (Tap to interrupt)
+  listeningSpeaking, // User is speaking (Finish speaking to send)
+  thinking, // AI is processing/thinking (Start speaking)
+  thoughtBubble, // AI is speaking (Thought bubble)
 }
 
 /// Represents the visual state of the main animated visualizer.
 enum VoiceVisualizerState {
-  idleCircles,       // Four white circles (on voice selection screen)
-  idleRoundedRects,  // Four rounded white rectangles (on listening idle screen)
-  connectingOval,    // Large white oval during connection
-  speakingCircle,    // Large white circle when user/AI is speaking/thinking
-  thoughtBubble,     // White thought bubble shape
+  idleCircles, // Four white circles (on voice selection screen)
+  idleRoundedRects, // Four rounded white rectangles (on listening idle screen)
+  connectingOval, // Large white oval during connection
+  speakingCircle, // Large white circle when user/AI is speaking/thinking
+  thoughtBubble, // White thought bubble shape
 }
 
 // --- Main Application Entry Point ---
@@ -80,16 +92,22 @@ class VoiceAssistantScreen extends StatefulWidget {
   State<VoiceAssistantScreen> createState() => _VoiceAssistantScreenState();
 }
 
-class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with TickerProviderStateMixin {
+class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
+    with TickerProviderStateMixin {
   ScreenState _currentScreenState = ScreenState.voiceSelection;
   String _selectedVoice = 'Sky';
 
   // Animation controllers for various UI elements
-  late AnimationController _visualizerAnimationController; // For circles/rects morph and thought bubble
-  late AnimationController _connectingAnimationController; // For connecting oval animation
-  late AnimationController _speakingCircleAnimationController; // For main speaking circle pulse
-  late AnimationController _thinkingDotsAnimationController; // For thinking dots animation
-  late AnimationController _voiceBarsAnimationController; // For simulating voice level bars
+  late AnimationController
+  _visualizerAnimationController; // For circles/rects morph and thought bubble
+  late AnimationController
+  _connectingAnimationController; // For connecting oval animation
+  late AnimationController
+  _speakingCircleAnimationController; // For main speaking circle pulse
+  late AnimationController
+  _thinkingDotsAnimationController; // For thinking dots animation
+  late AnimationController
+  _voiceBarsAnimationController; // For simulating voice level bars
 
   // State variables to simulate voice input for the bars
   List<double> _barHeights = List.generate(7, (index) => 0.0);
@@ -124,15 +142,16 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
     )..repeat(reverse: true); // Repeats back and forth for pulsing effect
 
     // Controller for the voice input bars simulation
-    _voiceBarsAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200), // Fast updates for bars
-    )..addListener(() {
-      // Only simulate voice input when on the speaking screen
-      if (_currentScreenState == ScreenState.listeningSpeaking) {
-        _simulateVoiceInput();
-      }
-    });
+    _voiceBarsAnimationController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 200), // Fast updates for bars
+        )..addListener(() {
+          // Only simulate voice input when on the speaking screen
+          if (_currentScreenState == ScreenState.listeningSpeaking) {
+            _simulateVoiceInput();
+          }
+        });
   }
 
   @override
@@ -148,9 +167,12 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
   /// Simulates fluctuating voice input levels for the visualizer bars.
   void _simulateVoiceInput() {
     setState(() {
-      final double wave = (sin(_voiceBarsAnimationController.value * pi * 2 * 3) + 1) / 2; // Sine wave for base level
+      final double wave =
+          (sin(_voiceBarsAnimationController.value * pi * 2 * 3) + 1) /
+          2; // Sine wave for base level
       for (int i = 0; i < _barHeights.length; i++) {
-        _barHeights[i] = wave * 0.8 + (Random().nextDouble() * 0.2); // Add randomness
+        _barHeights[i] =
+            wave * 0.8 + (Random().nextDouble() * 0.2); // Add randomness
       }
     });
   }
@@ -178,21 +200,34 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
         });
         break;
       case ScreenState.listeningIdle:
-        _visualizerAnimationController.forward(from: 0.0); // Animate to rounded rects
+        _visualizerAnimationController.forward(
+          from: 0.0,
+        ); // Animate to rounded rects
         break;
       case ScreenState.listeningSpeaking:
-        _speakingCircleAnimationController.repeat(reverse: true); // Subtle pulse for speaking circle
-        _voiceBarsAnimationController.repeat(period: const Duration(milliseconds: 1000)); // Start bars animation
+        _speakingCircleAnimationController.repeat(
+          reverse: true,
+        ); // Subtle pulse for speaking circle
+        _voiceBarsAnimationController.repeat(
+          period: const Duration(milliseconds: 1000),
+        ); // Start bars animation
         break;
       case ScreenState.thinking:
-        _speakingCircleAnimationController.value = 1.0; // Keep circle fully expanded
-        _thinkingDotsAnimationController.repeat(reverse: true); // Start dots animation
+        _speakingCircleAnimationController.value =
+            1.0; // Keep circle fully expanded
+        _thinkingDotsAnimationController.repeat(
+          reverse: true,
+        ); // Start dots animation
         break;
       case ScreenState.thoughtBubble:
-        _visualizerAnimationController.forward(from: 0.0); // Animate to thought bubble
+        _visualizerAnimationController.forward(
+          from: 0.0,
+        ); // Animate to thought bubble
         break;
       case ScreenState.voiceSelection:
-        _visualizerAnimationController.forward(from: 0.0); // Animate back to circles
+        _visualizerAnimationController.forward(
+          from: 0.0,
+        ); // Animate back to circles
         break;
     }
   }
@@ -206,7 +241,8 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
             _AppBar(
               title: 'Choose a voice',
               subtitle: 'You can change this later',
-              onClose: () => Navigator.of(context).pop(), // Placeholder: go back/close
+              onClose: () =>
+                  Navigator.of(context).pop(), // Placeholder: go back/close
             ),
             Expanded(
               child: Column(
@@ -267,7 +303,9 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
                 child: BottomActionButton(
                   icon: Icons.close_rounded,
                   backgroundColor: AppColors.accentRed,
-                  onPressed: () => _navigateTo(ScreenState.voiceSelection), // Cancel connection
+                  onPressed: () => _navigateTo(
+                    ScreenState.voiceSelection,
+                  ), // Cancel connection
                 ),
               ),
             ),
@@ -318,7 +356,9 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
             ),
             const Spacer(),
             BottomActionButtons(
-              onRecordPause: () => _navigateTo(ScreenState.thinking), // Simulate finishing speaking
+              onRecordPause: () => _navigateTo(
+                ScreenState.thinking,
+              ), // Simulate finishing speaking
               onCancel: () => _navigateTo(ScreenState.voiceSelection),
               pauseButtonIcon: Icons.pause_circle_outline, // Pause icon
             ),
@@ -331,7 +371,8 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
             const Spacer(),
             Center(
               child: AnimatedVoiceVisualizer(
-                state: VoiceVisualizerState.speakingCircle, // Circle remains during thinking
+                state: VoiceVisualizerState
+                    .speakingCircle, // Circle remains during thinking
                 animationController: _speakingCircleAnimationController,
               ),
             ),
@@ -344,7 +385,9 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
             ),
             const Spacer(),
             BottomActionButtons(
-              onRecordPause: () => _navigateTo(ScreenState.thoughtBubble), // Simulate AI response
+              onRecordPause: () => _navigateTo(
+                ScreenState.thoughtBubble,
+              ), // Simulate AI response
               onCancel: () => _navigateTo(ScreenState.voiceSelection),
               pauseButtonIcon: Icons.pause_circle_outline, // Pause icon
             ),
@@ -358,7 +401,8 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
             Center(
               child: AnimatedVoiceVisualizer(
                 state: VoiceVisualizerState.thoughtBubble,
-                animationController: _visualizerAnimationController, // Re-use general visualizer controller
+                animationController:
+                    _visualizerAnimationController, // Re-use general visualizer controller
               ),
             ),
             const SizedBox(height: 80),
@@ -370,7 +414,9 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen> with Ticker
             ),
             const Spacer(),
             BottomActionButtons(
-              onRecordPause: () => _navigateTo(ScreenState.listeningIdle), // Placeholder: back to idle
+              onRecordPause: () => _navigateTo(
+                ScreenState.listeningIdle,
+              ), // Placeholder: back to idle
               onCancel: () => _navigateTo(ScreenState.voiceSelection),
               pauseButtonIcon: Icons.stop_circle_outlined, // Stop icon
             ),
@@ -401,16 +447,17 @@ class _AppBar extends StatelessWidget {
   final String? subtitle;
   final VoidCallback? onClose;
 
-  const _AppBar({
-    required this.title,
-    this.subtitle,
-    this.onClose,
-  });
+  const _AppBar({required this.title, this.subtitle, this.onClose});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 16.0, right: 16.0),
+      padding: const EdgeInsets.only(
+        top: 16.0,
+        bottom: 8.0,
+        left: 16.0,
+        right: 16.0,
+      ),
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -461,7 +508,7 @@ class VoiceSelectionList extends StatelessWidget {
   final ValueChanged<String> onVoiceSelected;
   final List<String> voices = ['Sky', 'Breeze', 'Ember', 'Cove', 'Juniper'];
 
-   VoiceSelectionList({
+  VoiceSelectionList({
     super.key,
     required this.selectedVoice,
     required this.onVoiceSelected,
@@ -477,13 +524,18 @@ class VoiceSelectionList extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
             child: Material(
-              color: isSelected ? AppColors.selectedCardBackground : AppColors.cardBackground,
+              color: isSelected
+                  ? AppColors.selectedCardBackground
+                  : AppColors.cardBackground,
               borderRadius: BorderRadius.circular(12.0),
               child: InkWell(
                 onTap: () => onVoiceSelected(voice),
                 borderRadius: BorderRadius.circular(12.0),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 14.0,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -492,11 +544,17 @@ class VoiceSelectionList extends StatelessWidget {
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                       if (isSelected)
-                        const Icon(Icons.check, color: AppColors.textLight, size: 20),
+                        const Icon(
+                          Icons.check,
+                          color: AppColors.textLight,
+                          size: 20,
+                        ),
                     ],
                   ),
                 ),
@@ -514,10 +572,7 @@ class VoiceSelectionList extends StatelessWidget {
 class ConfirmButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const ConfirmButton({
-    super.key,
-    required this.onPressed,
-  });
+  const ConfirmButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -551,7 +606,8 @@ class ConfirmButton extends StatelessWidget {
 class BottomActionButtons extends StatelessWidget {
   final VoidCallback onRecordPause;
   final VoidCallback onCancel;
-  final IconData pauseButtonIcon; // Icon for the left button (pause/stop/record)
+  final IconData
+  pauseButtonIcon; // Icon for the left button (pause/stop/record)
 
   const BottomActionButtons({
     super.key,
@@ -611,11 +667,7 @@ class BottomActionButton extends StatelessWidget {
         child: SizedBox(
           width: size,
           height: size,
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: iconSize,
-          ),
+          child: Icon(icon, color: Colors.white, size: iconSize),
         ),
       ),
     );
@@ -628,7 +680,8 @@ class StatusTextAndIcon extends AnimatedWidget {
   final String text;
   final IconData? icon; // Standard icon (e.g., microphone)
   final List<double> barHeights; // Data for voice bars (if applicable)
-  final AnimationController? animationController; // Controller for dynamic icons (bars or dots)
+  final AnimationController?
+  animationController; // Controller for dynamic icons (bars or dots)
 
   const StatusTextAndIcon({
     super.key,
@@ -637,7 +690,9 @@ class StatusTextAndIcon extends AnimatedWidget {
     this.barHeights = const [],
     this.animationController,
     // Listen to the animationController if provided, otherwise a stopped animation
-  }) : super(listenable: animationController ?? const AlwaysStoppedAnimation(0));
+  }) : super(
+         listenable: animationController ?? const AlwaysStoppedAnimation(0),
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -645,17 +700,12 @@ class StatusTextAndIcon extends AnimatedWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (icon != null) // If a standard icon is provided
-          Icon(
-            icon,
-            color: AppColors.textLight,
-            size: 24,
-          )
-        else if (barHeights.isNotEmpty && animationController != null) // If voice bars are needed
-          _VoiceBars(
-            animation: animationController!,
-            barHeights: barHeights,
-          )
-        else if (animationController != null && text == 'Start speaking') // If thinking dots are needed
+          Icon(icon, color: AppColors.textLight, size: 24)
+        else if (barHeights.isNotEmpty &&
+            animationController != null) // If voice bars are needed
+          _VoiceBars(animation: animationController!, barHeights: barHeights)
+        else if (animationController != null &&
+            text == 'Start speaking') // If thinking dots are needed
           _ThinkingDots(animation: animationController!),
         const SizedBox(height: 8),
         Text(
@@ -676,18 +726,13 @@ class _VoiceBars extends StatelessWidget {
   final Animation<double> animation;
   final List<double> barHeights; // Values from 0.0 to 1.0
 
-  const _VoiceBars({
-    required this.animation,
-    required this.barHeights,
-  });
+  const _VoiceBars({required this.animation, required this.barHeights});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: const Size(80, 24), // Fixed size for the bars area
-      painter: _VoiceBarsPainter(
-        barHeights,
-      ),
+      painter: _VoiceBarsPainter(barHeights),
     );
   }
 }
@@ -706,7 +751,8 @@ class _VoiceBarsPainter extends CustomPainter {
     final double barWidth = 6.0;
     final double spacing = 4.0;
     final int numberOfBars = 7;
-    final double totalWidth = (barWidth * numberOfBars) + (spacing * (numberOfBars - 1));
+    final double totalWidth =
+        (barWidth * numberOfBars) + (spacing * (numberOfBars - 1));
     final double startX = (size.width - totalWidth) / 2;
 
     for (int i = 0; i < numberOfBars; i++) {
@@ -747,9 +793,7 @@ class _ThinkingDots extends StatelessWidget {
     return SizedBox(
       width: 80,
       height: 24,
-      child: CustomPaint(
-        painter: _ThinkingDotsPainter(animation.value),
-      ),
+      child: CustomPaint(painter: _ThinkingDotsPainter(animation.value)),
     );
   }
 }
@@ -765,7 +809,8 @@ class _ThinkingDotsPainter extends CustomPainter {
     final double dotRadius = 4.0;
     final double spacing = 8.0;
     final int numberOfDots = 5;
-    final double totalWidth = (dotRadius * 2 * numberOfDots) + (spacing * (numberOfDots - 1));
+    final double totalWidth =
+        (dotRadius * 2 * numberOfDots) + (spacing * (numberOfDots - 1));
     final double startX = (size.width - totalWidth) / 2 + dotRadius;
     final double centerY = size.height / 2;
 
@@ -774,7 +819,9 @@ class _ThinkingDotsPainter extends CustomPainter {
       double offset = 0.0;
 
       // Simple pulsing effect where dots animate out of sync
-      double currentAnimationValue = (i % 2 == 0) ? animationValue : (1.0 - animationValue);
+      double currentAnimationValue = (i % 2 == 0)
+          ? animationValue
+          : (1.0 - animationValue);
       scale = 0.8 + (0.2 * currentAnimationValue); // Scale from 0.8 to 1.0
       offset = -4 * currentAnimationValue; // Move up by up to 4 pixels
 
@@ -823,10 +870,7 @@ class _VoiceVisualizerPainter extends CustomPainter {
   final VoiceVisualizerState state;
   final double animationValue;
 
-  _VoiceVisualizerPainter({
-    required this.state,
-    required this.animationValue,
-  });
+  _VoiceVisualizerPainter({required this.state, required this.animationValue});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -854,7 +898,12 @@ class _VoiceVisualizerPainter extends CustomPainter {
   }
 
   /// Draws four shapes (circles or rounded rectangles).
-  void _drawFourShapes(Canvas canvas, Size size, Paint paint, {required bool isRoundedRects}) {
+  void _drawFourShapes(
+    Canvas canvas,
+    Size size,
+    Paint paint, {
+    required bool isRoundedRects,
+  }) {
     final double totalWidth = size.width * 0.8;
     final double shapeSize = totalWidth / 4.5; // Calculated size for each shape
     final double spacing = (totalWidth - (shapeSize * 4)) / 3;
@@ -868,22 +917,40 @@ class _VoiceVisualizerPainter extends CustomPainter {
         // Rounded rectangles with a subtle vertical pulse
         double currentHeight = shapeSize;
         // This simple pulse ensures some animation for idle state in rounded rects
-        double pulseFactor = 0.5 + 0.5 * sin(animationValue * pi * 2 + i * pi / 4);
-        currentHeight = shapeSize * (0.8 + 0.2 * pulseFactor); // Fluctuate height
+        double pulseFactor =
+            0.5 + 0.5 * sin(animationValue * pi * 2 + i * pi / 4);
+        currentHeight =
+            shapeSize * (0.8 + 0.2 * pulseFactor); // Fluctuate height
         final RRect rrect = RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, centerY - currentHeight / 2, shapeSize, currentHeight),
-          Radius.circular(shapeSize / 4), // Fixed corner radius for rounded rects
+          Rect.fromLTWH(
+            x,
+            centerY - currentHeight / 2,
+            shapeSize,
+            currentHeight,
+          ),
+          Radius.circular(
+            shapeSize / 4,
+          ), // Fixed corner radius for rounded rects
         );
         canvas.drawRRect(rrect, paint);
       } else {
         // Circles
-        canvas.drawCircle(Offset(x + shapeSize / 2, centerY), shapeSize / 2, paint);
+        canvas.drawCircle(
+          Offset(x + shapeSize / 2, centerY),
+          shapeSize / 2,
+          paint,
+        );
       }
     }
   }
 
   /// Draws an animating oval for the "Connecting" state.
-  void _drawConnectingOval(Canvas canvas, Size size, Paint paint, double animationValue) {
+  void _drawConnectingOval(
+    Canvas canvas,
+    Size size,
+    Paint paint,
+    double animationValue,
+  ) {
     // Animate from a smaller oval to a larger one and hold or slightly shrink
     final double minWidth = size.width * 0.4;
     final double maxWidth = size.width * 0.7;
@@ -894,25 +961,38 @@ class _VoiceVisualizerPainter extends CustomPainter {
     final double curvedValue = Curves.easeOutCubic.transform(animationValue);
 
     final double currentWidth = minWidth + (maxWidth - minWidth) * curvedValue;
-    final double currentHeight = minHeight + (maxHeight - minHeight) * curvedValue;
+    final double currentHeight =
+        minHeight + (maxHeight - minHeight) * curvedValue;
 
     final double left = (size.width - currentWidth) / 2;
     final double top = (size.height - currentHeight) / 2;
 
     final RRect rrect = RRect.fromRectAndRadius(
       Rect.fromLTWH(left, top, currentWidth, currentHeight),
-      Radius.circular(currentWidth.clamp(0.0, currentHeight) / 2), // Make it a perfect oval
+      Radius.circular(
+        currentWidth.clamp(0.0, currentHeight) / 2,
+      ), // Make it a perfect oval
     );
     canvas.drawRRect(rrect, paint);
   }
 
   /// Draws a large circle for the "Speaking" and "Thinking" states.
-  void _drawSpeakingCircle(Canvas canvas, Size size, Paint paint, double animationValue) {
+  void _drawSpeakingCircle(
+    Canvas canvas,
+    Size size,
+    Paint paint,
+    double animationValue,
+  ) {
     // The circle can have a subtle pulse when animated, otherwise static
     final double baseRadius = size.width * 0.45;
     // Apply a subtle scale animation for a "breathing" effect
-    final double currentRadius = baseRadius * (0.98 + 0.02 * animationValue); // Scale from 98% to 100%
-    canvas.drawCircle(Offset(size.width / 2, size.height / 2), currentRadius, paint);
+    final double currentRadius =
+        baseRadius * (0.98 + 0.02 * animationValue); // Scale from 98% to 100%
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      currentRadius,
+      paint,
+    );
   }
 
   /// Draws a simplified thought bubble shape.
@@ -936,14 +1016,20 @@ class _VoiceVisualizerPainter extends CustomPainter {
 
     // Position of the first small bubble (main tail)
     canvas.drawCircle(
-      Offset(bodyLeft + smallBubbleRadius * 1.5, bodyTop + bodyHeight - smallBubbleRadius * 0.8),
+      Offset(
+        bodyLeft + smallBubbleRadius * 1.5,
+        bodyTop + bodyHeight - smallBubbleRadius * 0.8,
+      ),
       smallBubbleRadius,
       paint,
     );
 
     // Position of the second, smaller bubble
     canvas.drawCircle(
-      Offset(bodyLeft + tinyBubbleRadius * 1.5, bodyTop + bodyHeight - tinyBubbleRadius * 0.5),
+      Offset(
+        bodyLeft + tinyBubbleRadius * 1.5,
+        bodyTop + bodyHeight - tinyBubbleRadius * 0.5,
+      ),
       tinyBubbleRadius,
       paint,
     );
@@ -952,6 +1038,7 @@ class _VoiceVisualizerPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _VoiceVisualizerPainter oldDelegate) {
     // Repaint only if state or animation value changes
-    return oldDelegate.state != state || oldDelegate.animationValue != animationValue;
+    return oldDelegate.state != state ||
+        oldDelegate.animationValue != animationValue;
   }
 }

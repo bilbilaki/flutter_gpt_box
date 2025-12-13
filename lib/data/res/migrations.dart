@@ -11,8 +11,11 @@ abstract final class MigrationFns {
   /// Passthrough if the url ends with '/v1'.
   ///
   /// It requires [context] to show a dialog to ask for user confirmation.
-  static Future<void> appendV1ToUrl(int lastVer, int now,
-      {BuildContext? context}) async {
+  static Future<void> appendV1ToUrl(
+    int lastVer,
+    int now, {
+    BuildContext? context,
+  }) async {
     if (lastVer >= 0) return;
 
     var userConfirm = false;

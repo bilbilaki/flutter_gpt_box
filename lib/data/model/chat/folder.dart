@@ -25,11 +25,8 @@ final class ChatFolder {
     this.isExpanded,
   });
 
-  ChatFolder.noid({
-    required this.name,
-    this.colorIndicator,
-    this.isExpanded,
-  }) : id = shortid.generate();
+  ChatFolder.noid({required this.name, this.colorIndicator, this.isExpanded})
+    : id = shortid.generate();
 
   factory ChatFolder.fromJson(Map<String, dynamic> json) =>
       _$ChatFolderFromJson(json);

@@ -35,10 +35,7 @@ Future<void> pageContentTask(
   for (final url in urls) {
     onProgress(indrun, url);
 
-    await page.goto(
-      url,
-      wait: untilConf,
-    );
+    await page.goto(url, wait: untilConf);
 
     // Try the provided helper, fallback to evaluate if needed
     String html;
@@ -49,8 +46,12 @@ Future<void> pageContentTask(
     }
 
     final String tit = await page.title ?? '';
-    final sanitizedTitle = tit.toLowerCase().trim().replaceAll(RegExp(r"[^a-z0-9_\-]+"), "-");
-    final filePath = '$_savef/_page_${sanitizedTitle.isEmpty ? indrun.toString() : sanitizedTitle}_$indrun.html';
+    final sanitizedTitle = tit.toLowerCase().trim().replaceAll(
+      RegExp(r"[^a-z0-9_\-]+"),
+      "-",
+    );
+    final filePath =
+        '$_savef/_page_${sanitizedTitle.isEmpty ? indrun.toString() : sanitizedTitle}_$indrun.html';
     await File(filePath).writeAsString(html);
     indrun = indrun + 1;
   }

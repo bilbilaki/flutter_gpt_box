@@ -1,4 +1,5 @@
 part of '../main.dart';
+
 class _TemplateCardData {
   final IconData icon;
   final String title;

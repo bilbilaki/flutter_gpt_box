@@ -1,7 +1,6 @@
-
 part of '../main.dart';
 
-  class _NodeItem {
+class _NodeItem {
   final IconData icon;
   final String label;
   final Color? color;

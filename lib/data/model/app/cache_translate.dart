@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
-
-
 class _PersistentEntry {
   final String value;
   final DateTime expiry;

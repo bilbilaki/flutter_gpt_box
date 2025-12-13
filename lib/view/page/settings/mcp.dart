@@ -14,7 +14,9 @@ final class _McpPageState extends State<McpPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return AutoMultiList(children: [_buildTools, _buildMcps,_presetMcpExample, _buildList]);
+    return AutoMultiList(
+      children: [_buildTools, _buildMcps, _presetMcpExample, _buildList],
+    );
   }
 
   Widget get _buildTools {
@@ -26,15 +28,13 @@ final class _McpPageState extends State<McpPage>
       ],
     );
   }
- Widget get _presetMcpExample {
+
+  Widget get _presetMcpExample {
     return Column(
-      children: [
-        CenterGreyTitle("MCP Presets"),
-       McpPresetsWidget(
-       ),
-      ],
+      children: [CenterGreyTitle("MCP Presets"), McpPresetsWidget()],
     );
   }
+
   Widget get _buildList {
     return Column(
       children: [
@@ -162,10 +162,8 @@ final class _McpPageState extends State<McpPage>
     return ListTile(
       leading: const Icon(Icons.add),
       title: Text(libL10n.add),
-      onTap: () => _onTapAddMcpServer(
-        _mcpStore.mcpServers,
-        _mcpStore.mcpServers.get(),
-      ),
+      onTap: () =>
+          _onTapAddMcpServer(_mcpStore.mcpServers, _mcpStore.mcpServers.get()),
     ).cardx;
   }
 
@@ -174,7 +172,7 @@ final class _McpPageState extends State<McpPage>
     final serverName = 'server_$idx';
     final isConnected = McpTools.isServerConnected(serverName);
     final toolCount = McpTools.getToolsFromServer(serverName).length;
-    
+
     return Dismissible(
       key: ValueKey(url),
       direction: DismissDirection.endToStart,
@@ -297,81 +295,83 @@ extension on _McpPageState {
     );
   }
 
-Future<void> _onDeleteMcpServer(String serverName, String url) async {
-  // Confirm dialog
-  final confirmed = await showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) {
-      final theme = Theme.of(ctx);
-      return AlertDialog(
-        title: Text(libL10n.delete),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(libL10n.askContinue('${libL10n.delete} $url')),
-            const SizedBox(height: 12),
-            Text(serverName, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(url, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 12),
-            Text(
-              // Fallback text if your l10n doesn't provide this key
-              'This action cannot be undone.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+  Future<void> _onDeleteMcpServer(String serverName, String url) async {
+    // Confirm dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return AlertDialog(
+          title: Text(libL10n.delete),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(libL10n.askContinue('${libL10n.delete} $url')),
+              const SizedBox(height: 12),
+              Text(serverName, style: theme.textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(url, style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 12),
+              Text(
+                // Fallback text if your l10n doesn't provide this key
+                'This action cannot be undone.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.error, // destructive color
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(libL10n.delete),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: theme.colorScheme.error, // destructive color
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(libL10n.delete),
-          ),
-        ],
-      );
-    },
-  );
+        );
+      },
+    );
 
-  if (confirmed != true) return;
+    if (confirmed != true) return;
 
-  // Show blocking progress indicator while deleting
-  showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => const Center(child: CircularProgressIndicator()),
-  );
+    // Show blocking progress indicator while deleting
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+    );
 
-  try {
-    await McpTools.removeServer(serverName);
+    try {
+      await McpTools.removeServer(serverName);
 
-    // Dismiss progress dialog
-    if (mounted) {
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Server removed')),
-      );
-    }
-  } catch (e, s) {
-    Loggers.app.warning('Disconnect MCP server failed', e, s);
+      // Dismiss progress dialog
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Server removed')));
+      }
+    } catch (e, s) {
+      Loggers.app.warning('Disconnect MCP server failed', e, s);
 
-    // Dismiss progress dialog
-    if (mounted) {
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to remove server')),
-      );
+      // Dismiss progress dialog
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to remove server')));
+      }
     }
   }
-}
-  
+
   Future<void> _onRetryMcpServer(String serverName) async {
     try {
       await McpTools.retryConnection(serverName);
@@ -403,19 +403,22 @@ class McpServer {
 const List<McpServer> _defaultMcpPresets = [
   McpServer(
     name: 'DuckDuckGo Search Server',
-    url: "https://server.smithery.ai/@OEvortex/ddg_search/mcp?api_key=b6c5b6d9-c2d3-444f-843c-27adafd1701b&profile=socialist-duck-7ALnWh",
+    url:
+        "https://server.smithery.ai/@OEvortex/ddg_search/mcp?api_key=b6c5b6d9-c2d3-444f-843c-27adafd1701b&profile=socialist-duck-7ALnWh",
     description:
         'About\nEnable web search capabilities through DuckDuckGo. Fetch and parse webpage content intelligently for enhanced LLM interaction.\n\nTools\nsearch\nSearch DuckDuckGo and return formatted results. Args: query: The search query string max_results: Maximum number of results to return (default: 10) ctx: MCP context for logging\n\nfetch_content\nFetch and parse content from a webpage URL. Args: url: The webpage URL to fetch content from ctx: MCP context for logging',
   ),
   McpServer(
     name: 'Toolbox',
-    url: "https://server.smithery.ai/@smithery/toolbox/mcp?api_key=b6c5b6d9-c2d3-444f-843c-27adafd1701b&profile=socialist-duck-7ALnWh",
+    url:
+        "https://server.smithery.ai/@smithery/toolbox/mcp?api_key=b6c5b6d9-c2d3-444f-843c-27adafd1701b&profile=socialist-duck-7ALnWh",
     description:
         'Toolbox dynamically finds MCPs in the Smithery registry based on your agent\'s need',
   ),
   McpServer(
     name: 'Parallel Web Search',
-    url: "https://server.smithery.ai/@parallel/search/mcp?api_key=b6c5b6d9-c2d3-444f-843c-27adafd1701b&profile=socialist-duck-7ALnWh",
+    url:
+        "https://server.smithery.ai/@parallel/search/mcp?api_key=b6c5b6d9-c2d3-444f-843c-27adafd1701b&profile=socialist-duck-7ALnWh",
     description:
         '''Purpose: Perform web searches for a given objective and return results in an LLM-friendly format and with parameters tuned for LLMs.
 
@@ -436,11 +439,13 @@ How to use:
   ),
 
   McpServer(
-      name: "Fetch",
-      url: "https://server.smithery.ai/@smithery-ai/fetch/mcp?api_key=b6c5b6d9-c2d3-444f-843c-27adafd1701b&profile=socialist-duck-7ALnWh",
-      description: '''A simple tool that performs a fetch request to a webpage.
+    name: "Fetch",
+    url:
+        "https://server.smithery.ai/@smithery-ai/fetch/mcp?api_key=b6c5b6d9-c2d3-444f-843c-27adafd1701b&profile=socialist-duck-7ALnWh",
+    description: '''A simple tool that performs a fetch request to a webpage.
 
-''')
+''',
+  ),
 ];
 
 /// Preset MCP servers widget
@@ -459,9 +464,9 @@ class McpPresetsWidget extends StatelessWidget {
 
   void _copyUrl(BuildContext context, String url) {
     Clipboard.setData(ClipboardData(text: url));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('URL copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('URL copied to clipboard')));
   }
 
   Future<void> _showDetailsDialog(BuildContext context, McpServer s) {
@@ -534,8 +539,10 @@ class McpPresetsWidget extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               onTap: () => _showDetailsDialog(context, s),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 6,
+              ),
               dense: false,
               // Optionally show a small trailing icon to hint for details
               trailing: const Icon(Icons.keyboard_arrow_right),

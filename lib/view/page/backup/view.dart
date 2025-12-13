@@ -5,7 +5,6 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_box/core/google/drive.dart';
-import 'package:gpt_box/core/util/sync.dart';
 import 'package:gpt_box/data/model/app/backup.dart';
 import 'package:gpt_box/data/model/app/backup2.dart';
 import 'package:gpt_box/data/model/app/utils.dart';
@@ -35,9 +34,7 @@ final class BackupPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _buildBody(context),
-    );
+    return Scaffold(body: _buildBody(context));
   }
 
   Widget _buildBody(BuildContext context) {

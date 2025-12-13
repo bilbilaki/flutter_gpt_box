@@ -7,10 +7,7 @@ ZipDecoder? _zipDecoder;
 
 /// Converts a docx file to text.
 /// Only top level numbering is supported.
-String docxToText(
-  Uint8List bytes, {
-  bool handleNumbering = false,
-}) {
+String docxToText(Uint8List bytes, {bool handleNumbering = false}) {
   _zipDecoder ??= ZipDecoder();
 
   final archive = _zipDecoder!.decodeBytes(bytes);
@@ -36,8 +33,9 @@ String docxToText(
         if (handleNumbering) {
           var numbering = paragraph.getElement('w:pPr')?.getElement('w:numPr');
           if (numbering != null) {
-            final numId =
-                numbering.getElement('w:numId')!.getAttribute('w:val')!;
+            final numId = numbering
+                .getElement('w:numId')!
+                .getAttribute('w:val')!;
 
             if (numId != lastNumId) {
               number = 0;

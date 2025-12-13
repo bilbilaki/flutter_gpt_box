@@ -1,4 +1,3 @@
-
 /// Deep Research request object (Responses API).
 class DeepResearchRequest {
   final String

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:fl_lib/fl_lib.dart';
@@ -36,8 +35,7 @@ class _TranslatableTextState extends State<TranslatableText> {
   @override
   void initState() {
     super.initState();
-    final svc = TranslationService(
-    );
+    final svc = TranslationService();
     _display = svc.translateSyncFirst(
       text: widget.text,
       targetLang: widget.targetLang,
@@ -58,6 +56,7 @@ class _TranslatableTextState extends State<TranslatableText> {
     );
   }
 }
+
 class _Lru<K, V> {
   final int capacity;
   final _map = <K, V>{};
@@ -88,13 +87,12 @@ class TranslationService {
     apiKey: Cfg.current.key,
     baseUrl: Cfg.current.url,
   );
-final PrefStore pref= PrefStore();
+  final PrefStore pref = PrefStore();
   final _mem = _Lru<String, Map<String, dynamic>>(2000);
   final _inFlight = <String, Future<String>>{};
 
-  Future<void> _init() async {
-  }
-String modelId = Cfg.current.model;
+  Future<void> _init() async {}
+  String modelId = Cfg.current.model;
   String _key(String text, String lang) {
     final norm = text.trim().replaceAll(RegExp(r'\s+'), ' ');
     return 'tr_v2|$modelId|$lang|${norm.hashCode}';

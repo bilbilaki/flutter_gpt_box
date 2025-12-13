@@ -9,16 +9,13 @@ class _ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<_ChatPage>
     with AutomaticKeepAliveClientMixin {
-
-final Map<int, String?> _translatedOverviews = {};
+  final Map<int, String?> _translatedOverviews = {};
   final Map<int, bool> _isTranslatingMap = {};
   final _translator = MovieTvTranslator();
-Future<void> _translateOverviewForEpisode(int key, String original) async {
+  Future<void> _translateOverviewForEpisode(int key, String original) async {
     setState(() => _isTranslatingMap[key] = true);
     try {
-      final translated = await _translator.mainTreanslator(
-        original,
-      );
+      final translated = await _translator.mainTreanslator(original);
       setState(() => _translatedOverviews[key] = translated);
     } finally {
       setState(() => _isTranslatingMap[key] = false);
@@ -150,7 +147,7 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
         return ChatRoleTitle(role: chatItem.role, loading: isWorking);
       }),
       // TODO: Handle this case.
-      ChatRole.ask ||ChatRole.assist => _loadingChatIds.listenVal((chats) {
+      ChatRole.ask || ChatRole.assist => _loadingChatIds.listenVal((chats) {
         final isLast = chatItems.length - 1 == idx;
         final isWorking = chats.contains(_curChatId.value) && isLast;
         return ChatRoleTitle(role: chatItem.role, loading: isWorking);
@@ -234,9 +231,9 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
   // Treat both file paths and data URLs as audio
   bool looksLikeAudioDataUrl(String s) {
     final v = s.trim().toLowerCase();
-    return (v.contains('data:audio/') == true 
-//    ||            v.contains('data:image/') == true
-            )
+    return (v.contains('data:audio/') == true
+        //    ||            v.contains('data:image/') == true
+        )
         ? true
         : false;
   }
@@ -385,7 +382,8 @@ Future<void> _translateOverviewForEpisode(int key, String original) async {
     List<ChatHistoryItem> chatItems,
     ChatHistoryItem chatItem,
   ) {
-        final int key = chatItems.index(chatItem);
+    final int key = chatItems.index(chatItem);
+
     /// TODO  remember to implanting this => final bool isTranslating = _isTranslatingMap[key] == true;
     final String? translated = _translatedOverviews[key];
 

@@ -19,7 +19,6 @@ class GeminiOcrService {
     final model = GenerativeModel(
       model: 'gemini-2.5-flash-lite',
       apiKey: apiKey,
-     
     );
 
     for (final file in files) {
@@ -38,18 +37,18 @@ class GeminiOcrService {
           completedCount++;
           onProgress(completedCount, files.length);
           combinedText.writeln(
-              '\n\n--- SKIPPED unsupported file: ${file.name} ---\n\n');
+            '\n\n--- SKIPPED unsupported file: ${file.name} ---\n\n',
+          );
           continue;
         }
 
         // Prepare the prompt and the data part for the API
-        final prompt = TextPart(
-            translatorConfig.geminiPrompt);
+        final prompt = TextPart(translatorConfig.geminiPrompt);
         final dataPart = DataPart(mimeType, bytes);
 
         // Send the request to the Gemini API
         final response = await model.generateContent([
-          Content.multi([prompt, dataPart])
+          Content.multi([prompt, dataPart]),
         ]);
 
         // Append the extracted text to the buffer
@@ -57,14 +56,15 @@ class GeminiOcrService {
           combinedText.writeln(response.text);
         } else {
           combinedText.writeln(
-              '\n\n--- No text found in file: ${file.name} ---\n\n');
+            '\n\n--- No text found in file: ${file.name} ---\n\n',
+          );
         }
-      //  combinedText.writeln('\n\n--- End of File: ${file.name} ---\n\n');
-
+        //  combinedText.writeln('\n\n--- End of File: ${file.name} ---\n\n');
       } catch (e) {
         // Append error message to the output to not lose progress
-        combinedText
-            .writeln('\n\n--- ERROR processing file ${file.name}: $e ---\n\n');
+        combinedText.writeln(
+          '\n\n--- ERROR processing file ${file.name}: $e ---\n\n',
+        );
       } finally {
         completedCount++;
         onProgress(completedCount, files.length);

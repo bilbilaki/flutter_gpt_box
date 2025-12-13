@@ -16,8 +16,10 @@ class FileIndexService {
   FileIndexService._internal();
   static final FileIndexService instance = FileIndexService._internal();
 
-  final Map<String, FileModel> _index = {}; // id -> FileModel (disk-backed or generated)
-  final Map<String, Uint8List> _generatedFiles = {}; // id -> bytes for in-app generated files
+  final Map<String, FileModel> _index =
+      {}; // id -> FileModel (disk-backed or generated)
+  final Map<String, Uint8List> _generatedFiles =
+      {}; // id -> bytes for in-app generated files
   final Uuid _uuid = const Uuid();
 
   // Request permissions for Android (all files access) and generic storage.
@@ -43,90 +45,91 @@ class FileIndexService {
       return true;
     }
   }
-  fs.MimeType toFileSaverMimeType(FileModel fileModel) {
- // If already correct type, return as is
- if (fileModel.fileExtension == '') return fs.MimeType.other;
 
- // Map your MimeType to file_saver's MimeType based on file extension
- switch (fileModel.fileExtension) {
- case 'aac':
- return fs.MimeType.aac;
- case 'apng':
- return fs.MimeType.apng;
- case 'asice':
- return fs.MimeType.asice;
- case 'asics':
- return fs.MimeType.asics;
- case 'avi':
- return fs.MimeType.avi;
- case 'avif':
- return fs.MimeType.avif;
- case 'bmp':
- return fs.MimeType.bmp;
- case 'csv':
- return fs.MimeType.csv;
- case 'epub':
- return fs.MimeType.epub;
- case 'gif':
- return fs.MimeType.gif;
- case 'heic':
- return fs.MimeType.heic;
- case 'heif':
- return fs.MimeType.heif;
- case 'jpeg':
- return fs.MimeType.jpeg;
- case 'json':
- return fs.MimeType.json;
- case 'md':
- return fs.MimeType.markdown;
- case 'xlsx':
- return fs.MimeType.microsoftExcel;
- case 'pptx':
- return fs.MimeType.microsoftPresentation;
- case 'docx':
- return fs.MimeType.microsoftWord;
- case 'mp3':
- return fs.MimeType.mp3;
- case 'mp4': // Handle mp4 for both audio and video/object
- return fs.MimeType.mp4Video;
- case 'mpeg':
- return fs.MimeType.mpeg;
- case 'odp':
- return fs.MimeType.openDocPresentation;
- case 'ods':
- return fs.MimeType.openDocSheets;
- case 'odt':
- return fs.MimeType.openDocText;
- case 'otf':
- return fs.MimeType.otf;
- case 'pdf':
- return fs.MimeType.pdf;
- case 'png':
- return fs.MimeType.png;
- case 'rar':
- return fs.MimeType.rar;
- case 'sql':
- return fs.MimeType.sql;
- case 'svg':
- return fs.MimeType.svg;
- case 'txt':
- return fs.MimeType.text;
- case 'ttf':
- return fs.MimeType.ttf;
- case 'webm':
- return fs.MimeType.webm;
- case 'webp':
- return fs.MimeType.webp;
- case 'xml':
- return fs.MimeType.xml;
- case 'yaml':
- return fs.MimeType.yaml;
- case 'zip':
- return fs.MimeType.zip;
- default:
- return fs.MimeType.other;
- }
- }
+  fs.MimeType toFileSaverMimeType(FileModel fileModel) {
+    // If already correct type, return as is
+    if (fileModel.fileExtension == '') return fs.MimeType.other;
+
+    // Map your MimeType to file_saver's MimeType based on file extension
+    switch (fileModel.fileExtension) {
+      case 'aac':
+        return fs.MimeType.aac;
+      case 'apng':
+        return fs.MimeType.apng;
+      case 'asice':
+        return fs.MimeType.asice;
+      case 'asics':
+        return fs.MimeType.asics;
+      case 'avi':
+        return fs.MimeType.avi;
+      case 'avif':
+        return fs.MimeType.avif;
+      case 'bmp':
+        return fs.MimeType.bmp;
+      case 'csv':
+        return fs.MimeType.csv;
+      case 'epub':
+        return fs.MimeType.epub;
+      case 'gif':
+        return fs.MimeType.gif;
+      case 'heic':
+        return fs.MimeType.heic;
+      case 'heif':
+        return fs.MimeType.heif;
+      case 'jpeg':
+        return fs.MimeType.jpeg;
+      case 'json':
+        return fs.MimeType.json;
+      case 'md':
+        return fs.MimeType.markdown;
+      case 'xlsx':
+        return fs.MimeType.microsoftExcel;
+      case 'pptx':
+        return fs.MimeType.microsoftPresentation;
+      case 'docx':
+        return fs.MimeType.microsoftWord;
+      case 'mp3':
+        return fs.MimeType.mp3;
+      case 'mp4': // Handle mp4 for both audio and video/object
+        return fs.MimeType.mp4Video;
+      case 'mpeg':
+        return fs.MimeType.mpeg;
+      case 'odp':
+        return fs.MimeType.openDocPresentation;
+      case 'ods':
+        return fs.MimeType.openDocSheets;
+      case 'odt':
+        return fs.MimeType.openDocText;
+      case 'otf':
+        return fs.MimeType.otf;
+      case 'pdf':
+        return fs.MimeType.pdf;
+      case 'png':
+        return fs.MimeType.png;
+      case 'rar':
+        return fs.MimeType.rar;
+      case 'sql':
+        return fs.MimeType.sql;
+      case 'svg':
+        return fs.MimeType.svg;
+      case 'txt':
+        return fs.MimeType.text;
+      case 'ttf':
+        return fs.MimeType.ttf;
+      case 'webm':
+        return fs.MimeType.webm;
+      case 'webp':
+        return fs.MimeType.webp;
+      case 'xml':
+        return fs.MimeType.xml;
+      case 'yaml':
+        return fs.MimeType.yaml;
+      case 'zip':
+        return fs.MimeType.zip;
+      default:
+        return fs.MimeType.other;
+    }
+  }
 
   // Generate temporary id
   String _generateId() => _uuid.v4();
@@ -177,7 +180,8 @@ class FileIndexService {
     final dir = Directory(directoryPath);
     if (!await dir.exists()) return [];
 
-    final normalizedExts = extensions
+    final normalizedExts =
+        extensions
             ?.map((e) => _normalizeExtension(e.trim().toLowerCase()))
             .where((e) => e.isNotEmpty)
             .toSet() ??
@@ -189,9 +193,14 @@ class FileIndexService {
 
     await for (final entity in stream) {
       if (entity is File) {
-        final name = entity.uri.pathSegments.isNotEmpty ? entity.uri.pathSegments.last : entity.path;
-        final fileExtension = name.contains('.') ? '.${name.split('.').last.toLowerCase()}' : '';
-        if (normalizedExts.isNotEmpty && !normalizedExts.contains(fileExtension)) {
+        final name = entity.uri.pathSegments.isNotEmpty
+            ? entity.uri.pathSegments.last
+            : entity.path;
+        final fileExtension = name.contains('.')
+            ? '.${name.split('.').last.toLowerCase()}'
+            : '';
+        if (normalizedExts.isNotEmpty &&
+            !normalizedExts.contains(fileExtension)) {
           continue;
         }
 
@@ -260,7 +269,9 @@ class FileIndexService {
     if (!await dir.exists()) return null;
 
     Future<Map<String, dynamic>> _build(Directory d) async {
-      final name = d.uri.pathSegments.isNotEmpty ? d.uri.pathSegments.last : d.path;
+      final name = d.uri.pathSegments.isNotEmpty
+          ? d.uri.pathSegments.last
+          : d.path;
       final nodeId = _generateId();
       final Map<String, dynamic> node = {
         'id': nodeId,
@@ -289,8 +300,12 @@ class FileIndexService {
             final childNode = await _build(entity);
             (node['children'] as List).add(childNode);
           } else if (entity is File) {
-            final fname = entity.uri.pathSegments.isNotEmpty ? entity.uri.pathSegments.last : entity.path;
-            final fext = fname.contains('.') ? '.${fname.split('.').last.toLowerCase()}' : '';
+            final fname = entity.uri.pathSegments.isNotEmpty
+                ? entity.uri.pathSegments.last
+                : entity.path;
+            final fext = fname.contains('.')
+                ? '.${fname.split('.').last.toLowerCase()}'
+                : '';
             final fid = _generateId();
             final stat = await entity.stat();
             final Map<String, dynamic> fileNode = {
@@ -328,7 +343,10 @@ class FileIndexService {
 
   // Given list of ids, return content bytes (reads from disk for disk-backed entries, returns stored bytes for generated).
   // Returns map id -> { bytes: Uint8List?, name, filePath, extension, size }
-  Future<Map<String, Map<String, dynamic>>> getContentsByIds(List<String> ids, {bool returnAsStringIfText = true}) async {
+  Future<Map<String, Map<String, dynamic>>> getContentsByIds(
+    List<String> ids, {
+    bool returnAsStringIfText = true,
+  }) async {
     final Map<String, Map<String, dynamic>> results = {};
     for (final id in ids) {
       final model = _index[id];
@@ -389,7 +407,10 @@ class FileIndexService {
           final dio = model.dioClient ?? Dio();
           final response = await dio.get<List<int>>(
             model.link!.link,
-            options: Options(responseType: ResponseType.bytes, headers: model.link!.headers),
+            options: Options(
+              responseType: ResponseType.bytes,
+              headers: model.link!.headers,
+            ),
           );
           Uint8List bytes = Uint8List.fromList(response.data ?? []);
           if (model.transformDioResponse != null) {
@@ -438,7 +459,8 @@ class FileIndexService {
         return {'status': 'saved', 'result': res};
       } else if (model.filePath != null) {
         final f = File(model.filePath!);
-        if (!await f.exists()) return {'status': 'error', 'message': 'file_not_found'};
+        if (!await f.exists())
+          return {'status': 'error', 'message': 'file_not_found'};
         final bytes = await f.readAsBytes();
         final res = await fs.FileSaver.instance.saveFile(
           name: model.name,
@@ -451,7 +473,13 @@ class FileIndexService {
         return {'status': 'saved', 'result': res};
       } else if (model.link != null) {
         final dio = model.dioClient ?? Dio();
-        final response = await dio.get<List<int>>(model.link!.link, options: Options(responseType: ResponseType.bytes, headers: model.link!.headers));
+        final response = await dio.get<List<int>>(
+          model.link!.link,
+          options: Options(
+            responseType: ResponseType.bytes,
+            headers: model.link!.headers,
+          ),
+        );
         Uint8List bytes = Uint8List.fromList(response.data ?? []);
         if (model.transformDioResponse != null) {
           bytes = model.transformDioResponse!(bytes);
@@ -488,7 +516,7 @@ class FileIndexService {
     return out;
   }
 
-// NEW: Delete a single file and clean up index.
+  // NEW: Delete a single file and clean up index.
   Future<bool> deleteFile(String filePath) async {
     final fileToDelete = File(filePath);
     if (!await fileToDelete.exists()) {
@@ -545,7 +573,8 @@ class FileIndexService {
       return false;
     }
   }
-Future<bool> copyFile(
+
+  Future<bool> copyFile(
     String sourceFilePath,
     String destinationFilePath,
   ) async {
@@ -708,6 +737,7 @@ Future<bool> copyFile(
       return false;
     }
   }
+
   // Clear index (useful for headless resets)
   void clearIndex() {
     _index.clear();

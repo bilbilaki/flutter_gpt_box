@@ -1,4 +1,5 @@
 part of '../main.dart';
+
 Widget buildSidebarMenuItem(
   BuildContext context,
   IconData icon,
@@ -33,5 +34,4 @@ Widget buildSidebarMenuItem(
     },
   );
 }
-  // endregion
-
+// endregion

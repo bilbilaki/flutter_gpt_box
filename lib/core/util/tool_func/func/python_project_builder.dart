@@ -18,14 +18,14 @@ final class TfPythonProjectBuilder extends ToolFunc {
   static const instance = TfPythonProjectBuilder._();
 
   const TfPythonProjectBuilder._()
-      : super(
-          name: 'pythonProjectBuilder',
-          parametersSchema: const {
-            'type': 'object',
-            'properties': {
-              'action': {
-                'type': 'string',
-                'description': '''
+    : super(
+        name: 'pythonProjectBuilder',
+        parametersSchema: const {
+          'type': 'object',
+          'properties': {
+            'action': {
+              'type': 'string',
+              'description': '''
 The operation to perform. Exactly one of:
 - 'scaffoldProject'  : Initialize a new Python/Flask project in the workspace.
 - 'writeFile'        : Create or overwrite a file.
@@ -42,117 +42,117 @@ The operation to perform. Exactly one of:
 - 'exportProject'    : Export the workspace to a user folder and optionally zip.
 - 'resetWorkspace'   : Wipe the workspace and start fresh (destructive).
 ''',
-              },
+            },
 
-              // Common file/dir params
-              'relPath': {
-                'type': 'string',
-                'description':
-                    'Relative path inside the workspace (e.g., "app.py", "src/utils/helpers.py", "tests/"). Used by writeFile/readFile/listDir/mkdirs/deletePath.',
-              },
-              'content': {
-                'type': 'string',
-                'description':
-                    'File content for writeFile. UTF‑8 text or base64 (see "encoding"). Use for code, configs, etc.',
-              },
-              'encoding': {
-                'type': 'string',
-                'enum': ['utf8', 'base64'],
-                'description':
-                    'Encoding for writeFile/readFile content. Defaults to "utf8". Use "base64" for binary files.',
-              },
-              'recursive': {
-                'type': 'boolean',
-                'description':
-                    'For listDir/deletePath/showTree: if true, include nested structure. Defaults to false for listDir/deletePath, true for showTree.',
-              },
+            // Common file/dir params
+            'relPath': {
+              'type': 'string',
+              'description':
+                  'Relative path inside the workspace (e.g., "app.py", "src/utils/helpers.py", "tests/"). Used by writeFile/readFile/listDir/mkdirs/deletePath.',
+            },
+            'content': {
+              'type': 'string',
+              'description':
+                  'File content for writeFile. UTF‑8 text or base64 (see "encoding"). Use for code, configs, etc.',
+            },
+            'encoding': {
+              'type': 'string',
+              'enum': ['utf8', 'base64'],
+              'description':
+                  'Encoding for writeFile/readFile content. Defaults to "utf8". Use "base64" for binary files.',
+            },
+            'recursive': {
+              'type': 'boolean',
+              'description':
+                  'For listDir/deletePath/showTree: if true, include nested structure. Defaults to false for listDir/deletePath, true for showTree.',
+            },
 
-              // Scaffold‑related
-              'templateType': {
-                'type': 'string',
-                'description': '''
+            // Scaffold‑related
+            'templateType': {
+              'type': 'string',
+              'description': '''
 Template to use for scaffoldProject. Suggested values:
 - 'flask_minimal'   : Minimal Flask app with app.py, requirements.txt, basic structure.
 - 'flask_blueprint' : Flask app with blueprints package structure.
 If omitted but "projectSchema" is provided, the schema is used instead of a built‑in template.
 ''',
-              },
-              'projectName': {
-                'type': 'string',
-                'description':
-                    'Logical project name, used in scaffold template files (e.g., package name, README title). Optional; defaults to "my_flask_app".',
-              },
-
-              /// Folder tree schema to build a custom project structure
-              /// when using 'scaffoldProject'. This mirrors common
-              /// "tree like" representations:
-              ///
-              /// {
-              ///   "name": "root",
-              ///   "children": [
-              ///     {"name": "app.py", "type": "file", "content": "..."},
-              ///     {
-              ///       "name": "templates",
-              ///       "type": "dir",
-              ///       "children": [
-              ///         {"name": "index.html", "type": "file", "content": "..."}
-              ///       ]
-              ///     }
-              ///   ]
-              /// }
-              'projectSchema': {
-                'type': 'object',
-                'description':
-                    'Optional folder tree schema for scaffoldProject. If provided, overrides templateType for structure/content. See tool description for schema shape.',
-              },
-
-              // Run / test actions
-              'command': {
-                'type': 'string',
-                'description':
-                    'For runCommand: the shell command to execute in the workspace (e.g., "python app.py", "pytest", "python -m unittest").',
-              },
-              'timeoutMs': {
-                'type': 'integer',
-                'description':
-                    'Optional timeout in milliseconds to wait for command output (default ~5000). Increase for long‑running tasks.',
-              },
-
-              'serverAction': {
-                'type': 'string',
-                'enum': ['start', 'stop', 'status'],
-                'description':
-                    'For runServer: whether to start, stop or query status of the Flask dev server helper.',
-              },
-              'serverCommand': {
-                'type': 'string',
-                'description':
-                    'Optional custom command for runServer "start" (e.g., "python app.py" or "flask run"). If omitted, a default Flask command is chosen based on scaffold.',
-              },
-
-              'testCommand': {
-                'type': 'string',
-                'description':
-                    'Optional override for runTests (default tries "pytest" then "python -m unittest"). Example: "pytest -q tests/".',
-              },
-
-              // Virtual environment
-              'venvPath': {
-                'type': 'string',
-                'description':
-                    'Optional path for virtual environment (default ".venv"). Used by setupVenv and installDeps.',
-              },
-
-              // Export
-              'includeZip': {
-                'type': 'boolean',
-                'description':
-                    'For exportProject: if true (default), also create a ZIP archive of the exported project directory.',
-              },
             },
-            'required': ['action'],
+            'projectName': {
+              'type': 'string',
+              'description':
+                  'Logical project name, used in scaffold template files (e.g., package name, README title). Optional; defaults to "my_flask_app".',
+            },
+
+            /// Folder tree schema to build a custom project structure
+            /// when using 'scaffoldProject'. This mirrors common
+            /// "tree like" representations:
+            ///
+            /// {
+            ///   "name": "root",
+            ///   "children": [
+            ///     {"name": "app.py", "type": "file", "content": "..."},
+            ///     {
+            ///       "name": "templates",
+            ///       "type": "dir",
+            ///       "children": [
+            ///         {"name": "index.html", "type": "file", "content": "..."}
+            ///       ]
+            ///     }
+            ///   ]
+            /// }
+            'projectSchema': {
+              'type': 'object',
+              'description':
+                  'Optional folder tree schema for scaffoldProject. If provided, overrides templateType for structure/content. See tool description for schema shape.',
+            },
+
+            // Run / test actions
+            'command': {
+              'type': 'string',
+              'description':
+                  'For runCommand: the shell command to execute in the workspace (e.g., "python app.py", "pytest", "python -m unittest").',
+            },
+            'timeoutMs': {
+              'type': 'integer',
+              'description':
+                  'Optional timeout in milliseconds to wait for command output (default ~5000). Increase for long‑running tasks.',
+            },
+
+            'serverAction': {
+              'type': 'string',
+              'enum': ['start', 'stop', 'status'],
+              'description':
+                  'For runServer: whether to start, stop or query status of the Flask dev server helper.',
+            },
+            'serverCommand': {
+              'type': 'string',
+              'description':
+                  'Optional custom command for runServer "start" (e.g., "python app.py" or "flask run"). If omitted, a default Flask command is chosen based on scaffold.',
+            },
+
+            'testCommand': {
+              'type': 'string',
+              'description':
+                  'Optional override for runTests (default tries "pytest" then "python -m unittest"). Example: "pytest -q tests/".',
+            },
+
+            // Virtual environment
+            'venvPath': {
+              'type': 'string',
+              'description':
+                  'Optional path for virtual environment (default ".venv"). Used by setupVenv and installDeps.',
+            },
+
+            // Export
+            'includeZip': {
+              'type': 'boolean',
+              'description':
+                  'For exportProject: if true (default), also create a ZIP archive of the exported project directory.',
+            },
           },
-        );
+          'required': ['action'],
+        },
+      );
 
   @override
   String get l10nName => 'Python Project Builder';
@@ -289,12 +289,18 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
     final action = (args['action'] as String?)?.trim();
     if (action == null || action.isEmpty) {
-      return [ChatContent.text("Error: 'action' is required for pythonProjectBuilder.")];
+      return [
+        ChatContent.text(
+          "Error: 'action' is required for pythonProjectBuilder.",
+        ),
+      ];
     }
 
     try {
       final ws = await _PyWorkspace.ensure();
-      log('[pythonProjectBuilder] workspaceRoot: ${ws.root.path}, action: $action');
+      log(
+        '[pythonProjectBuilder] workspaceRoot: ${ws.root.path}, action: $action',
+      );
 
       switch (action) {
         case 'scaffoldProject':
@@ -359,8 +365,11 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     _Map args,
     OnToolLog log,
   ) async {
-    final templateType = (args['templateType'] as String?)?.trim().toLowerCase();
-    final projectName = (args['projectName'] as String?)?.trim().isNotEmpty == true
+    final templateType = (args['templateType'] as String?)
+        ?.trim()
+        .toLowerCase();
+    final projectName =
+        (args['projectName'] as String?)?.trim().isNotEmpty == true
         ? (args['projectName'] as String).trim()
         : 'my_flask_app';
     final schema = args['projectSchema'] as Map<String, dynamic>?;
@@ -390,7 +399,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     return [
-      ChatContent.text('scaffoldProject OK (templateType: ${templateType ?? 'flask_minimal'})'),
+      ChatContent.text(
+        'scaffoldProject OK (templateType: ${templateType ?? 'flask_minimal'})',
+      ),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
     ];
   }
@@ -470,12 +481,17 @@ All operations are sandboxed under an internal workspace directory. Relative pat
       return [ChatContent.text("Error: Directory not found: '$relPath'")];
     }
     final items = <String>[];
-    await for (final ent in dir.list(recursive: recursive, followLinks: false)) {
+    await for (final ent in dir.list(
+      recursive: recursive,
+      followLinks: false,
+    )) {
       final rp = ws.relative(ent.path);
       if (rp.isNotEmpty) items.add(rp);
     }
     items.sort();
-    log("[pythonProjectBuilder] listDir: '$relPath' (recursive=$recursive) -> ${items.length} items");
+    log(
+      "[pythonProjectBuilder] listDir: '$relPath' (recursive=$recursive) -> ${items.length} items",
+    );
     return [
       ChatContent.text('listDir OK'),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
@@ -483,11 +499,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     ];
   }
 
-  Future<_Ret?> _handleMkdirs(
-    _PyWorkspace ws,
-    _Map args,
-    OnToolLog log,
-  ) async {
+  Future<_Ret?> _handleMkdirs(_PyWorkspace ws, _Map args, OnToolLog log) async {
     final relPath = _sanitizeRelPath(args['relPath'] as String?);
     final recursive = args['recursive'] != false; // default true
     if (relPath == null || relPath.isEmpty) {
@@ -524,7 +536,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
         return [ChatContent.text("Error: Path not found: '$relPath'")];
       }
       await dir.delete(recursive: recursive);
-      log("[pythonProjectBuilder] deleteDir: '$relPath' (recursive=$recursive) OK");
+      log(
+        "[pythonProjectBuilder] deleteDir: '$relPath' (recursive=$recursive) OK",
+      );
     }
 
     return [
@@ -546,9 +560,18 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     }
 
     final buffer = StringBuffer();
-    await _buildTree(ws, dir, buffer, prefix: '', isRoot: true, recursive: recursive);
+    await _buildTree(
+      ws,
+      dir,
+      buffer,
+      prefix: '',
+      isRoot: true,
+      recursive: recursive,
+    );
     final treeStr = buffer.toString();
-    log("[pythonProjectBuilder] showTree for '$relPath' (recursive=$recursive)\n$treeStr");
+    log(
+      "[pythonProjectBuilder] showTree for '$relPath' (recursive=$recursive)\n$treeStr",
+    );
     return [
       ChatContent.text('showTree OK'),
       ChatContent.text('workspaceRoot: ${ws.root.path}'),
@@ -615,7 +638,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   ) async {
     final action = (args['serverAction'] as String?)?.trim().toLowerCase();
     if (action == null || action.isEmpty) {
-      return [ChatContent.text("Error: 'serverAction' is required for runServer.")];
+      return [
+        ChatContent.text("Error: 'serverAction' is required for runServer."),
+      ];
     }
 
     final serverCommandRaw = (args['serverCommand'] as String?)?.trim();
@@ -623,7 +648,8 @@ All operations are sandboxed under an internal workspace directory. Relative pat
 
     switch (action) {
       case 'start':
-        final cmd = serverCommandRaw ??
+        final cmd =
+            serverCommandRaw ??
             await _guessDefaultServerCommand(ws, log) ??
             'python app.py';
         final info = await server.startIfNeeded(ws.root, cmd, log);
@@ -645,7 +671,9 @@ All operations are sandboxed under an internal workspace directory. Relative pat
       case 'stop':
         final stopped = await server.stop(log);
         return [
-          ChatContent.text('runServer stop ${stopped ? "OK" : "no running server"}'),
+          ChatContent.text(
+            'runServer stop ${stopped ? "OK" : "no running server"}',
+          ),
           ChatContent.text('workspaceRoot: ${ws.root.path}'),
         ];
 
@@ -662,16 +690,24 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     final explicit = (args['testCommand'] as String?)?.trim();
     if (explicit != null && explicit.isNotEmpty) {
       // Just run that command
-      return _handleRunCommand(ws, {'command': explicit, 'timeoutMs': args['timeoutMs']}, log);
+      return _handleRunCommand(ws, {
+        'command': explicit,
+        'timeoutMs': args['timeoutMs'],
+      }, log);
     }
 
     // Heuristic: prefer pytest if tests folder or pytest.ini exists
     final hasTestsDir = ws.resolveDir('tests').existsSync();
     final hasPytestIni = ws.resolve('pytest.ini').existsSync();
-    final command = (hasTestsDir || hasPytestIni) ? 'pytest' : 'python -m unittest';
+    final command = (hasTestsDir || hasPytestIni)
+        ? 'pytest'
+        : 'python -m unittest';
 
     log('[pythonProjectBuilder] runTests auto command: $command');
-    return _handleRunCommand(ws, {'command': command, 'timeoutMs': args['timeoutMs']}, log);
+    return _handleRunCommand(ws, {
+      'command': command,
+      'timeoutMs': args['timeoutMs'],
+    }, log);
   }
 
   Future<_Ret?> _handleSetupVenv(
@@ -687,7 +723,11 @@ All operations are sandboxed under an internal workspace directory. Relative pat
 
     final venvDir = ws.resolveDir(sanitized);
     if (venvDir.existsSync()) {
-      return [ChatContent.text("Error: Virtual environment already exists at '$sanitized'. Delete it first or use a different path.")];
+      return [
+        ChatContent.text(
+          "Error: Virtual environment already exists at '$sanitized'. Delete it first or use a different path.",
+        ),
+      ];
     }
 
     final command = 'python -m venv $sanitized';
@@ -738,20 +778,28 @@ All operations are sandboxed under an internal workspace directory. Relative pat
 
     final venvDir = ws.resolveDir(sanitized);
     if (!venvDir.existsSync()) {
-      return [ChatContent.text("Error: Virtual environment not found at '$sanitized'. Run setupVenv first.")];
+      return [
+        ChatContent.text(
+          "Error: Virtual environment not found at '$sanitized'. Run setupVenv first.",
+        ),
+      ];
     }
 
     final requirementsFile = ws.resolve('requirements.txt');
     if (!requirementsFile.existsSync()) {
-      return [ChatContent.text("Error: requirements.txt not found in workspace.")];
+      return [
+        ChatContent.text("Error: requirements.txt not found in workspace."),
+      ];
     }
 
     // Construct activation + pip install command
     final String command;
     if (Platform.isWindows) {
-      command = '$sanitized\\Scripts\\activate.bat && pip install -r requirements.txt';
+      command =
+          '$sanitized\\Scripts\\activate.bat && pip install -r requirements.txt';
     } else {
-      command = 'source $sanitized/bin/activate && pip install -r requirements.txt';
+      command =
+          'source $sanitized/bin/activate && pip install -r requirements.txt';
     }
 
     log('[pythonProjectBuilder] installDeps: $command');
@@ -795,10 +843,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
   ) async {
     final includeZip = args['includeZip'] != false;
 
-    final exportDir = await _Export.exportWorkspace(
-      ws.root,
-      log: log,
-    );
+    final exportDir = await _Export.exportWorkspace(ws.root, log: log);
 
     String? zipPath;
     if (includeZip) {
@@ -813,10 +858,7 @@ All operations are sandboxed under an internal workspace directory. Relative pat
     ];
   }
 
-  Future<_Ret?> _handleResetWorkspace(
-    _PyWorkspace ws,
-    OnToolLog log,
-  ) async {
+  Future<_Ret?> _handleResetWorkspace(_PyWorkspace ws, OnToolLog log) async {
     await ws.reset();
     log('[pythonProjectBuilder] workspace reset');
     return [
@@ -853,7 +895,8 @@ All operations are sandboxed under an internal workspace directory. Relative pat
         await dir.create(recursive: true);
         log('[pythonProjectBuilder] schema mkdir: $rel');
       }
-      final children = (node['children'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final children =
+          (node['children'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       for (final child in children) {
         await _materializeSchema(ws, child, log, prefix: rel);
       }
@@ -912,7 +955,9 @@ flask>=2.0.0
     final staticDir = ws.resolveDir('static');
     await staticDir.create(recursive: true);
 
-    log('[pythonProjectBuilder] scaffolded flask_minimal project "$projectName"');
+    log(
+      '[pythonProjectBuilder] scaffolded flask_minimal project "$projectName"',
+    );
   }
 
   Future<void> _scaffoldFlaskBlueprint(
@@ -990,7 +1035,9 @@ def test_health():
     assert resp.status_code == 200
 ''');
 
-    log('[pythonProjectBuilder] scaffolded flask_blueprint project "$projectName"');
+    log(
+      '[pythonProjectBuilder] scaffolded flask_blueprint project "$projectName"',
+    );
   }
 
   Future<void> _buildTree(
@@ -1020,8 +1067,14 @@ def test_health():
 
       if (ent is Directory && recursive) {
         final childPrefix = prefix + (isLast ? '    ' : '│   ');
-        await _buildTree(ws, ent, buf,
-            prefix: childPrefix, isRoot: false, recursive: recursive);
+        await _buildTree(
+          ws,
+          ent,
+          buf,
+          prefix: childPrefix,
+          isRoot: false,
+          recursive: recursive,
+        );
       }
     }
   }
@@ -1032,12 +1085,16 @@ def test_health():
   ) async {
     final appPy = ws.resolve('app.py');
     if (appPy.existsSync()) {
-      log('[pythonProjectBuilder] default server command guessed: python app.py');
+      log(
+        '[pythonProjectBuilder] default server command guessed: python app.py',
+      );
       return 'python app.py';
     }
     final wsgiPy = ws.resolve('wsgi.py');
     if (wsgiPy.existsSync()) {
-      log('[pythonProjectBuilder] default server command guessed: python wsgi.py');
+      log(
+        '[pythonProjectBuilder] default server command guessed: python wsgi.py',
+      );
       return 'python wsgi.py';
     }
     return null;
@@ -1087,10 +1144,10 @@ class _PyServerManager {
   String? _command;
 
   _ServerStatus get status => _ServerStatus(
-        isRunning: _proc != null,
-        command: _command,
-        cwd: _cwd?.path,
-      );
+    isRunning: _proc != null,
+    command: _command,
+    cwd: _cwd?.path,
+  );
 
   Future<_ServerStatus> startIfNeeded(
     Directory cwd,
@@ -1114,14 +1171,18 @@ class _PyServerManager {
     _command = command;
 
     // Consume stdout/stderr to avoid blocking; log lightweight lines.
-    proc.stdout.transform(utf8.decoder).listen(
-      (data) => log('[pyServer stdout] $data'),
-      onError: (e) => log('[pyServer stdout error] $e'),
-    );
-    proc.stderr.transform(utf8.decoder).listen(
-      (data) => log('[pyServer stderr] $data'),
-      onError: (e) => log('[pyServer stderr error] $e'),
-    );
+    proc.stdout
+        .transform(utf8.decoder)
+        .listen(
+          (data) => log('[pyServer stdout] $data'),
+          onError: (e) => log('[pyServer stdout error] $e'),
+        );
+    proc.stderr
+        .transform(utf8.decoder)
+        .listen(
+          (data) => log('[pyServer stderr] $data'),
+          onError: (e) => log('[pyServer stderr error] $e'),
+        );
 
     proc.exitCode.then((code) {
       log('[pythonProjectBuilder] server process exited with code $code');
@@ -1150,11 +1211,7 @@ class _ServerStatus {
   final String? command;
   final String? cwd;
 
-  _ServerStatus({
-    required this.isRunning,
-    this.command,
-    this.cwd,
-  });
+  _ServerStatus({required this.isRunning, this.command, this.cwd});
 
   String get statusText {
     if (!isRunning) return 'stopped';

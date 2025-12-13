@@ -35,10 +35,7 @@ Future<void> generatePDFTask(
   for (final url in urls) {
     onProgress(indrun, url);
 
-    await page.goto(
-      url,
-      wait: untilConf,
-    );
+    await page.goto(url, wait: untilConf);
 
     await page.emulateMediaType(pup.MediaType.screen);
     final String tit = await page.title ?? '';
@@ -47,7 +44,9 @@ Future<void> generatePDFTask(
       format: pup.PaperFormat.a4,
       printBackground: true,
       pageRanges: '1',
-      output: File('$_savef/_resultPdf_${tit.toLowerCase().trim()}_$indrun.pdf').openWrite(),
+      output: File(
+        '$_savef/_resultPdf_${tit.toLowerCase().trim()}_$indrun.pdf',
+      ).openWrite(),
     );
     indrun = indrun + 1;
   }

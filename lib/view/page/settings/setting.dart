@@ -47,9 +47,10 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage>
     with SingleTickerProviderStateMixin {
   late final _tabCtrl = TabController(
-      length: SettingsTab.values.length,
-      vsync: this,
-      initialIndex: widget.args?.tabIndex.index ?? 0);
+    length: SettingsTab.values.length,
+    vsync: this,
+    initialIndex: widget.args?.tabIndex.index ?? 0,
+  );
 
   @override
   void dispose() {
@@ -104,7 +105,7 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     return MultiList(
       children: [
         [const CenterGreyTitle('App'), _buildApp()],
-        [CenterGreyTitle(l10n.chat), _buildAppChat()]
+        [CenterGreyTitle(l10n.chat), _buildAppChat()],
       ],
     );
   }
@@ -114,7 +115,7 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
       _buildLocale(),
       // _buildColorSeed(),
       _buildThemeMode(),
-            _buildResponseTitle(),
+      _buildResponseTitle(),
 
       // _buildCheckUpdate(),
       _buildAppMore(),
@@ -158,10 +159,7 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
             RNodes.app.notify(delay: true);
           }
         },
-        trailing: Text(
-          ThemeMode.values[val].name,
-          style: UIs.text13Grey,
-        ),
+        trailing: Text(ThemeMode.values[val].name, style: UIs.text13Grey),
       ),
     );
   }
@@ -195,7 +193,6 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   //     },
   //   );
   // }
-
 
   Widget _buildLocale() {
     return ValueListenableBuilder(
@@ -249,7 +246,6 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   //   );
   // }
 
-
   Widget _buildGenTitle() {
     return ListTile(
       leading: const Icon(Icons.auto_awesome, size: 21),
@@ -265,14 +261,12 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
       trailing: StoreSwitch(prop: _setStore.response),
     );
   }
+
   Widget _buildAutoScrollBottom() {
     return ExpandTile(
       leading: const Icon(Icons.keyboard_arrow_down),
       title: Text(l10n.autoScrollBottom),
-      children: [
-        _buildScrollBottomOnMsg(),
-        _buildScrollAfterSwitch(),
-      ],
+      children: [_buildScrollBottomOnMsg(), _buildScrollAfterSwitch()],
     );
   }
 
@@ -307,15 +301,11 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   //   );
   // }
 
-
   Widget _buildAppMore() {
     return ExpandTile(
       leading: const Icon(MingCute.more_3_fill),
       title: Text(l10n.more),
-      children: [
-        _buildJoinBeta(),
-        if (isDesktop) _buildHideTitleBar(),
-      ],
+      children: [_buildJoinBeta(), if (isDesktop) _buildHideTitleBar()],
     );
   }
 
@@ -447,7 +437,9 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     return ListTile(
       leading: const Icon(Icons.delete),
       title: TipText(
-          l10n.emptyTrash, '${l10n.emptyTrashTip}\n${l10n.needRestart}'),
+        l10n.emptyTrash,
+        '${l10n.emptyTrashTip}\n${l10n.needRestart}',
+      ),
       onTap: () {
         context.showRoundDialog(
           title: l10n.emptyTrash,
@@ -460,9 +452,9 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
           actions: Btn.ok(onTap: () => onSave(_autoDelTrashCtrl.text)).toList,
         );
       },
-      trailing: _setStore.trashDays
-          .listenable()
-          .listenVal((days) => Text('$days ${libL10n.day}')),
+      trailing: _setStore.trashDays.listenable().listenVal(
+        (days) => Text('$days ${libL10n.day}'),
+      ),
     );
   }
 }

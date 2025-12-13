@@ -38,7 +38,7 @@ class FileModel {
   @JsonKey(ignore: true)
   final Uint8List Function(Uint8List)? transformDioResponse;
 
-   FileModel({
+  FileModel({
     required this.id,
     required this.name,
     this.bytes,

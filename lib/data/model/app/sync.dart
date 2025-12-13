@@ -5,11 +5,7 @@ class SyncResult<T, E> {
   final List<T> down;
   final Map<T, E> err;
 
-  const SyncResult({
-    required this.up,
-    required this.down,
-    required this.err,
-  });
+  const SyncResult({required this.up, required this.down, required this.err});
 
   @override
   String toString() {

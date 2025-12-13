@@ -188,11 +188,9 @@ void _onCloneChat(String chatId, BuildContext context) async {
   final clonedItems = entity.items.map((item) {
     return ChatHistoryItem(
       role: item.role,
-      content: item.content.map((c) => ChatContent(
-        type: c.type,
-        raw: c.raw,
-        id: c.id,
-      )).toList(),
+      content: item.content
+          .map((c) => ChatContent(type: c.type, raw: c.raw, id: c.id))
+          .toList(),
       createdAt: item.createdAt,
       id: item.id,
       toolCallId: item.toolCallId,
@@ -234,7 +232,7 @@ void _onTogglePinChat(String chatId, BuildContext context) {
   allHistories[chatId] = ne;
   _historyRN.notify();
   _storeChat(chatId);
-  
+
   // Re-sort to show pinned chats at the top
   _resortHistories();
 }
@@ -373,13 +371,16 @@ void _onDeleteFolder(String folderId, BuildContext context) async {
   if (folder == null) return;
 
   // Check if folder has chats
-  final chatsInFolder = allHistories.values.where((h) => h.folderId == folderId);
-  
+  final chatsInFolder = allHistories.values.where(
+    (h) => h.folderId == folderId,
+  );
+
   String message;
   if (chatsInFolder.isEmpty) {
     message = l10n.delFmt(folder.name, 'folder');
   } else {
-    message = 'Delete folder "${folder.name}"? ${chatsInFolder.length} chat(s) will be moved out.';
+    message =
+        'Delete folder "${folder.name}"? ${chatsInFolder.length} chat(s) will be moved out.';
   }
 
   final confirmed = await context.showRoundDialog<bool>(
@@ -430,26 +431,25 @@ void _onToggleFolderExpanded(String folderId) {
 
 void _resortHistories() {
   final entries = allHistories.entries.toList();
-  
+
   // Sort: pinned first, then by last modified time
   entries.sort((a, b) {
     final aPinned = a.value.isPinned ?? false;
     final bPinned = b.value.isPinned ?? false;
-    
+
     if (aPinned && !bPinned) return -1;
     if (!aPinned && bPinned) return 1;
-    
+
     // Both pinned or both not pinned, sort by time
     final now = DateTime.now();
     final aTime = a.value.items.lastOrNull?.createdAt ?? now;
     final bTime = b.value.items.lastOrNull?.createdAt ?? now;
     return bTime.compareTo(aTime);
   });
-  
+
   allHistories = Map.fromEntries(entries);
   _historyRN.notify();
 }
-
 
 /// Used in send btn and [_onCreateText]
 void _onStopStreamSub(String chatId) async {
@@ -549,7 +549,8 @@ Future<void> _onTapFilePick(BuildContext context) async {
   _filesPicked.value.addAll(files.map((e) => e.path).whereType<String>());
   _filesPicked.notify();
 
-    final bool? isModelUsingFilePathConfirmed = await _showFilePathUsageConfirmationDialog(context);
+  final bool? isModelUsingFilePathConfirmed =
+      await _showFilePathUsageConfirmationDialog(context);
 
   if (isModelUsingFilePathConfirmed == true) {
     // User pressed 'Yes'
@@ -563,7 +564,9 @@ Future<void> _onTapFilePick(BuildContext context) async {
     }
   } else if (isModelUsingFilePathConfirmed == false) {
     // User pressed 'No'
-    print('User denied: Model *will not* use file paths for tools. Perhaps only content is needed.');
+    print(
+      'User denied: Model *will not* use file paths for tools. Perhaps only content is needed.',
+    );
     // You might decide to clear the paths, or process the files differently
     // (e.g., load file content directly without using their paths externally).
   } else {
@@ -571,10 +574,6 @@ Future<void> _onTapFilePick(BuildContext context) async {
     print('Confirmation dialog was dismissed without a clear choice.');
   }
 }
-
-
-
-
 
 Future<bool?> _showFilePathUsageConfirmationDialog(BuildContext context) async {
   return showDialog<bool?>(
@@ -599,7 +598,7 @@ Future<bool?> _showFilePathUsageConfirmationDialog(BuildContext context) async {
           ),
           TextButton(
             onPressed: () {
-              modelUseFilePath=true;
+              modelUseFilePath = true;
               // User pressed 'Yes'
               // Pop the dialog and return true
               Navigator.of(dialogContext).pop(true);

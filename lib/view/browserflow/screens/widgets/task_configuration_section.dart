@@ -44,10 +44,7 @@ class TaskConfigurationSection extends StatelessWidget {
           children: [
             const Text(
               'Task Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildTaskSelector(),
@@ -130,18 +127,9 @@ class TaskConfigurationSection extends StatelessWidget {
               value: 'none',
               child: Text('Desktop (No Emulation)'),
             ),
-            DropdownMenuItem(
-              value: 'iPhoneX',
-              child: Text('iPhone X'),
-            ),
-            DropdownMenuItem(
-              value: 'pixel2',
-              child: Text('Pixel 2'),
-            ),
-            DropdownMenuItem(
-              value: 'iPad',
-              child: Text('iPad'),
-            ),
+            DropdownMenuItem(value: 'iPhoneX', child: Text('iPhone X')),
+            DropdownMenuItem(value: 'pixel2', child: Text('Pixel 2')),
+            DropdownMenuItem(value: 'iPad', child: Text('iPad')),
           ],
           onChanged: isRunning ? null : onDeviceChanged,
         ),
@@ -313,10 +301,7 @@ class TaskConfigurationSection extends StatelessWidget {
               value: 'domContentLoaded',
               child: Text('DOM Content Loaded'),
             ),
-            DropdownMenuItem(
-              value: 'networkIdle',
-              child: Text('Network Idle'),
-            ),
+            DropdownMenuItem(value: 'networkIdle', child: Text('Network Idle')),
             DropdownMenuItem(
               value: 'networkAlmostIdle',
               child: Text('Network Almost Idle'),

@@ -18,11 +18,13 @@ import 'package:logging/logging.dart';
 import 'package:telegram/telegram.dart';
 
 late TranslatorConfig translatorConfig;
-final Telegram telegram= Telegram();
-final persistentCache = PersistentTranslationCache(ttl: Duration(days: 365), maxEntries: 5000);
+final Telegram telegram = Telegram();
+final persistentCache = PersistentTranslationCache(
+  ttl: Duration(days: 365),
+  maxEntries: 5000,
+);
 
 Future<void> main() async {
- 
   _runInZone(() async {
     await _initApp();
     runApp(const MyApp());
@@ -60,7 +62,7 @@ Future<void> _initDb() async {
   // If you want to override the existing adapter, the typeIds must match.
   // Hive.registerAdapter(DateTimeAdapter()); // 4
   // Hive.registerAdapter(TranslatorConfigAdapter());//25
-  
+
   Hive.registerAdapter(ChatCompletionMessageToolCallAdapter()); // 9
   Hive.registerAdapter(ChatCompletionMessageFunctionCallAdapter()); // 10
   final configBox = await Hive.openBox<TranslatorConfig>('app_config');
@@ -74,7 +76,7 @@ Future<void> _initDb() async {
     print("Loading existing configuration...");
     translatorConfig = configBox.get('config')!; // Load it from the box
   }
- await PrefStore.shared.init();
+  await PrefStore.shared.init();
   await Stores.init();
 }
 

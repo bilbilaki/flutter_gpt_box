@@ -14,21 +14,21 @@ extension ChatHistoryShare on ChatHistory {
     for (final item in items) {
       final md = switch (item.role) {
         ChatRole.tool => Text(
-            item.toMarkdown,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          item.toMarkdown,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         _ => MarkdownBody(
-            data: item.toMarkdown,
-            extensionSet: MarkdownUtils.extensionSet,
-            builders: {
-              'code': CodeElementBuilder(isForCapture: true),
-              'latex': LatexElementBuilder(),
-            },
-            fitContent: false,
-            selectable: false,
-            shrinkWrap: false,
-          ),
+          data: item.toMarkdown,
+          extensionSet: MarkdownUtils.extensionSet,
+          builders: {
+            'code': CodeElementBuilder(isForCapture: true),
+            'latex': LatexElementBuilder(),
+          },
+          fitContent: false,
+          selectable: false,
+          shrinkWrap: false,
+        ),
       };
       children.add(ChatRoleTitle(role: item.role, loading: false));
       children.add(UIs.height13);
@@ -47,8 +47,10 @@ extension ChatHistoryShare on ChatHistory {
               Text(
                 name ?? l10n.untitled,
                 textAlign: TextAlign.center,
-                style:
-                    const TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               UIs.height13,
               Column(

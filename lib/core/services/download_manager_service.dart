@@ -1,6 +1,18 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:background_downloader/background_downloader.dart' show DownloadTask, Batch, FileDownloader, Task, TaskUpdate, TaskProgressUpdate, TaskStatusUpdate, BaseDirectory, Updates, TaskStatus, SharedStorage;
+import 'package:background_downloader/background_downloader.dart'
+    show
+        DownloadTask,
+        Batch,
+        FileDownloader,
+        Task,
+        TaskUpdate,
+        TaskProgressUpdate,
+        TaskStatusUpdate,
+        BaseDirectory,
+        Updates,
+        TaskStatus,
+        SharedStorage;
 import 'package:collection/collection.dart';
 import 'package:gpt_box/core/util/utils.dart';
 import 'package:gpt_box/data/model/download.dart' hide DownloadItemAdapter;
@@ -49,7 +61,7 @@ class DownloadManagerService {
     // Start downloader with DB tracking, resume, reschedule killed tasks
     await _downloader.start(
       doTrackTasks: true,
-    //  doResume: true,
+      //  doResume: true,
       doRescheduleKilledTasks: true,
     );
 
@@ -92,6 +104,7 @@ class DownloadManagerService {
     }
     return _downloader.downloadBatch(tasks);
   }
+
   /// Pause a task
   Future<bool> pause(String taskId) async {
     final record = await _downloader.database.recordForId(taskId);
@@ -102,14 +115,13 @@ class DownloadManagerService {
   }
 
   /// Resume a task
-  Future<bool> resume(String taskId) async{
-        final record = await _downloader.database.recordForId(taskId);
+  Future<bool> resume(String taskId) async {
+    final record = await _downloader.database.recordForId(taskId);
     if (record?.task is DownloadTask) {
       return _downloader.resume(record!.task as DownloadTask);
     }
     return false;
   }
-  
 
   /// Cancel a task
   Future<bool> cancel(String taskId) => _downloader.cancelTaskWithId(taskId);
@@ -130,7 +142,8 @@ class DownloadManagerService {
 
   /// Returns persistent history
   List<DownloadItem> history() =>
-      historyBox?.values.sortedBy<DateTime>((e) => e.createdAt!).toList() ?? const [];
+      historyBox?.values.sortedBy<DateTime>((e) => e.createdAt!).toList() ??
+      const [];
 
   /// Clear all history (does not delete files)
   Future<void> clearHistory() async => historyBox?.clear();

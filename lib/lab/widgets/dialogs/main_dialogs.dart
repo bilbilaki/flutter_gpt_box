@@ -1,6 +1,5 @@
 part of '../../main.dart';
 
-
 void _showAddNodeDialog(BuildContext context) {
   showDialog(
     context: context,

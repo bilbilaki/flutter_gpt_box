@@ -24,10 +24,7 @@ class URLInputSection extends StatelessWidget {
           children: [
             const Text(
               'Add URLs',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -41,7 +38,8 @@ class URLInputSection extends StatelessWidget {
               maxLines: null,
               minLines: 3,
               decoration: InputDecoration(
-                hintText: 'Enter URL (e.g., example.com or https://example.com)\nOr paste multiple URLs (one per line)',
+                hintText:
+                    'Enter URL (e.g., example.com or https://example.com)\nOr paste multiple URLs (one per line)',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

@@ -11,6 +11,7 @@ import 'widgets/task_configuration_section.dart';
 import 'widgets/url_list_section.dart';
 import 'widgets/progress_tracker_section.dart';
 import 'widgets/action_button.dart';
+
 class PDFGeneratorWidget extends StatefulWidget {
   const PDFGeneratorWidget({Key? key}) : super(key: key);
 
@@ -20,21 +21,25 @@ class PDFGeneratorWidget extends StatefulWidget {
 
 class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
   final TextEditingController _urlController = TextEditingController();
-  final TextEditingController _selectorController = TextEditingController(text: 'input[id="search-box"]');
-  final TextEditingController _toolagent2Controller = TextEditingController(); // Testing controller
+  final TextEditingController _selectorController = TextEditingController(
+    text: 'input[id="search-box"]',
+  );
+  final TextEditingController _toolagent2Controller =
+      TextEditingController(); // Testing controller
   final List<String> _urls = [];
   int _totalUrls = 0;
   int _completedUrls = 0;
   bool _isRunning = false;
   String _currentUrl = '';
-  
+
   // Task selection
-  String _selectedTask = 'pdf'; // 'pdf' | 'screenshot' | 'element' | 'html' | 'screencast'
-  
+  String _selectedTask =
+      'pdf'; // 'pdf' | 'screenshot' | 'element' | 'html' | 'screencast'
+
   // Configuration
   String _selectedDevice = 'none'; // Device type
   String _selectedWaitRule = 'networkAlmostIdle'; // Wait condition
-  
+
   // Screencast configuration
   int _screencastWidth = 1280;
   int _screencastHeight = 720;
@@ -51,12 +56,12 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
   void _addUrl() {
     final url = _urlController.text.trim();
     if (url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a URL')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a URL')));
       return;
     }
-    
+
     final validatedUrl = _validateAndFormatUrl(url);
     setState(() {
       _urls.add(validatedUrl);
@@ -83,12 +88,12 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
 
   String _validateAndFormatUrl(String url) {
     url = url.trim();
-    
+
     // If URL already starts with http:// or https://, return as is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
-    
+
     // Otherwise, add https://
     return 'https://$url';
   }
@@ -104,7 +109,7 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
 
     final lines = batchText.split('\n');
     final validUrls = <String>[];
-    
+
     for (final line in lines) {
       final url = line.trim();
       if (url.isNotEmpty) {
@@ -113,9 +118,9 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
     }
 
     if (validUrls.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No valid URLs found')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No valid URLs found')));
       return;
     }
 
@@ -125,9 +130,9 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
       _totalUrls = _urls.length;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Added ${validUrls.length} URLs')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Added ${validUrls.length} URLs')));
   }
 
   Future<void> _startGeneration() async {
@@ -144,7 +149,7 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
     });
 
     final waitRule = _getWaitRule(_selectedWaitRule);
-    
+
     try {
       if (_selectedTask == 'pdf') {
         await generatePDFTask(
@@ -211,9 +216,9 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
         await screencastTask(
           _urls,
           waitRule,
-           _screencastWidth,
-           _screencastHeight,
-           _screencastDuration,
+          _screencastWidth,
+          _screencastHeight,
+          _screencastDuration,
           context,
           onProgress: (completed, currentUrl) {
             setState(() {
@@ -225,9 +230,9 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
 
@@ -235,7 +240,7 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
       _isRunning = false;
     });
   }
-  
+
   pup.Until _getWaitRule(String rule) {
     switch (rule) {
       case 'domContentLoaded':
@@ -247,7 +252,7 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
         return pup.Until.networkAlmostIdle;
     }
   }
-  
+
   pup.Device? _getDevice(String deviceName) {
     // Return null for desktop (no device emulation)
     // For mobile devices, we can use the device emulation
@@ -255,7 +260,7 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
     if (deviceName == 'none') {
       return null;
     }
-    
+
     // For now, we'll just return null since device construction is complex
     // The screenshot function will need to handle device emulation differently
     return null;
@@ -308,201 +313,188 @@ class _PDFGeneratorWidgetState extends State<PDFGeneratorWidget> {
           ),
         ],
       ),
-      body:  
-    SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // AI Browser Chat Button - Prominent Access
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue[600]!, Colors.blue[800]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // AI Browser Chat Button - Prominent Access
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue[600]!, Colors.blue[800]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.smart_toy,
-                  size: 48,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'AI Browser Agent',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Chat with AI to automate browser tasks',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BrowserChatScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.chat_bubble),
-                  label: const Text('Start Chatting'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.blue[800],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 12,
+              child: Column(
+                children: [
+                  const Icon(Icons.smart_toy, size: 48, color: Colors.white),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'AI Browser Agent',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Chat with AI to automate browser tasks',
+                    style: TextStyle(fontSize: 14, color: Colors.white70),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BrowserChatScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.chat_bubble),
+                    label: const Text('Start Chatting'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.blue[800],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // // Testing Section - toolagent2
-          // Container(
-          //   padding: const EdgeInsets.all(12.0),
-          //   decoration: BoxDecoration(
-          //     border: Border.all(color: Colors.orange, width: 2),
-          //     borderRadius: BorderRadius.circular(8),
-          //     color: Colors.orange.withOpacity(0.05),
-          //   ),
-          //   child: Column(
-          //     crossAxisAlignment: CrossAxisAlignment.stretch,
-          //     children: [
-          //       const Text(
-          //         'Testing - toolagent2',
-          //         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          //       ),
-          //       const SizedBox(height: 8),
-          //       TextField(
-          //         controller: _toolagent2Controller,
-          //         decoration: InputDecoration(
-          //           hintText: 'Enter task for toolagent2',
-          //           border: OutlineInputBorder(
-          //             borderRadius: BorderRadius.circular(4),
-          //           ),
-          //           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          //         ),
-          //         enabled: !_isRunning,
-          //       ),
-          //       const SizedBox(height: 8),
-          //       // ElevatedButton(
-          //       //   onPressed: _isRunning ? null : _testToolagent2,
-          //       //   style: ElevatedButton.styleFrom(
-          //       //     backgroundColor: Colors.orange,
-          //       //   ),
-          //       //   child: const Text('Test toolagent2'),
-          //       // ),
-          //     ],
-          //   ),
-          // ),
-          // const SizedBox(height: 24),
+            // // Testing Section - toolagent2
+            // Container(
+            //   padding: const EdgeInsets.all(12.0),
+            //   decoration: BoxDecoration(
+            //     border: Border.all(color: Colors.orange, width: 2),
+            //     borderRadius: BorderRadius.circular(8),
+            //     color: Colors.orange.withOpacity(0.05),
+            //   ),
+            //   child: Column(
+            //     crossAxisAlignment: CrossAxisAlignment.stretch,
+            //     children: [
+            //       const Text(
+            //         'Testing - toolagent2',
+            //         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            //       ),
+            //       const SizedBox(height: 8),
+            //       TextField(
+            //         controller: _toolagent2Controller,
+            //         decoration: InputDecoration(
+            //           hintText: 'Enter task for toolagent2',
+            //           border: OutlineInputBorder(
+            //             borderRadius: BorderRadius.circular(4),
+            //           ),
+            //           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            //         ),
+            //         enabled: !_isRunning,
+            //       ),
+            //       const SizedBox(height: 8),
+            //       // ElevatedButton(
+            //       //   onPressed: _isRunning ? null : _testToolagent2,
+            //       //   style: ElevatedButton.styleFrom(
+            //       //     backgroundColor: Colors.orange,
+            //       //   ),
+            //       //   child: const Text('Test toolagent2'),
+            //       // ),
+            //     ],
+            //   ),
+            // ),
+            // const SizedBox(height: 24),
 
-          // URL Input Section
-          URLInputSection(
-            urlController: _urlController,
-            onAddSingle: _addUrl,
-            onAddBatch: _addBatchUrls,
-            isRunning: _isRunning,
-          ),
-          const SizedBox(height: 16),
+            // URL Input Section
+            URLInputSection(
+              urlController: _urlController,
+              onAddSingle: _addUrl,
+              onAddBatch: _addBatchUrls,
+              isRunning: _isRunning,
+            ),
+            const SizedBox(height: 16),
 
-          // Task and Configuration Section
-          TaskConfigurationSection(
-            selectedTask: _selectedTask,
-            onTaskChanged: (value) {
-              setState(() {
-                _selectedTask = value ?? 'pdf';
-              });
-            },
-            selectedDevice: _selectedDevice,
-            onDeviceChanged: (value) {
-              setState(() {
-                _selectedDevice = value ?? 'none';
-              });
-            },
-            selectorController: _selectorController,
-            screencastWidth: _screencastWidth,
-            screencastHeight: _screencastHeight,
-            screencastDuration: _screencastDuration,
-            onWidthChanged: (value) {
-              setState(() {
-                _screencastWidth = value ?? _screencastWidth;
-              });
-            },
-            onHeightChanged: (value) {
-              setState(() {
-                _screencastHeight = value ?? _screencastHeight;
-              });
-            },
-            onDurationChanged: (value) {
-              setState(() {
-                _screencastDuration = value ?? _screencastDuration;
-              });
-            },
-            selectedWaitRule: _selectedWaitRule,
-            onWaitRuleChanged: (value) {
-              setState(() {
-                _selectedWaitRule = value ?? 'networkAlmostIdle';
-              });
-            },
-            isRunning: _isRunning,
-          ),
-          const SizedBox(height: 16),
+            // Task and Configuration Section
+            TaskConfigurationSection(
+              selectedTask: _selectedTask,
+              onTaskChanged: (value) {
+                setState(() {
+                  _selectedTask = value ?? 'pdf';
+                });
+              },
+              selectedDevice: _selectedDevice,
+              onDeviceChanged: (value) {
+                setState(() {
+                  _selectedDevice = value ?? 'none';
+                });
+              },
+              selectorController: _selectorController,
+              screencastWidth: _screencastWidth,
+              screencastHeight: _screencastHeight,
+              screencastDuration: _screencastDuration,
+              onWidthChanged: (value) {
+                setState(() {
+                  _screencastWidth = value ?? _screencastWidth;
+                });
+              },
+              onHeightChanged: (value) {
+                setState(() {
+                  _screencastHeight = value ?? _screencastHeight;
+                });
+              },
+              onDurationChanged: (value) {
+                setState(() {
+                  _screencastDuration = value ?? _screencastDuration;
+                });
+              },
+              selectedWaitRule: _selectedWaitRule,
+              onWaitRuleChanged: (value) {
+                setState(() {
+                  _selectedWaitRule = value ?? 'networkAlmostIdle';
+                });
+              },
+              isRunning: _isRunning,
+            ),
+            const SizedBox(height: 16),
 
-          // URL List Section
-          URLListSection(
-            urls: _urls,
-            onClearAll: _clearAllUrls,
-            onRemoveUrl: _removeUrl,
-            isRunning: _isRunning,
-          ),
-          const SizedBox(height: 24),
+            // URL List Section
+            URLListSection(
+              urls: _urls,
+              onClearAll: _clearAllUrls,
+              onRemoveUrl: _removeUrl,
+              isRunning: _isRunning,
+            ),
+            const SizedBox(height: 24),
 
-          // Progress Tracker Section
-          ProgressTrackerSection(
-            totalUrls: _totalUrls,
-            completedUrls: _completedUrls,
-            isRunning: _isRunning,
-            currentUrl: _currentUrl,
-          ),
-          const SizedBox(height: 24),
+            // Progress Tracker Section
+            ProgressTrackerSection(
+              totalUrls: _totalUrls,
+              completedUrls: _completedUrls,
+              isRunning: _isRunning,
+              currentUrl: _currentUrl,
+            ),
+            const SizedBox(height: 24),
 
-          // Run Button
-          ActionButton(
-            onPressed: _startGeneration,
-            isRunning: _isRunning,
-          ),
-        ],
+            // Run Button
+            ActionButton(onPressed: _startGeneration, isRunning: _isRunning),
+          ],
+        ),
       ),
-     ));
+    );
   }
 }
-
-
-

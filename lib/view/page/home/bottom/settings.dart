@@ -24,8 +24,7 @@ final class _ChatSettingsState extends State<_ChatSettings> {
       _buildIgnoreCtxConstraint(),
       _buildUseTools(),
       _buildHeadTailMode(),
-      SizedBox(child:
-      _buildList)
+      SizedBox(child: _buildList),
     ];
 
     return Scaffold(
@@ -46,6 +45,7 @@ final class _ChatSettingsState extends State<_ChatSettings> {
       ),
     );
   }
+
   Widget get _buildList {
     return Column(
       children: [
@@ -93,6 +93,7 @@ final class _ChatSettingsState extends State<_ChatSettings> {
       ],
     ).cardx;
   }
+
   Widget _buildIgnoreCtxConstraint() {
     return ListTile(
       title: Text(l10n.ignoreContextConstraint),
@@ -112,6 +113,7 @@ final class _ChatSettingsState extends State<_ChatSettings> {
       }),
     );
   }
+
   Widget _buildSwitchTile(ToolFunc e, {String? title}) {
     final prop = _mcpStore.disabledTools;
     return ValBuilder(
@@ -138,7 +140,6 @@ final class _ChatSettingsState extends State<_ChatSettings> {
     ).cardx;
   }
 
-
   Widget _buildUseTools() {
     return ListTile(
       title: Text(l10n.tool),
@@ -152,6 +153,7 @@ final class _ChatSettingsState extends State<_ChatSettings> {
       }),
     );
   }
+
   Widget _buildUseTool() {
     return ListTile(
       leading: const Icon(MingCute.tool_line),
@@ -159,6 +161,7 @@ final class _ChatSettingsState extends State<_ChatSettings> {
       trailing: StoreSwitch(prop: _mcpStore.enabled),
     ).cardx;
   }
+
   Widget _buildHeadTailMode() {
     return ListTile(
       title: TipText(l10n.headTailMode, l10n.headTailModeTip),
@@ -166,12 +169,14 @@ final class _ChatSettingsState extends State<_ChatSettings> {
         return Switch(
           value: val.headTailMode,
           onChanged: (_) {
-            settings.value =
-                settings.value.copyWith(headTailMode: !val.headTailMode);
+            settings.value = settings.value.copyWith(
+              headTailMode: !val.headTailMode,
+            );
             if (settings.value.headTailMode &&
                 settings.value.ignoreContextConstraint) {
-              settings.value =
-                  settings.value.copyWith(ignoreContextConstraint: false);
+              settings.value = settings.value.copyWith(
+                ignoreContextConstraint: false,
+              );
             }
           },
         );
@@ -180,9 +185,7 @@ final class _ChatSettingsState extends State<_ChatSettings> {
   }
 
   void _save() {
-    final newOne = widget.args.copyWith(
-      settings: settings.value,
-    );
+    final newOne = widget.args.copyWith(settings: settings.value);
     newOne.save();
     allHistories[_curChatId.value] = newOne;
   }

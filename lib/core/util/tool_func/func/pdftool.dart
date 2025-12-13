@@ -205,7 +205,6 @@ Focus on user-requested PDF tasks—keep it straightforward and safe.''';
           // Removed ownerPassword, pfxId, pfxPassword for simplicity
           // ... parse all other 'modify' parameters ...
 
-    
           if (textToAdd != null) {
             final pageIndex = args['pageIndex'] as int? ?? 0;
             final newId = await pdfHelper.loadAndModifyExistingAndIndex(

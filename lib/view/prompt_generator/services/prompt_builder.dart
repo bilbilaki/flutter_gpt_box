@@ -6,12 +6,11 @@ import '../../../data/res/openai.dart';
 class PromptBuilder {
   final PromptSettings settings;
 
-  PromptBuilder(this.settings,);
-       String? openAiApiKey=Cfg.current.key; // Required for actual API calls
+  PromptBuilder(this.settings);
+  String? openAiApiKey = Cfg.current.key; // Required for actual API calls
 
   String buildPrompt() {
     final StringBuffer prompt = StringBuffer();
-
 
     // 1. Format Type
     prompt.writeln(
@@ -83,23 +82,29 @@ class PromptBuilder {
       return "OpenAI API Key is not set. Cannot send request.";
     }
 
-    final OpenAIClient client = OpenAIClient(apiKey: openAiApiKey!,baseUrl: Cfg.current.url);
+    final OpenAIClient client = OpenAIClient(
+      apiKey: openAiApiKey!,
+      baseUrl: Cfg.current.url,
+    );
     final String constructedPrompt = buildPrompt();
 
     try {
-      final  chatCompletion = await client.createChatCompletion(
+      final chatCompletion = await client.createChatCompletion(
         request: CreateChatCompletionRequest(
-
-              model: ChatCompletionModel.modelId(Cfg.current.model), // Or gpt35Turbo
-              messages: [
-                ChatCompletionUserMessage(
-                  role: ChatCompletionMessageRole.user,
-                  content: ChatCompletionUserMessageContent.string(constructedPrompt),
-                ),
-              ],
-              maxTokens: settings.maxTokens, // Pass max tokens if set
+          model: ChatCompletionModel.modelId(
+            Cfg.current.model,
+          ), // Or gpt35Turbo
+          messages: [
+            ChatCompletionUserMessage(
+              role: ChatCompletionMessageRole.user,
+              content: ChatCompletionUserMessageContent.string(
+                constructedPrompt,
+              ),
             ),
-          );
+          ],
+          maxTokens: settings.maxTokens, // Pass max tokens if set
+        ),
+      );
 
       return chatCompletion.choices.first.message.content;
     } on OpenAIClientException catch (e) {

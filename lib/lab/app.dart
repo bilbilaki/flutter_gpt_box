@@ -4,7 +4,6 @@ import 'package:gpt_box/lab/main.dart';
 
 import 'utils/themsdata.dart';
 
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -18,18 +17,19 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class BuildShipHome extends StatefulWidget {
-  const BuildShipHome( {super.key});
+  const BuildShipHome({super.key});
 
   @override
-  State<BuildShipHome> createState({currentView = CurrentView.templates }) => _BuildShipHomeState(currentView: currentView);
+  State<BuildShipHome> createState({currentView = CurrentView.templates}) =>
+      _BuildShipHomeState(currentView: currentView);
 }
 
 class _BuildShipHomeState extends State<BuildShipHome> {
   final CurrentView currentView;
 
   _BuildShipHomeState({required this.currentView});
-
 
   @override
   Widget build(BuildContext context) {

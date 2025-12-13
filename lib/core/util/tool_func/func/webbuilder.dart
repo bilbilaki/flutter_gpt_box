@@ -565,10 +565,7 @@ class _Export {
   }) async {
     final base = await getTargetDirectory(folderUnderApp: 'GptBoxWebApps');
     final out = Directory(
-      p.join(
-        base.path,
-        'web_${DateTime.now().millisecondsSinceEpoch}',
-      ),
+      p.join(base.path, 'web_${DateTime.now().millisecondsSinceEpoch}'),
     );
     await out.create(recursive: true);
     await _copyDir(wsRoot, out);

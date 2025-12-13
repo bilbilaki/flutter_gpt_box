@@ -3,16 +3,22 @@ import 'package:gpt_box/data/model/chat/history/history.dart';
 
 abstract final class OpenAIConvertor {
   static ChatHistory toChatHistory(Map session) {
-    if (session['title'] is! String || session['mapping'] is! Map<String, dynamic>) {
-      throw ArgumentError('Invalid session format: missing or invalid title/mapping');
+    if (session['title'] is! String ||
+        session['mapping'] is! Map<String, dynamic>) {
+      throw ArgumentError(
+        'Invalid session format: missing or invalid title/mapping',
+      );
     }
     final title = session['title'] as String;
     final mapping = session['mapping'] as Map<String, dynamic>;
     final items = <ChatHistoryItem>[];
 
     try {
-      Map<String, dynamic>? item = mapping.values
-          .firstWhereOrNull((e) => e is Map && e['parent'] == null) as Map<String, dynamic>?;
+      Map<String, dynamic>? item =
+          mapping.values.firstWhereOrNull(
+                (e) => e is Map && e['parent'] == null,
+              )
+              as Map<String, dynamic>?;
       List<dynamic>? children = item?['children'] as List?;
 
       /// To avoid infinite loop
@@ -40,11 +46,9 @@ abstract final class OpenAIConvertor {
         final createdTime = (createTimeValue * 1000).toInt();
         final time = DateTime.fromMillisecondsSinceEpoch(createdTime);
 
-        items.add(ChatHistoryItem.single(
-          role: role,
-          raw: contentStr,
-          createdAt: time,
-        ));
+        items.add(
+          ChatHistoryItem.single(role: role, raw: contentStr, createdAt: time),
+        );
       }
     } catch (e) {
       // Log error or handle gracefully, for now just continue with partial items

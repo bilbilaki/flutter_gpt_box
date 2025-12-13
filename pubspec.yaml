@@ -8,32 +8,64 @@ environment:
   flutter: ^3.32.0
 
 dependencies:
-  flutter:
-    sdk: flutter
-  flutter_localizations:
-    sdk: flutter
+  android_package_installer: ^0.0.3
+  audioplayers: ^6.5.0
+  background_downloader: any
+  before_after: ^3.2.0
+  collection: ^1.19.1
+  debounce_throttle: ^2.0.0
+  dio: ^5.9.0
   #app_links: ^6.1.1
   # audioplayers: ^6.0.0
   equatable: ^2.0.7
-  extended_image: ^10.0.1
   file_picker: ^10.1.9
+  file_saver: ^0.3.1
+  file_selector: any
+  fl_lib:
+    git:
+      url: https://github.com/lppcg/fl_lib
+      ref: v1.0.327
+    # ref: v1.0.327
+  flutter:
+    sdk: flutter
+  flutter_code_crafter: any
+  flutter_contacts: ^1.1.9+2
+  flutter_highlight: ^0.7.0
+  flutter_localizations:
+    sdk: flutter
+  flutter_markdown: ^0.7.7+1
+  flutter_markdown_latex: ^0.3.4
+  flutter_quill: ^11.4.2
+  flutter_riverpod: ^2.6.1
+  flutter_secure_storage: ^9.2.4
+  freezed_annotation: ^3.0.0
   # flutter_js: ^0.8.1
   google_fonts: ^6.1.0
-  html: ^0.15.4
+  google_generative_ai: ^0.4.7
+  google_sign_in: ^6.2.1
+  google_sign_in_all_platforms: ^1.2.1
+  googleapis: ^14.0.0
+  highlight: ^0.7.0
+  hive_ce: ^2.11.3
+  hive_ce_flutter: ^2.3.2
+  hive_flutter: ^1.1.0
+  http: ^1.5.0
+  http_parser: ^4.1.2
+  icons_plus: ^5.0.0
   image: ^4.2.0
   image_picker: ^1.0.7
-  screenshot: ^3.0.0
-  shortid: ^0.1.2
   json_annotation: ^4.9.0
-  freezed_annotation: ^3.0.0
-  responsive_framework: ^1.5.1
-  # flutter_riverpod: ^2.6.1
-  # riverpod_annotation: ^2.6.1
-  # dart_openai: #^5.1.0
-  #   git:
-  #     url: https://github.com/lollipopkit/dart_openai
-  #     ref: a2f5f0dc8aea25530bbd38b3004f656b85e730b6
-  webdav_client_plus: ^1.0.2
+  json_editor_flutter: ^1.4.2
+  language_picker: ^0.4.5
+  logging: ^1.3.0
+  markdown: ^7.3.0
+  math_keyboard: ^0.3.3
+  mcp_dart:
+    git:
+      url: https://github.com/leehack/mcp_dart
+      ref: main
+  mime: ^2.0.0
+  native_zip: ^0.8.4
   # flutter_highlight: # ^0.7.0
   #   git:
   #     ref: master
@@ -44,75 +76,34 @@ dependencies:
       url: https://github.com/lollipopkit/langchain_dart
       ref: v1.0.759
       path: packages/openai_dart
-  mcp_dart:
-    git:
-      url: https://github.com/leehack/mcp_dart
-      ref: main
-  fl_lib:
-    git:
-      url: https://github.com/lppcg/fl_lib
-      ref: v1.0.327
-     # ref: v1.0.327
-  audioplayers: ^6.5.0
-  siri_wave: ^2.3.0
   path: ^1.9.1
-  record: ^6.0.0
-  tiktoken: ^1.0.3
-  wav: ^1.5.0
-  flutter_quill: ^11.4.2
-  math_keyboard: ^0.3.3
-  flutter_code_crafter: any
-  json_editor_flutter: ^1.4.2
-  flutter_launcher_icons: ^0.14.4
-  pdf: ^3.11.3
-  file_saver: ^0.3.1
-  pdfx: ^2.9.2
-  before_after: ^3.2.0
-  flutter_markdown: ^0.7.7+1
-  flutter_markdown_latex: ^0.3.4
-  language_picker: ^0.4.5
-  permission_handler: ^12.0.1
-  google_generative_ai: ^0.4.7
-  syncfusion_flutter_pdf: ^30.2.7
-  logging: ^1.3.0
-  shared_preferences: ^2.5.3
-  hive_ce_flutter: ^2.3.2
-  hive_flutter: ^1.1.0
-  provider: ^6.1.5+1
-  dio: ^5.9.0
-  icons_plus: ^5.0.0
-  url_launcher: ^6.3.2
-  flutter_riverpod: ^2.6.1
-  flutter_highlight: ^0.7.0
-  markdown: ^7.3.0
-  highlight: ^0.7.0
-  hive_ce: ^2.11.3
-  flutter_contacts: ^1.1.9+2
-  sms_sender_background: ^1.0.6
   path_provider: ^2.1.5
-  google_sign_in: ^6.2.1
-  http: ^1.5.0
-  googleapis: ^14.0.0
-  google_sign_in_all_platforms: ^1.2.1
-  native_zip: ^0.8.4
-  uuid: ^4.5.1
-  riverpod: ^2.6.1
-  file_selector: any
-  mime: ^2.0.0
-  http_parser: ^4.1.2
-  shelf_static: ^1.1.3
-  shelf: ^1.4.2
-  background_downloader: any
-  collection: ^1.19.1
-  flutter_secure_storage: ^9.2.4
-  universal_html: ^2.2.4
-  debounce_throttle: ^2.0.0
-  worker_manager: ^7.2.6
-  android_package_installer: ^0.0.3
-  window_manager: ^0.5.1
-  puppeteer: ^3.19.0
-  telegram: ^1.0.0
+  permission_handler: ^12.0.1
   pool: ^1.5.2
+  puppeteer: ^3.19.0
+  record: ^6.0.0
+  responsive_framework: ^1.5.1
+  riverpod: ^2.6.1
+  screenshot: ^3.0.0
+  shared_preferences: ^2.5.3
+  shelf: ^1.4.2
+  shelf_static: ^1.1.3
+  shortid: ^0.1.2
+  siri_wave: ^2.3.0
+  sms_sender_background: ^1.0.6
+  syncfusion_flutter_pdf: ^30.2.7
+  telegram: ^1.0.0
+  tiktoken: ^1.0.3
+  url_launcher: ^6.3.2
+  uuid: ^4.5.1
+  # flutter_riverpod: ^2.6.1
+  # riverpod_annotation: ^2.6.1
+  # dart_openai: #^5.1.0
+  #   git:
+  #     url: https://github.com/lollipopkit/dart_openai
+  #     ref: a2f5f0dc8aea25530bbd38b3004f656b85e730b6
+  webdav_client_plus: ^1.0.2
+  worker_manager: ^7.2.6
 
 dependency_overrides:
   # fl_lib:
@@ -130,23 +121,22 @@ dependency_overrides:
   flutter_math_fork: ^0.7.4
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^5.0.0
-  freezed: ^3.2.0
-
   build_runner: ^2.4.7
-  hive_ce_generator: ^1.9.2
-  flutter_native_splash: ^2.3.9
-  json_serializable: ^6.8.0
   ffigen: any
   # riverpod_generator: ^2.6.1
   # riverpod_lint: ^2.6.1
-    # path: ../fl_build
+  # path: ../fl_build
   fl_build:
     git:
       url: https://github.com/lppcg/fl_build.git
       ref: v1.0.51
+  flutter_lints: ^5.0.0
+  flutter_native_splash: ^2.3.9
+  flutter_test:
+    sdk: flutter
+  freezed: ^3.2.0
+  hive_ce_generator: ^1.9.2
+  json_serializable: ^6.8.0
 
 flutter:
   generate: true
@@ -157,5 +147,3 @@ flutter:
 flutter_launcher_icons:
   android: true
   image_path: "assets/app_icon.png"
-
-

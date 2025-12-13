@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
-Future<Map<String, dynamic>?> showBrowserConfigDialog(BuildContext context) async {
+Future<Map<String, dynamic>?> showBrowserConfigDialog(
+  BuildContext context,
+) async {
   final browserUrlController = TextEditingController();
   final browserWsEndpointController = TextEditingController();
   String? selectedViewport;
@@ -66,7 +68,7 @@ Future<Map<String, dynamic>?> showBrowserConfigDialog(BuildContext context) asyn
               );
               return;
             }
-            
+
             Navigator.pop(context, {
               'browserUrl': browserUrlController.text,
               'browserWsEndpoint': browserWsEndpointController.text,

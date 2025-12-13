@@ -28,16 +28,16 @@ abstract class ChatConfig with _$ChatConfig {
     String? tskrModel,
     String? altrModel,
     String? wrkrModel,
-        String? trnscrbModel,
-        String? defaultTranslateLanguage,
+    String? trnscrbModel,
+    String? defaultTranslateLanguage,
 
     // Newly added nullable fields
     String? file,
     String? image,
     String? audio,
-       bool? isVertex,
-   String? vertexProjectId,
-   String? vertexLocation
+    bool? isVertex,
+    String? vertexProjectId,
+    String? vertexLocation,
   }) = _ChatConfig;
 
   factory ChatConfig.fromJson(Map<String, dynamic> json) =>
@@ -54,15 +54,14 @@ extension ChatConfigX on ChatConfig {
   static const defaultHistoryLen = 7;
   static const defaultImgModel = 'dall-e-3';
   static const defaultaudioModel = 'gpt-4o-mini-audio-preview';
-    static const defaulttrnscrbModel = 'gpt-4o-mini-transcribe-preview';
-    static const defaulttaskrModel = 'gemini-2.5-flash';
-    static const defaultaltrModel = 'gemini-2.5-flash-lite';
-        static const defaultwrkrModel = 'gpt-4.1-mini';
-        static const defaultTranslateLanguage= 'English';
-        static const isVertex= false;
-        static const vertexProjectId = '';
-        static const vertexLocation ='';
-
+  static const defaulttrnscrbModel = 'gpt-4o-mini-transcribe-preview';
+  static const defaulttaskrModel = 'gemini-2.5-flash';
+  static const defaultaltrModel = 'gemini-2.5-flash-lite';
+  static const defaultwrkrModel = 'gpt-4.1-mini';
+  static const defaultTranslateLanguage = 'English';
+  static const isVertex = false;
+  static const vertexProjectId = '';
+  static const vertexLocation = '';
 
   static const defaultOne = ChatConfig(
     id: defaultId,
@@ -76,7 +75,7 @@ extension ChatConfigX on ChatConfig {
     defaultTranslateLanguage: 'English',
     isVertex: isVertex,
     vertexProjectId: vertexProjectId,
-    vertexLocation: vertexLocation
+    vertexLocation: vertexLocation,
     // audioModel: defaultaudioModel,
     // trnscrbModel: defaulttrnscrbModel,
     // tskrModel: defaulttaskrModel,
@@ -85,10 +84,10 @@ extension ChatConfigX on ChatConfig {
   );
 
   String get displayName => switch (id) {
-        // Corresponding as `id == defaultId && name.isEmpty`
-        defaultId when name.isEmpty => l10n.defaulT,
-        _ => name,
-      };
+    // Corresponding as `id == defaultId && name.isEmpty`
+    defaultId when name.isEmpty => l10n.defaulT,
+    _ => name,
+  };
 
   void save() => Stores.config.put(this);
 
@@ -128,19 +127,17 @@ extension ChatConfigX on ChatConfig {
       image: params_['image'],
       audio: params_['audio'],
       historyLen: params_['historyLen'] ?? defaultHistoryLen,
-      tskrModel: params_['TaskerModel']??defaulttaskrModel,
-            audioModel: params_['AudioModel']??defaultaudioModel,
-                  altrModel: params_['AlterModel']??defaultaltrModel,
+      tskrModel: params_['TaskerModel'] ?? defaulttaskrModel,
+      audioModel: params_['AudioModel'] ?? defaultaudioModel,
+      altrModel: params_['AlterModel'] ?? defaultaltrModel,
 
-      wrkrModel: params_['TaskerModel']??defaultwrkrModel,
-            trnscrbModel: params_['TaskerModel']??defaulttrnscrbModel,
-            defaultTranslateLanguage: params_['defaultTranslateLanguage']??defaultTranslateLanguage,
-             isVertex: params_['isVertex'],
+      wrkrModel: params_['TaskerModel'] ?? defaultwrkrModel,
+      trnscrbModel: params_['TaskerModel'] ?? defaulttrnscrbModel,
+      defaultTranslateLanguage:
+          params_['defaultTranslateLanguage'] ?? defaultTranslateLanguage,
+      isVertex: params_['isVertex'],
       vertexProjectId: params_['vertexProjectId'],
       vertexLocation: params_['vertexLocation'],
-
-
-
     );
   }
 }

@@ -43,19 +43,23 @@ call this tool and pass url to opening that for user''';
 
     try {
       final success = await launchUrl(Uri.parse(url));
-      
+
       return success
           ? [ChatContent.text('Successfully opened URL for the user.')]
-          : [ChatContent.text(
-              ToolError.executionFailed(
-                'Failed to open URL',
-                suggestion: 'Verify the URL is valid and a compatible app is available.',
-              ).toMessage(),
-            )];
+          : [
+              ChatContent.text(
+                ToolError.executionFailed(
+                  'Failed to open URL',
+                  suggestion:
+                      'Verify the URL is valid and a compatible app is available.',
+                ).toMessage(),
+              ),
+            ];
     } catch (e) {
       final error = ToolError.executionFailed(
         'URL launch failed: $e',
-        suggestion: 'Ensure the URL is properly formatted and a handler app is available.',
+        suggestion:
+            'Ensure the URL is properly formatted and a handler app is available.',
       );
       log('URL Launcher Error: ${error.toMessage()}');
       return [ChatContent.text(error.toMessage())];

@@ -77,7 +77,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
   Timer? minuteTimer;
   bool monitoring = false;
   bool ocr = false;
-    final GeminiOcrService _ocrService = GeminiOcrService();
+  final GeminiOcrService _ocrService = GeminiOcrService();
   bool isOcrEnabled = false; // The state for the OCR checkbox
   List<PlatformFile> selectedFilesForOcr = [];
   bool isOcrProcessing = false;
@@ -90,7 +90,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
 
   @override
   void dispose() {
-   linesPerChunkController.dispose();
+    linesPerChunkController.dispose();
     wordsPerChunkController.dispose();
     charactersPerChunkController.dispose();
     regexPatternController.dispose();
@@ -181,7 +181,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
         } else {
           throw Exception('No readable data for selected Doc or Docx.');
         }
-      }  else {
+      } else {
         if (pf.path != null) {
           // Prefer file path when available (fast and memory-safe)
           content = await File(pf.path!).readAsString();
@@ -253,15 +253,15 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
       showSnack('Error during chunking: $e', error: true);
     }
   }
-    Future<void> _performOcr() async {
+
+  Future<void> _performOcr() async {
     if (selectedFilesForOcr.isEmpty) {
       showSnack('No files selected for OCR.', error: true);
       return;
     }
     // Note: Ensure your config page saves the  API Key to translatorConfig.apiKey
     if (translatorConfig.apiKey.isEmpty) {
-      showSnack(' API key is not set in the configuration.',
-          error: true);
+      showSnack(' API key is not set in the configuration.', error: true);
       return;
     }
 
@@ -278,7 +278,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
       final String combinedText = await _ocrService.processFiles(
         files: selectedFilesForOcr,
         apiKey: translatorConfig.geminiApi,
-   //  apiKey: translatorConfig.apiKey,
+        //  apiKey: translatorConfig.apiKey,
         onProgress: (completed, total) {
           setState(() {
             ocrProgress = completed / total;
@@ -552,7 +552,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: <Widget>[
-           Row(
+          Row(
             children: [
               Checkbox(
                 value: isOcrEnabled,
@@ -577,11 +577,11 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
                     if (isOcrEnabled) {
                       FilePickerResult? result = await FilePicker.platform
                           .pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-                        allowMultiple: true,
-                        withData: true,
-                      );
+                            type: FileType.custom,
+                            allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+                            allowMultiple: true,
+                            withData: true,
+                          );
                       if (result != null) {
                         setState(() {
                           selectedFilesForOcr = result.files;
@@ -591,10 +591,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
                       }
                     } else {
                       FilePickerResult? result = await FilePicker.platform
-                          .pickFiles(
-                        type: FileType.any,
-                        withData: true,
-                      );
+                          .pickFiles(type: FileType.any, withData: true);
                       if (result != null) {
                         await pickFile(result);
                       }
@@ -602,7 +599,8 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
                   },
                   icon: const Icon(Icons.folder_open),
                   label: Text(
-                      isOcrEnabled ? 'Select Files for OCR' : 'Select File'),
+                    isOcrEnabled ? 'Select Files for OCR' : 'Select File',
+                  ),
                   style: const ButtonStyle(
                     minimumSize: WidgetStatePropertyAll(Size.fromHeight(48)),
                   ),
@@ -610,8 +608,9 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
               ),
               const SizedBox(width: 10),
               FilledButton.tonalIcon(
-                onPressed: () => Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (_) => const ConfigPage())),
+                onPressed: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const ConfigPage())),
                 icon: const Icon(Icons.settings),
                 label: const Text('Open Config'),
               ),
@@ -627,7 +626,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
             ),
           ),
           SizedBox(height: 12),
-    if (isOcrEnabled && selectedFilesForOcr.isNotEmpty) ...[
+          if (isOcrEnabled && selectedFilesForOcr.isNotEmpty) ...[
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -635,8 +634,12 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
                 icon: const Icon(Icons.document_scanner),
                 label: const Text('Perform OCR'),
                 style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(Colors.orange.shade700),
-                  minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
+                  backgroundColor: WidgetStatePropertyAll(
+                    Colors.orange.shade700,
+                  ),
+                  minimumSize: const WidgetStatePropertyAll(
+                    Size.fromHeight(48),
+                  ),
                 ),
               ),
             ),
@@ -726,7 +729,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
               ),
             ],
           ),
-             if (isOcrProcessing)
+          if (isOcrProcessing)
             Padding(
               padding: const EdgeInsets.only(top: 12.0),
               child: Column(

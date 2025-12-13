@@ -5,7 +5,6 @@
 // file_picker: ^6.x.x // As used in _showAttachBottomSheet
 // image_picker: ^1.x.x // As used in _showAttachBottomSheet
 
-
 import 'package:flutter/material.dart';
 import 'package:gpt_box/view/page/home/home.dart';
 import 'package:openai_dart/openai_dart.dart';
@@ -49,7 +48,6 @@ class ChatController {
 }
 
 enum AudioSourceType { picked, recorded }
-
 
 // Mock Client for fetching models
 
