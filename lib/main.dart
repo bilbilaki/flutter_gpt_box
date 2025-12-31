@@ -10,7 +10,6 @@ import 'package:gpt_box/data/model/chat/history/hive_adapter.dart';
 import 'package:gpt_box/data/res/build_data.dart';
 import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
-import 'package:gpt_box/env.dart';
 import 'package:gpt_box/hive/hive_registrar.g.dart';
 import 'package:gpt_box/view/translator/configuration/translator_config.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';

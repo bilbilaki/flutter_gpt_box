@@ -155,17 +155,16 @@ final class _HomeBottomState extends State<_HomeBottom> {
             _buildRight(),
             _buildFileSearchBtn(),
             _buildPromptGeneratorPageBTN(),
-            _buildBatchTaskRunnerPageBTN(),
           ],
         ),
         const SizedBox(height: 1),
         Row(
           children: [
-            IconButton(
-              tooltip: 'Canvas',
-              icon: const Icon(Icons.edit_note_rounded, size: 19),
-              onPressed: () => _openCanvas(context, inputCtrl),
-            ),
+            // IconButton(
+            //   tooltip: 'Canvas',
+            //   icon: const Icon(Icons.edit_note_rounded, size: 19),
+            //   onPressed: () => _openCanvas(context, inputCtrl),
+            // ),
             IconButton(
               tooltip: 'Translate Files',
               icon: const Icon(Icons.translate, size: 19),
@@ -223,7 +222,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
   Widget _buildFileSearchBtn() {
     return IconButton(
       onPressed: () async {
-        await _navigateToPage(context, FileSearchScreen());
+        await _navigateToPage(context, GitLoaderApp());
       },
       icon: Icon(Icons.search, size: 17),
     );
@@ -237,16 +236,6 @@ final class _HomeBottomState extends State<_HomeBottom> {
       icon: Icon(Icons.auto_awesome_mosaic_sharp, size: 17),
     );
   }
-
-  Widget _buildBatchTaskRunnerPageBTN() {
-    return IconButton(
-      onPressed: () async {
-        await _navigateToPage(context, AIBatchProcessorScreen());
-      },
-      icon: Icon(Icons.batch_prediction, size: 17),
-    );
-  }
-
   Widget _buildOpenSettingsDrawerBtn() {
     return IconButton(
       tooltip: 'Open Settings Drawer',
@@ -438,19 +427,19 @@ final class _HomeBottomState extends State<_HomeBottom> {
     });
   }
 
-  Future<void> _openCanvas(
-    BuildContext context,
-    TextEditingController inputCtrl,
-  ) async {
-    final result = await Navigator.of(
-      context,
-    ).push<CanvasResult>(_fadeRoute(const FreeCanvasPage()));
-    if (result == null) return;
+  // Future<void> _openCanvas(
+  //   BuildContext context,
+  //   TextEditingController inputCtrl,
+  // ) async {
+  //   final result = await Navigator.of(
+  //     context,
+  //   ).push<CanvasResult>(_fadeRoute(const FreeCanvasPage()));
+  //   if (result == null) return;
 
-    for (final p in result.parts) {
-      inputCtrl.text = p.text;
-    }
-  }
+  //   for (final p in result.parts) {
+  //     inputCtrl.text = p.text;
+  //   }
+  // }
 
   Future<void> _navigateToPage(BuildContext context, Widget page) async {
     await Navigator.of(context).push<void>(
@@ -458,11 +447,11 @@ final class _HomeBottomState extends State<_HomeBottom> {
     ); // Replace AnotherPage with your desired page
   }
 
-  Future<void> _navigateToBatchTaskerPage(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      _fadeRoute(AIBatchProcessorScreen()),
-    ); // Replace AnotherPage with your desired page
-  }
+  // Future<void> _navigateToBatchTaskerPage(BuildContext context) async {
+  //   await Navigator.of(context).push<void>(
+  //     _fadeRoute(AIBatchProcessorScreen()),
+  //   ); // Replace AnotherPage with your desired page
+  // }
 
   // Future<void> _navigateToWebView(BuildContext context) async {
   //     await Navigator.of(context).push<void>(

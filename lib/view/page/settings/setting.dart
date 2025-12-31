@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gpt_box/core/google/core.dart';
 import 'package:gpt_box/core/util/api_balance.dart';
 import 'package:gpt_box/core/util/tool_func/tool.dart';
 import 'package:gpt_box/data/model/chat/config.dart';
@@ -14,7 +13,6 @@ import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/res/url.dart';
 import 'package:gpt_box/data/store/all.dart';
-import 'package:gpt_box/env.dart';
 import 'package:gpt_box/generated/l10n/l10n.dart';
 import 'package:gpt_box/view/page/backup/view.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
@@ -141,7 +139,7 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   Widget _buildThemeMode() {
     return ValueListenableBuilder(
       valueListenable: _setStore.themeMode.listenable(),
-      builder: (_, val, _) => ListTile(
+      builder: (_, val, __) => ListTile(
         leading: const Icon(Icons.sunny),
         title: Text(l10n.themeMode),
         onTap: () async {
@@ -197,7 +195,7 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   Widget _buildLocale() {
     return ValueListenableBuilder(
       valueListenable: _setStore.locale.listenable(),
-      builder: (_, val, _) => ListTile(
+      builder: (_, val, __) => ListTile(
         leading: const Icon(MingCute.translate_2_line),
         title: Text(libL10n.language),
         trailing: Text(

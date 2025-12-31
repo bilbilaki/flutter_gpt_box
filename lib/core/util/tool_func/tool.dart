@@ -24,12 +24,10 @@ import 'package:mcp_dart/mcp_dart.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:native_zip/native_zip.dart';
 import 'package:sms_sender_background/sms_sender.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
 import 'package:shelf_static/shelf_static.dart';
-import '../../../env.dart';
 part 'type.dart';
 part 'func/iface.dart';
 part 'func/http.dart';
@@ -41,7 +39,6 @@ part 'internal_mcp_server.dart';
 part 'func/urlluancher.dart';
 part 'func/contectsms.dart';
 part 'func/download.dart';
-part 'func/ziptool.dart';
 part 'func/filemanager.dart';
 part 'func/pdftool.dart';
 part 'func/webbuilder.dart';
@@ -61,7 +58,6 @@ abstract final class OpenAIFuncCalls {
     TfDownloader.instance,
     TfFileManager.instance,
     TfPdfManager.instance,
-    TfZipManager.instance,
     TfWebBuilder.instance,
     TfPythonProjectBuilder.instance,
     TfGoProjectBuilder.instance,

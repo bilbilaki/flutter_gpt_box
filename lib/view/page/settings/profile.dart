@@ -162,10 +162,8 @@ final class _ProfilePageState extends State<ProfilePage>
             },
           ),
           Btn.icon(
-            icon: const Icon(Icons.cloud_circle_outlined, size: 19),
-            onTap: () =>
-                _addVertexAIProfile(), // We will create this function next
-          ),
+              icon: const Icon(Icons.cloud_circle_outlined, size: 19),
+              onTap: () {}),
         ],
       ),
     );
@@ -238,141 +236,6 @@ final class _ProfilePageState extends State<ProfilePage>
   //   }
 
   // Replace your old _addVertexAIProfile function with this new, much better one.
-
-  Future<void> _addVertexAIProfile() async {
-    final nameCtrl = TextEditingController();
-    final locationCtrl = TextEditingController(text: 'us-central1');
-
-    // Use StatefulBuilder to manage the state of the async call inside the dialog
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        // State for our dialog
-        List<GoogleCloudProject>? projects;
-        GoogleCloudProject? selectedProject;
-        bool isLoading = true;
-        String? errorMessage;
-
-        // This is a common pattern for async operations in a dialog
-        return StatefulBuilder(
-          builder: (context, setState) {
-            // Fetch projects only once
-            if (projects == null && isLoading) {
-              fetchUserGoogleCloudProjects()
-                  .then((fetchedProjects) {
-                    setState(() {
-                      if (fetchedProjects.isNotEmpty) {
-                        projects = fetchedProjects;
-                        selectedProject =
-                            projects!.first; // Pre-select the first one
-                      } else {
-                        projects = []; // Mark as loaded, but empty
-                        errorMessage =
-                            "No Google Cloud projects found or API not enabled.";
-                      }
-                      isLoading = false;
-                    });
-                  })
-                  .catchError((e) {
-                    setState(() {
-                      errorMessage = "Error: ${e.toString()}";
-                      isLoading = false;
-                    });
-                  });
-            }
-
-            Widget buildContent() {
-              if (isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (errorMessage != null) {
-                return Text(
-                  errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                );
-              }
-              if (projects!.isEmpty) {
-                return const Text(
-                  "No Google Cloud projects found for this account.",
-                );
-              }
-
-              // --- THE UI WITH THE DROPDOWN ---
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Input(
-                    controller: nameCtrl,
-                    label: 'Profile Name',
-                    hint: 'My Vertex AI Project',
-                    autoFocus: true,
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<GoogleCloudProject>(
-                    value: selectedProject,
-                    decoration: const InputDecoration(
-                      labelText: 'Select Google Cloud Project',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: projects!.map((project) {
-                      return DropdownMenuItem<GoogleCloudProject>(
-                        value: project,
-                        child: Text('${project.name} (${project.projectId})'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedProject = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Input(
-                    controller: locationCtrl,
-                    label: 'Location (Region)',
-                    hint: 'us-central1',
-                  ),
-                ],
-              );
-            }
-
-            return AlertDialog(
-              title: const Text('Add Vertex AI Profile'),
-              content: buildContent(),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: (selectedProject == null || isLoading)
-                      ? null
-                      : () {
-                          // The OK button logic
-                          final newCfg = Cfg.current.copyWith(
-                            id: shortid.generate(),
-                            name: nameCtrl.text,
-
-                            isVertex: true,
-                            vertexProjectId: selectedProject!
-                                .projectId, // Use the ID from the selected project
-                            vertexLocation: locationCtrl.text,
-                            url: 'vertex-ai-autogenerated',
-                            key: 'google-oauth-token',
-                          );
-                          newCfg.save();
-                          Cfg.setTo(cfg: newCfg);
-                          Navigator.of(context).pop(); // Close the dialog
-                        },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
   Widget _buildOpenAIUrl(String val) {
     return ListTile(

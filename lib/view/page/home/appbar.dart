@@ -82,7 +82,7 @@ final class _CustomAppBar extends CustomAppBar {
       actions: [
         ValueListenableBuilder(
           valueListenable: _curPage,
-          builder: (_, page, _) => page.buildAppbarActions(context),
+          builder: (_, page, __) => page.buildAppbarActions(context),
         ),
       ],
     );

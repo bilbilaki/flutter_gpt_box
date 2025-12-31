@@ -58,7 +58,6 @@ final class _ChatSettingsState extends State<_ChatSettings> {
         _buildSwitchTile(TfDownloader.instance),
         _buildSwitchTile(TfPdfManager.instance),
         _buildSwitchTile(TfFileManager.instance),
-        _buildSwitchTile(TfZipManager.instance),
         _buildSwitchTile(TfWebBuilder.instance),
 
         _buildMemory(),

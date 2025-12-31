@@ -24,11 +24,11 @@ Map<String, dynamic> _$ChatHistoryToJson(ChatHistory instance) =>
     <String, dynamic>{
       'id': instance.id,
       'items': instance.items,
-      'name': ?instance.name,
-      'settings': ?instance.settings,
-      'isPinned': ?instance.isPinned,
-      'colorIndicator': ?instance.colorIndicator,
-      'folderId': ?instance.folderId,
+      'name': instance.name,
+      'settings': instance.settings,
+      'isPinned': instance.isPinned,
+      'colorIndicator': instance.colorIndicator,
+      'folderId': instance.folderId,
     };
 
 ChatHistoryItem _$ChatHistoryItemFromJson(Map<String, dynamic> json) =>
@@ -60,13 +60,13 @@ Map<String, dynamic> _$ChatHistoryItemToJson(ChatHistoryItem instance) =>
       'content': instance.content,
       'createdAt': instance.createdAt.toIso8601String(),
       'id': instance.id,
-      'toolCallId': ?instance.toolCallId,
-      'toolCalls': ?instance.toolCalls,
-      'reasoning': ?instance.reasoning,
-      'inputTokens': ?instance.inputTokens,
-      'outputTokens': ?instance.outputTokens,
-      'totalTokens': ?instance.totalTokens,
-      'nanobenana': ?instance.nanobenana,
+      'toolCallId': instance.toolCallId,
+      'toolCalls': instance.toolCalls,
+      'reasoning': instance.reasoning,
+      'inputTokens': instance.inputTokens,
+      'outputTokens': instance.outputTokens,
+      'totalTokens': instance.totalTokens,
+      'nanobenana': instance.nanobenana,
     };
 
 const _$ChatRoleEnumMap = {

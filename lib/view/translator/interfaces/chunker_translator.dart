@@ -7,7 +7,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_box/view/translator/docx_to_text_src.dart';
 import 'package:gpt_box/view/translator/interfaces/configuration_interface.dart';
-import 'package:gpt_box/view/translator/services/ocr.dart';
 import 'package:gpt_box/view/translator/utils/colors.dart';
 import 'package:gpt_box/view/translator/widgets/language_picker.dart';
 import 'package:path/path.dart' as p;
@@ -77,7 +76,6 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
   Timer? minuteTimer;
   bool monitoring = false;
   bool ocr = false;
-  final GeminiOcrService _ocrService = GeminiOcrService();
   bool isOcrEnabled = false; // The state for the OCR checkbox
   List<PlatformFile> selectedFilesForOcr = [];
   bool isOcrProcessing = false;
@@ -254,67 +252,67 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
     }
   }
 
-  Future<void> _performOcr() async {
-    if (selectedFilesForOcr.isEmpty) {
-      showSnack('No files selected for OCR.', error: true);
-      return;
-    }
-    // Note: Ensure your config page saves the  API Key to translatorConfig.apiKey
-    if (translatorConfig.apiKey.isEmpty) {
-      showSnack(' API key is not set in the configuration.', error: true);
-      return;
-    }
+  // Future<void> _performOcr() async {
+  //   if (selectedFilesForOcr.isEmpty) {
+  //     showSnack('No files selected for OCR.', error: true);
+  //     return;
+  //   }
+  //   // Note: Ensure your config page saves the  API Key to translatorConfig.apiKey
+  //   if (translatorConfig.apiKey.isEmpty) {
+  //     showSnack(' API key is not set in the configuration.', error: true);
+  //     return;
+  //   }
 
-    setState(() {
-      isOcrProcessing = true;
-      ocrProgress = 0.0;
-      originalFileContent =
-          'Starting OCR process for ${selectedFilesForOcr.length} files...';
-      chunkedContent = '';
-      translatedContent = '';
-    });
+  //   setState(() {
+  //     isOcrProcessing = true;
+  //     ocrProgress = 0.0;
+  //     originalFileContent =
+  //         'Starting OCR process for ${selectedFilesForOcr.length} files...';
+  //     chunkedContent = '';
+  //     translatedContent = '';
+  //   });
 
-    try {
-      final String combinedText = await _ocrService.processFiles(
-        files: selectedFilesForOcr,
-        apiKey: translatorConfig.geminiApi,
-        //  apiKey: translatorConfig.apiKey,
-        onProgress: (completed, total) {
-          setState(() {
-            ocrProgress = completed / total;
-          });
-        },
-      );
+  //   // try {
+  //   //   final String combinedText = await _ocrService.processFiles(
+  //   //     files: selectedFilesForOcr,
+  //   //     apiKey: translatorConfig.geminiApi,
+  //   //     //  apiKey: translatorConfig.apiKey,
+  //   //     onProgress: (completed, total) {
+  //   //       setState(() {
+  //   //         ocrProgress = completed / total;
+  //   //       });
+  //   //     },
+  //   //   );
 
-      setState(() {
-        originalFileContent = combinedText.trim().isNotEmpty
-            ? combinedText
-            : 'OCR process finished, but no text was extracted.';
-        chunkedContent = 'Press "Chunk Text" to process.';
-        translatedContent = 'Translate chunks to see the result.';
-        chunks = [];
-        translatedChunks = null;
-        translationProgress = 0.0;
-        inputTokens = _countTokens(originalFileContent);
-        outputTokens = 0;
-        lastResultTokens = 0;
-        _recomputeUsageCost();
-        // Clear the selection after processing
-        selectedFilesForOcr = [];
-        fileName = 'OCR Completed. Content loaded.';
-      });
-    } catch (e) {
-      showSnack('An error occurred during OCR processing: $e', error: true);
-      setState(() {
-        originalFileContent =
-            'OCR failed. Please check your API key and network connection.';
-      });
-    } finally {
-      setState(() {
-        isOcrProcessing = false;
-      });
-    }
-  }
+  //     setState(() {
+  //       originalFileContent = combinedText.trim().isNotEmpty
+  //           ? combinedText
+  //           : 'OCR process finished, but no text was extracted.';
+  //       chunkedContent = 'Press "Chunk Text" to process.';
+  //       translatedContent = 'Translate chunks to see the result.';
+  //       chunks = [];
+  //       translatedChunks = null;
+  //       translationProgress = 0.0;
+  //       inputTokens = _countTokens(originalFileContent);
+  //       outputTokens = 0;
+  //       lastResultTokens = 0;
+  //       _recomputeUsageCost();
+  //       // Clear the selection after processing
+  //       selectedFilesForOcr = [];
+  //       fileName = 'OCR Completed. Content loaded.';
+  //     });
+  //   } catch (e) {
+  //     showSnack('An error occurred during OCR processing: $e', error: true);
+  //     setState(() {
+  //       originalFileContent =
+  //           'OCR failed. Please check your API key and network connection.';
+  //     });
+  //   } finally {
+  //     setState(() {
+  //       isOcrProcessing = false;
+  //     });
+  //   }
+  // }
   // void _startMinuteMonitor() {
   //   minuteTimer?.cancel();
   //   setState(() {
@@ -630,7 +628,7 @@ class _ChunkerInterfaceandState extends State<ChunkerInterfaceand> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: isOcrProcessing ? null : _performOcr,
+                onPressed: isOcrProcessing ? null : null,
                 icon: const Icon(Icons.document_scanner),
                 label: const Text('Perform OCR'),
                 style: ButtonStyle(

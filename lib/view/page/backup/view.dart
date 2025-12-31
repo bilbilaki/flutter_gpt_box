@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:gpt_box/core/google/drive.dart';
 import 'package:gpt_box/data/model/app/backup.dart';
 import 'package:gpt_box/data/model/app/backup2.dart';
 import 'package:gpt_box/data/model/app/utils.dart';
@@ -21,8 +20,6 @@ import 'package:icons_plus/icons_plus.dart';
 import 'package:webdav_client_plus/webdav_client_plus.dart';
 
 part 'impl/file.dart';
-part 'impl/webdav.dart';
-part 'impl/icloud.dart';
 part 'impl/gpt_next.dart';
 part 'impl/openai.dart';
 part 'impl/shared.dart';
@@ -42,8 +39,6 @@ final class BackupPage extends StatelessWidget {
       children: [
         [
           const CenterGreyTitle('App'),
-          if (isMacOS || isIOS) _buildIcloud(context),
-          if (!isWeb) _buildWebdav(context),
           _buildFile(context),
           CenterGreyTitle(libL10n.attention),
           _buildTip(),

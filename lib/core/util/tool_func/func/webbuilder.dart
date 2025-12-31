@@ -577,8 +577,8 @@ class _Export {
     // Use NativeZip if available in your app (already used elsewhere)
     final zipOut = p.join(dir.parent.path, '${p.basename(dir.path)}.zip');
     try {
-      final future = NativeZip.zipDir(dir.path, zipOut, threadCount: 2);
-      await future;
+    //  final future = NativeZip.zipDir(dir.path, zipOut, threadCount: 2);
+   //  await future;
       log('[webbuilder] zip created: $zipOut');
       return zipOut;
     } catch (e) {
