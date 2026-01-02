@@ -5,12 +5,12 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:sound_stream/sound_stream.dart';
+import 'package:openai_realtime_dart/openai_realtime_dart.dart';
 
 import '../../data/res/openai.dart';
 
@@ -249,8 +249,6 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     }
   }
 
-  
-
   Widget _buildConnectingUI() {
     return Stack(
       key: const ValueKey('connecting'),
@@ -434,6 +432,12 @@ class VoiceSessionController {
   final PlayerStream _playerStream = PlayerStream();
   StreamSubscription? _playerSubscription;
 
+  final RealtimeClient _realtimeClient =
+      RealtimeClient(apiKey: _kOpenAiApiKey);
+  Voice _currentVoice = Voice.alloy;
+  EventHandlerCallback? _conversationUpdatedHandler;
+  EventHandlerCallback? _conversationCompletedHandler;
+
   final void Function(bool isSpeaking)? onAiSpeakingStatusChanged;
   final void Function(Uint8List pcmChunk)? onAudioChunk;
 
@@ -443,6 +447,8 @@ class VoiceSessionController {
 
   Future<void> initialize() async {
     await _playerStream.initialize();
+    _setupRealtimeHandlers();
+    await _connectRealtime();
   }
 
   Future<void> startRecording() async {
@@ -454,13 +460,13 @@ class VoiceSessionController {
     final dir = await getTemporaryDirectory();
     _currentRecordingPath = p.join(
       dir.path,
-      'user_audio_${DateTime.now().millisecondsSinceEpoch}.wav',
+      'user_audio_${DateTime.now().millisecondsSinceEpoch}.pcm',
     );
 
     
     await _audioRecorder.start(
       const RecordConfig(
-        encoder: AudioEncoder.wav,
+        encoder: AudioEncoder.pcm16bits,
         sampleRate: 24000, 
         numChannels: 1,
       ),
@@ -468,94 +474,69 @@ class VoiceSessionController {
     );
   }
 
-  Future<void> stopRecordingAndFetchResponse({required String voice}) async {
-    
-    final path = await _audioRecorder.stop();
-    if (path == null) throw Exception("Recording failed");
+  Voice _voiceFromName(String voice) {
+    return Voice.values.firstWhere(
+      (v) => v.name.toLowerCase() == voice.toLowerCase(),
+      orElse: () => Voice.alloy,
+    );
+  }
 
-    
-    final file = File(path);
-    if (!await file.exists()) throw Exception("Audio file not found");
-    
-    final audioBytes = await file.readAsBytes();
-    final audioBase64 = base64Encode(audioBytes);
+  Future<void> _connectRealtime({String? voice}) async {
+    final targetVoice = voice != null ? _voiceFromName(voice) : _currentVoice;
+    _currentVoice = targetVoice;
 
-    
-    final request = http.Request('POST', Uri.parse('https://api.openai.com/v1/chat/completions'));
-    request.headers['Authorization'] = 'Bearer $_kOpenAiApiKey';
-    request.headers['Content-Type'] = 'application/json';
-    final body = jsonEncode({
-      "model": "gpt-audio-mini",
-      "modalities": ["text", "audio"],
-      "audio": {
-        "voice": voice,
-        "format": "pcm16" 
-      },
-      "messages": [
-        {
-          "role": "user",
-          "content": [
-            {
-              "type": "input_audio",
-              "input_audio": {
-                "data": audioBase64,
-                "format": "wav"
-              }
-            }
-          ]
-        }
-      ],
-      "stream": true 
-    });
-    request.body = body;
-
-    final response = await http.Client().send(request);
-
-    if (response.statusCode != 200) {
-      throw Exception("API Error: ${response.statusCode}");
+    if (!_realtimeClient.isConnected()) {
+      await _realtimeClient.connect(); // uses default realtime model
     }
 
-    onAiSpeakingStatusChanged?.call(true);
-    
-    
-    response.stream
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen(
-      (line) {
-        if (line.startsWith('data: ')) {
-          final jsonStr = line.substring(6);
-          if (jsonStr == '[DONE]') return;
-          try {
-            final data = jsonDecode(jsonStr);
-            if (data['choices'] != null && data['choices'].isNotEmpty) {
-              final delta = data['choices'][0]['delta'];
-              
-              
-              if (delta['audio'] != null && delta['audio']['data'] != null) {
-                final String audioDataB64 = delta['audio']['data'];
-                final Uint8List pcmBytes = base64Decode(audioDataB64);
-                
-                
-                _playerStream.writeChunk(pcmBytes);
-                
-                
-                onAudioChunk?.call(pcmBytes);
-              }
-            }
-          } catch (e) {
-            
-          }
-        }
-      },
-      onDone: () {
-        
-        onAiSpeakingStatusChanged?.call(false);
-      },
-      onError: (e) {
-        onAiSpeakingStatusChanged?.call(false);
-      },
+    await _realtimeClient.updateSession(voice: _currentVoice);
+    await _realtimeClient.waitForSessionCreated();
+  }
+
+  void _setupRealtimeHandlers() {
+    _conversationUpdatedHandler = (event) async {
+      final ev = event as RealtimeEventConversationUpdated;
+      final delta = ev.result.delta;
+      final audio = delta?.audio;
+      if (audio != null && audio.isNotEmpty) {
+        onAiSpeakingStatusChanged?.call(true);
+        _playerStream.writeChunk(audio);
+        onAudioChunk?.call(audio);
+      }
+    };
+    _conversationCompletedHandler = (event) async {
+      onAiSpeakingStatusChanged?.call(false);
+    };
+
+    _realtimeClient.on(
+      RealtimeEventType.conversationUpdated,
+      _conversationUpdatedHandler!,
     );
+    _realtimeClient.on(
+      RealtimeEventType.conversationItemCompleted,
+      _conversationCompletedHandler!,
+    );
+  }
+
+  Future<void> stopRecordingAndFetchResponse({required String voice}) async {
+    try {
+      final path = await _audioRecorder.stop();
+      if (path == null) throw Exception("Recording failed");
+
+      final file = File(path);
+      if (!await file.exists()) throw Exception("Audio file not found");
+      final audioBytes = await file.readAsBytes();
+      final audioBase64 = base64Encode(audioBytes);
+
+      await _connectRealtime(voice: voice);
+
+      onAiSpeakingStatusChanged?.call(true);
+      await _realtimeClient.sendUserMessageContent(
+        [ContentPart.inputAudio(audio: audioBase64)],
+      );
+    } finally {
+      _currentRecordingPath = null;
+    }
   }
 
   Future<void> cancelRecording() async {
@@ -569,6 +550,19 @@ class VoiceSessionController {
     _audioRecorder.dispose();
     _playerStream.dispose();
     _playerSubscription?.cancel();
+    if (_conversationUpdatedHandler != null) {
+      _realtimeClient.off(
+        RealtimeEventType.conversationUpdated,
+        _conversationUpdatedHandler!,
+      );
+    }
+    if (_conversationCompletedHandler != null) {
+      _realtimeClient.off(
+        RealtimeEventType.conversationItemCompleted,
+        _conversationCompletedHandler!,
+      );
+    }
+    unawaited(_realtimeClient.disconnect());
   }
 }
 

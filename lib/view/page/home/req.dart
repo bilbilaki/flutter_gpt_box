@@ -90,6 +90,25 @@ Map<String, dynamic> _toolOutputInput({
     'output': outputText,
   };
 }
+
+List<Map<String, dynamic>> _chatContentToResponsesInput(
+  List<ChatContent> contents,
+) {
+  return contents.map((c) {
+    switch (c.type) {
+      case ChatContentType.text:
+        return {'type': 'input_text', 'text': c.raw};
+      case ChatContentType.image:
+        return {'type': 'input_image', 'image_url': c.raw};
+      case ChatContentType.audio:
+        return {'type': 'input_audio', 'audio_url': c.raw};
+      case ChatContentType.file:
+        return {'type': 'input_file', 'file_url': c.raw};
+      case ChatContentType.nanobenana:
+        return {'type': 'input_image', 'image_url': c.raw};
+    }
+  }).toList();
+}
 bool _validChatCfg(BuildContext context) {
   final config = Cfg.current;
   final urlEmpty = config.url == 'https://api.openai.com/v1';
@@ -266,6 +285,14 @@ Future<void> _onCreateTextResponses(
     List<dynamic>? nextInputArray;
 
     while (true) {
+      final requestInputs = nextInputArray ??
+          [
+            {
+              'role': 'user',
+              'content': _chatContentToResponsesInput(questionContents),
+            },
+          ];
+
       final req = ResponsesRequest(
         model: cfg.model,
         previousResponseId: previousId,
@@ -274,8 +301,8 @@ Future<void> _onCreateTextResponses(
         extra: {
           if (previousId == null && instructions.isNotEmpty) 'instructions': instructions,
         },
-        input: nextInputArray == null ? question.toMarkdown : null,
-        inputs: nextInputArray, // serialized to "input" by toJson()
+        input: null,
+        inputs: requestInputs, // serialized to "input" by toJson()
       );
 
       final calls = <_RespFuncCall>[];

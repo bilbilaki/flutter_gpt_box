@@ -25,9 +25,10 @@ class FunctionTool extends ResponseTool {
 
 class ResponsesRequest {
   final String model;
-  final String? input; // simple string input (typical)
+  // `input` can be a string or a structured array for the Responses API.
+  final Object? input;
   final List<dynamic>?
-  inputs; // advanced inputs array (for local_shell and others)
+  inputs; // legacy field; will be sent as `input` if provided
   final bool? background;
   final String? previousResponseId;
 
@@ -59,8 +60,7 @@ class ResponsesRequest {
       'model': model,
       if (previousResponseId != null) 'previous_response_id': previousResponseId,
 
-      if (input != null) 'input': input,
-      if (inputs != null) 'inputs': inputs,
+      if (input != null || inputs != null) 'input': input ?? inputs,
       if (background == true) 'background': true,
       if (reasoning != null) 'reasoning': reasoning,
       if (tools.isNotEmpty) 'tools': tools.map((t) => t.toJson()).toList(),
