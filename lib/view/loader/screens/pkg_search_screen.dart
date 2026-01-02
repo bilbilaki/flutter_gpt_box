@@ -11,6 +11,8 @@ import 'package:file_selector/file_selector.dart';
 import 'package:html2md/html2md.dart' as html2md;
 import 'dart:io';
 
+import '../main.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -137,6 +139,8 @@ class GoPkgsApp extends StatelessWidget {
     
 
     return MaterialApp(
+         
+
       debugShowCheckedModeBanner: false,
       theme: theme,
       home: const GoPackageSearchPage(),
@@ -449,6 +453,17 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Package Hunter'),
+           leading: IconButton(
+             icon: const Icon(Icons.arrow_back),
+             onPressed: () {
+                        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GitLoaderApp(),
+          ),
+        );// This pops the screen and goes back
+             },
+           ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 10),

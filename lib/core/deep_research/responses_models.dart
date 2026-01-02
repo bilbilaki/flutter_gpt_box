@@ -1,4 +1,4 @@
-/// Deep Research request object (Responses API).
+
 class DeepResearchRequest {
   final String
   model; // e.g. "o3-deep-research" | "o4-mini-deep-research" | "gpt-4.1"

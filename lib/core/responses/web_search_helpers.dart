@@ -1,5 +1,5 @@
-import 'responses_models.dart';
-import 'responses_service.dart';
+ part of 'package:gpt_box/view/page/home/home.dart';
+
 
 class WebSearchApi {
   final ResponsesService _svc;
@@ -13,7 +13,7 @@ class WebSearchApi {
       model: model,
       input: query,
       tools: [WebSearchTool()],
-      toolChoice: 'auto',
+      toolChoice: 'auto', previousResponseId: null,
     );
     final res = await _svc.create(req);
     return res.outputText;
@@ -37,7 +37,7 @@ class WebSearchApi {
       input: query,
       tools: [tool],
       toolChoice: 'auto',
-      include: includeSources ? ['web_search_call.action.sources'] : null,
+      include: includeSources ? ['web_search_call.action.sources'] : null, previousResponseId: null,
     );
     return await _svc.create(req);
   }
@@ -52,7 +52,7 @@ class WebSearchApi {
       model: model,
       input: query,
       tools: [WebSearchPreviewTool(searchContextSize: contextSize)],
-      toolChoice: 'auto',
+      toolChoice: 'auto', previousResponseId: null,
     );
     return await _svc.create(req);
   }

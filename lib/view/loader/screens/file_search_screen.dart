@@ -9,6 +9,7 @@ import 'package:worker_manager/worker_manager.dart';
 import 'package:path/path.dart' as path_pkg;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../main.dart';
 import '../models/file_content.dart';
 import '../models/diff_hunk.dart';
 import '../services/search_service.dart';
@@ -665,7 +666,13 @@ class _FileSearchScreenState extends State<FileSearchScreen> {
            leading: IconButton(
              icon: const Icon(Icons.arrow_back),
              onPressed: () {
-               Navigator.pop(context); // This pops the screen and goes back
+                                   Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GitLoaderApp(),
+          ),
+        );// This pops the screen and goes back
+
              },
            ),
       ),

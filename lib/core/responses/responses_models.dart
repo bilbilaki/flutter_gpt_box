@@ -1,10 +1,36 @@
 /// Generic Responses API request for our use-cases.
+ part of 'package:gpt_box/view/page/home/home.dart';
+class FunctionTool extends ResponseTool {
+  @override
+  String get type => 'function';
+
+  final String name;
+  final String? description;
+  final Map<String, dynamic>? parameters;
+
+  FunctionTool({
+    required this.name,
+    this.description,
+    this.parameters,
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'name': name,
+    if (description != null) 'description': description,
+    if (parameters != null) 'parameters': parameters,
+  };
+}
+
 class ResponsesRequest {
   final String model;
   final String? input; // simple string input (typical)
   final List<dynamic>?
   inputs; // advanced inputs array (for local_shell and others)
   final bool? background;
+  final String? previousResponseId;
+
   final Map<String, dynamic>?
   reasoning; // e.g., {"effort":"low"} or {"summary":"auto"}
   final List<ResponseTool> tools;
@@ -18,6 +44,7 @@ class ResponsesRequest {
     this.inputs,
     this.background,
     this.reasoning,
+   required this.previousResponseId,
     this.tools = const [],
     this.toolChoice,
     this.include,
@@ -30,6 +57,8 @@ class ResponsesRequest {
   }) {
     final body = <String, dynamic>{
       'model': model,
+      if (previousResponseId != null) 'previous_response_id': previousResponseId,
+
       if (input != null) 'input': input,
       if (inputs != null) 'inputs': inputs,
       if (background == true) 'background': true,
@@ -232,6 +261,15 @@ class DeepResponseChunk {
   });
 
   factory DeepResponseChunk.fromJson(Map<String, dynamic> json) {
+    // Responses SSE events are not consistent about where the response id lives.
+    // Prefer the top-level `id`, then fall back to nested `response.id` or `response_id`.
+    String? respId = json['id']?.toString();
+    final responseObj = json['response'];
+    if (respId == null && responseObj is Map && responseObj['id'] != null) {
+      respId = responseObj['id']?.toString();
+    }
+    respId ??= json['response_id']?.toString();
+
     String? delta;
     if (json.containsKey('delta')) {
       final d = json['delta'];
@@ -245,7 +283,7 @@ class DeepResponseChunk {
       }
     }
     return DeepResponseChunk(
-      id: json['id']?.toString(),
+      id: respId,
       status: json['status']?.toString(),
       deltaText: delta,
       outputItem: json['output_item'] is Map<String, dynamic>

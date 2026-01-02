@@ -18,14 +18,12 @@ final class _HomeBottomState extends State<_HomeBottom> {
     BoxShadow(color: Colors.white12, blurRadius: 3, offset: Offset(0, -0.5)),
   ];
 
-  // Hold-to-record runtime state
   bool _isRecording = false;
   String? _recordingPath;
 
   @override
   void initState() {
     super.initState();
-    // Update token counter when user types
   }
 
   @override
@@ -77,10 +75,8 @@ final class _HomeBottomState extends State<_HomeBottom> {
       return;
     }
 
-    // Route recorded audio: text + recorded audio -> stream textual answer
-    // This uses the existing voice input flow (VoiceJustInput) so it attaches the audio base64.
     final chatId = _curChatId.value;
-    final text = inputCtrl.text; // keep any current text
+    final text = inputCtrl.text;
     _onAudioModel(context, chatId, text, [path]);
     _recordingPath = null;
   }
@@ -119,14 +115,13 @@ final class _HomeBottomState extends State<_HomeBottom> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _PickedFilesPreview(), // now powered by AttachmentPreview adapter
+        _PickedFilesPreview(),
         _buildBottomFnsTwoRows(),
         _buildTextField(),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
       ],
     );
   }
-  //final url = "https://www.google.com";
 
   Widget _buildBottomFnsTwoRows() {
     return Column(
@@ -150,26 +145,16 @@ final class _HomeBottomState extends State<_HomeBottom> {
               icon: const Icon(Icons.delete, size: 19),
             ),
             _buildFileBtn(),
-            _buildSettingsBtn(), // existing chat settings
-            _buildOpenSettingsDrawerBtn(), // new: open Hive-backed drawer
+            _buildSettingsBtn(),
+            _buildOpenSettingsDrawerBtn(),
             _buildRight(),
             _buildFileSearchBtn(),
-            _buildPromptGeneratorPageBTN(),
+            _buildVoiceChatBtn(),
           ],
         ),
         const SizedBox(height: 1),
         Row(
           children: [
-            // IconButton(
-            //   tooltip: 'Canvas',
-            //   icon: const Icon(Icons.edit_note_rounded, size: 19),
-            //   onPressed: () => _openCanvas(context, inputCtrl),
-            // ),
-            IconButton(
-              tooltip: 'Translate Files',
-              icon: const Icon(Icons.translate, size: 19),
-              onPressed: () => _navigateToPage(context, ChunkerInterfaceand()),
-            ),
             IconButton(
               tooltip: 'X.Search',
               icon: const Icon(Icons.one_x_mobiledata, size: 19),
@@ -181,27 +166,6 @@ final class _HomeBottomState extends State<_HomeBottom> {
               onPressed: () => _navigateToPage(context, PDFGeneratorWidget()),
             ),
 
-            // IconButton(
-            //   tooltip: 'Voice mode',
-            //  onPressed: () {
-            //   Navigator.of(context).push(
-            //     MaterialPageRoute(
-            //       builder: (_) => VoiceAssistantScreen(
-            //         // controller: VoiceSessionController(
-            //         //   chatId: _curChatId.value,
-            //         //   onUserPartial: (p) {
-            //         //     // Optional: Show floating live transcript
-            //         //   },
-            //         //   onTtsChunk: (pcm) {
-            //         //     // Hook for UI animations; playback handling can be implemented by you if needed
-            //         //   },
-            //        // ),
-            //       ),
-            //     ),
-            //   );
-            //   },
-            // icon: const Icon(Icons.record_voice_over, size: 20),
-            //  ),
             const Spacer(),
             UIs.width7,
             _buildSwitchChatType(),
@@ -228,20 +192,19 @@ final class _HomeBottomState extends State<_HomeBottom> {
     );
   }
 
-  Widget _buildPromptGeneratorPageBTN() {
+  Widget _buildVoiceChatBtn() {
     return IconButton(
       onPressed: () async {
-        await _navigateToPage(context, PromptGeneratorScreen());
+        await _navigateToPage(context, VoiceAssistantScreen());
       },
-      icon: Icon(Icons.auto_awesome_mosaic_sharp, size: 17),
+      icon: Icon(Icons.voice_chat, size: 17),
     );
   }
+
   Widget _buildOpenSettingsDrawerBtn() {
     return IconButton(
       tooltip: 'Open Settings Drawer',
       onPressed: () {
-        // Prefer using the global key so it works on desktop where context
-        // may not resolve to the correct Scaffold (e.g., nested navigators).
         final state = homeScaffoldKey.currentState ?? Scaffold.maybeOf(context);
         if (state == null) {
           context.showSnackBar('No Scaffold found for opening drawer.');
@@ -283,24 +246,6 @@ final class _HomeBottomState extends State<_HomeBottom> {
   Widget _buildTextField() {
     return Column(
       children: [
-        // Align(
-        //   alignment: Alignment.centerLeft,
-        //   child: Container(
-        //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        //     decoration: BoxDecoration(
-        //       color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-        //       borderRadius: BorderRadius.circular(8),
-        //     ),
-        //     // child: Text(
-        //     //   'Tokens: ${ss.currentTokenCount.get()}',
-        //     //   style: TextStyle(
-        //     //     color: Theme.of(context).colorScheme.primary,
-        //     //     fontSize: 12,
-        //     //     fontWeight: FontWeight.bold,
-        //     //   ),
-        //  //   ),
-        //   ),
-        // ),
         Input(
           controller: inputCtrl,
           label: l10n.message,
@@ -308,8 +253,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
           action: TextInputAction.newline,
           maxLines: 5,
           minLines: 1,
-          type: TextInputType
-              .multiline, // Keep this, or 'Wrap' will not work on iOS
+          type: TextInputType.multiline,
           autoCorrect: true,
           suggestion: true,
           onTap: () async {
@@ -350,7 +294,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
                   icon: const Icon(Icons.stop),
                 );
               }
-              // Dynamic: if no text -> hold-to-record button; else -> send button
+
               return ListenableBuilder(
                 listenable: inputCtrl,
                 builder: (_, __) {
@@ -427,37 +371,10 @@ final class _HomeBottomState extends State<_HomeBottom> {
     });
   }
 
-  // Future<void> _openCanvas(
-  //   BuildContext context,
-  //   TextEditingController inputCtrl,
-  // ) async {
-  //   final result = await Navigator.of(
-  //     context,
-  //   ).push<CanvasResult>(_fadeRoute(const FreeCanvasPage()));
-  //   if (result == null) return;
-
-  //   for (final p in result.parts) {
-  //     inputCtrl.text = p.text;
-  //   }
-  // }
-
   Future<void> _navigateToPage(BuildContext context, Widget page) async {
-    await Navigator.of(context).push<void>(
-      _fadeRoute(page),
-    ); // Replace AnotherPage with your desired page
+    await Navigator.of(context).push<void>(_fadeRoute(page));
   }
 
-  // Future<void> _navigateToBatchTaskerPage(BuildContext context) async {
-  //   await Navigator.of(context).push<void>(
-  //     _fadeRoute(AIBatchProcessorScreen()),
-  //   ); // Replace AnotherPage with your desired page
-  // }
-
-  // Future<void> _navigateToWebView(BuildContext context) async {
-  //     await Navigator.of(context).push<void>(
-  //       _fadeRoute( ()),
-  //     ); // Replace AnotherPage with your desired page
-  //   }
   Route<T> _fadeRoute<T>(Widget page) {
     return PageRouteBuilder<T>(
       pageBuilder: (_, __, ___) => page,
@@ -501,15 +418,6 @@ final class _HomeBottomState extends State<_HomeBottom> {
     });
   }
 
-  // Widget _buildSyncChats() {
-  //   final rs = BakSync.instance.remoteStorage;
-  //   if (rs == null) return UIs.placeholder;
-  //   return IconButton(
-  //     onPressed: _onTapSyncChats,
-  //     icon: const Icon(Icons.sync, size: 19),
-  //   );
-  // }
-
   Widget _buildChatMeta() {
     if (BuildMode.isRelease) return UIs.placeholder;
     return IconButton(
@@ -538,8 +446,6 @@ $jsonRaw
       actions: Btnx.oks,
     );
   }
-
-  // Removed unused _onTapSyncChats() method
 }
 
 class _HoldToRecordButton extends StatelessWidget {

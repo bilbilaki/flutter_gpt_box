@@ -18,10 +18,9 @@ class ChatService extends ChangeNotifier {
   }
 
   void _initSystemPrompt() {
-    String os = Platform.operatingSystem;
     messages.add(Message(
       role: "system", 
-      content: "You are an advanced coding assistant. OS: $os\n"
+      content: "You are an advanced coding assistant.\n"
                "Use 'list_files' to see the repo structure.\n"
                "Use 'read_file' to see code with line numbers.\n"
                "Use 'patch_file' to edit. Syntax: 'N++ code', 'N--', '0++' (prepend), '00++' (append).\n"

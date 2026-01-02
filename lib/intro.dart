@@ -12,7 +12,7 @@ final class _IntroPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      // To fix the l10n issue
+      
       key: UniqueKey(),
       builder: (context, cons) {
         final padTop = cons.maxHeight * .12;

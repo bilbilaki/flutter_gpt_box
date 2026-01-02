@@ -46,7 +46,7 @@ abstract final class GPTNextConvertor {
       );
     }
 
-    return ChatHistory(id: shortid.generate(), name: topic, items: items);
+    return ChatHistory(lastResponseId: null,id: shortid.generate(), name: topic, items: items);
   }
 
   /// 2023/11/6 15:57:22

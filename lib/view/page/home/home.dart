@@ -32,9 +32,6 @@ import 'package:gpt_box/view/browserflow/screens/main.dart';
 import 'package:gpt_box/view/loader/main.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
-import 'package:gpt_box/view/prompt_generator/screens/prompt_generator_screen.dart';
-import 'package:gpt_box/view/translator/interfaces/chunker_translator.dart';
-import 'package:gpt_box/view/widget/canvas_free.dart';
 import 'package:gpt_box/view/widget/x_ai_search_fantasy.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:typed_data';
@@ -49,6 +46,10 @@ import 'package:record/record.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:uuid/uuid.dart';
 import 'package:pool/pool.dart';
+
+import 'package:http/http.dart' as http;
+
+import '../../widget/voice_assistant.dart';
 part '../../widget/audio.dart';
 part 'chat.dart';
 part 'history.dart';
@@ -66,6 +67,11 @@ part 'md_copy.dart';
 part 'trash.dart';
 part 'settings_drawer.dart';
 part 'bottom/chatmessage_translator.dart';
+part 'package:gpt_box/core/responses/responses_service.dart';
+part 'package:gpt_box/core/responses/responses_models.dart';
+part 'package:gpt_box/core/responses/web_search_helpers.dart';
+part 'package:gpt_box/core/responses/codex_local_shell.dart';
+part 'package:gpt_box/core/responses/chat_tool_call.dart';
 
 //part '../../widget/v1.dart';
 final aiSettings = AiSettings();
@@ -324,3 +330,4 @@ final class _Body extends StatelessWidget {
     });
   }
 }
+

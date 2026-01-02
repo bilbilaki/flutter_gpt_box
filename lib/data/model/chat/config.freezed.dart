@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ChatConfig {
 
- String get prompt; String get url; String get key; String get model; int get historyLen; String get id; String get name; String? get genTitlePrompt; String? get genTitleModel; String? get imgModel; String? get audioModel; String? get tskrModel; String? get altrModel; String? get wrkrModel; String? get trnscrbModel; String? get defaultTranslateLanguage;// Newly added nullable fields
+ String get prompt; String get url; String get key; String get model; int get historyLen; String get id; String get name; String? get lastResponseId; String? get genTitlePrompt; String? get genTitleModel; String? get imgModel; String? get audioModel; String? get tskrModel; String? get altrModel; String? get wrkrModel; String? get trnscrbModel; String? get defaultTranslateLanguage;// Newly added nullable fields
  String? get file; String? get image; String? get audio; bool? get isVertex; String? get vertexProjectId; String? get vertexLocation;
 /// Create a copy of ChatConfig
 /// with the given fields replaced by the non-null parameter values.
@@ -29,12 +29,12 @@ $ChatConfigCopyWith<ChatConfig> get copyWith => _$ChatConfigCopyWithImpl<ChatCon
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatConfig&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.url, url) || other.url == url)&&(identical(other.key, key) || other.key == key)&&(identical(other.model, model) || other.model == model)&&(identical(other.historyLen, historyLen) || other.historyLen == historyLen)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.genTitlePrompt, genTitlePrompt) || other.genTitlePrompt == genTitlePrompt)&&(identical(other.genTitleModel, genTitleModel) || other.genTitleModel == genTitleModel)&&(identical(other.imgModel, imgModel) || other.imgModel == imgModel)&&(identical(other.audioModel, audioModel) || other.audioModel == audioModel)&&(identical(other.tskrModel, tskrModel) || other.tskrModel == tskrModel)&&(identical(other.altrModel, altrModel) || other.altrModel == altrModel)&&(identical(other.wrkrModel, wrkrModel) || other.wrkrModel == wrkrModel)&&(identical(other.trnscrbModel, trnscrbModel) || other.trnscrbModel == trnscrbModel)&&(identical(other.defaultTranslateLanguage, defaultTranslateLanguage) || other.defaultTranslateLanguage == defaultTranslateLanguage)&&(identical(other.file, file) || other.file == file)&&(identical(other.image, image) || other.image == image)&&(identical(other.audio, audio) || other.audio == audio)&&(identical(other.isVertex, isVertex) || other.isVertex == isVertex)&&(identical(other.vertexProjectId, vertexProjectId) || other.vertexProjectId == vertexProjectId)&&(identical(other.vertexLocation, vertexLocation) || other.vertexLocation == vertexLocation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatConfig&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.url, url) || other.url == url)&&(identical(other.key, key) || other.key == key)&&(identical(other.model, model) || other.model == model)&&(identical(other.historyLen, historyLen) || other.historyLen == historyLen)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.lastResponseId, lastResponseId) || other.lastResponseId == lastResponseId)&&(identical(other.genTitlePrompt, genTitlePrompt) || other.genTitlePrompt == genTitlePrompt)&&(identical(other.genTitleModel, genTitleModel) || other.genTitleModel == genTitleModel)&&(identical(other.imgModel, imgModel) || other.imgModel == imgModel)&&(identical(other.audioModel, audioModel) || other.audioModel == audioModel)&&(identical(other.tskrModel, tskrModel) || other.tskrModel == tskrModel)&&(identical(other.altrModel, altrModel) || other.altrModel == altrModel)&&(identical(other.wrkrModel, wrkrModel) || other.wrkrModel == wrkrModel)&&(identical(other.trnscrbModel, trnscrbModel) || other.trnscrbModel == trnscrbModel)&&(identical(other.defaultTranslateLanguage, defaultTranslateLanguage) || other.defaultTranslateLanguage == defaultTranslateLanguage)&&(identical(other.file, file) || other.file == file)&&(identical(other.image, image) || other.image == image)&&(identical(other.audio, audio) || other.audio == audio)&&(identical(other.isVertex, isVertex) || other.isVertex == isVertex)&&(identical(other.vertexProjectId, vertexProjectId) || other.vertexProjectId == vertexProjectId)&&(identical(other.vertexLocation, vertexLocation) || other.vertexLocation == vertexLocation));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,prompt,url,key,model,historyLen,id,name,genTitlePrompt,genTitleModel,imgModel,audioModel,tskrModel,altrModel,wrkrModel,trnscrbModel,defaultTranslateLanguage,file,image,audio,isVertex,vertexProjectId,vertexLocation]);
+int get hashCode => Object.hashAll([runtimeType,prompt,url,key,model,historyLen,id,name,lastResponseId,genTitlePrompt,genTitleModel,imgModel,audioModel,tskrModel,altrModel,wrkrModel,trnscrbModel,defaultTranslateLanguage,file,image,audio,isVertex,vertexProjectId,vertexLocation]);
 
 
 
@@ -45,7 +45,7 @@ abstract mixin class $ChatConfigCopyWith<$Res>  {
   factory $ChatConfigCopyWith(ChatConfig value, $Res Function(ChatConfig) _then) = _$ChatConfigCopyWithImpl;
 @useResult
 $Res call({
- String prompt, String url, String key, String model, int historyLen, String id, String name, String? genTitlePrompt, String? genTitleModel, String? imgModel, String? audioModel, String? tskrModel, String? altrModel, String? wrkrModel, String? trnscrbModel, String? defaultTranslateLanguage, String? file, String? image, String? audio, bool? isVertex, String? vertexProjectId, String? vertexLocation
+ String prompt, String url, String key, String model, int historyLen, String id, String name, String? lastResponseId, String? genTitlePrompt, String? genTitleModel, String? imgModel, String? audioModel, String? tskrModel, String? altrModel, String? wrkrModel, String? trnscrbModel, String? defaultTranslateLanguage, String? file, String? image, String? audio, bool? isVertex, String? vertexProjectId, String? vertexLocation
 });
 
 
@@ -62,7 +62,7 @@ class _$ChatConfigCopyWithImpl<$Res>
 
 /// Create a copy of ChatConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? prompt = null,Object? url = null,Object? key = null,Object? model = null,Object? historyLen = null,Object? id = null,Object? name = null,Object? genTitlePrompt = freezed,Object? genTitleModel = freezed,Object? imgModel = freezed,Object? audioModel = freezed,Object? tskrModel = freezed,Object? altrModel = freezed,Object? wrkrModel = freezed,Object? trnscrbModel = freezed,Object? defaultTranslateLanguage = freezed,Object? file = freezed,Object? image = freezed,Object? audio = freezed,Object? isVertex = freezed,Object? vertexProjectId = freezed,Object? vertexLocation = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? prompt = null,Object? url = null,Object? key = null,Object? model = null,Object? historyLen = null,Object? id = null,Object? name = null,Object? lastResponseId = freezed,Object? genTitlePrompt = freezed,Object? genTitleModel = freezed,Object? imgModel = freezed,Object? audioModel = freezed,Object? tskrModel = freezed,Object? altrModel = freezed,Object? wrkrModel = freezed,Object? trnscrbModel = freezed,Object? defaultTranslateLanguage = freezed,Object? file = freezed,Object? image = freezed,Object? audio = freezed,Object? isVertex = freezed,Object? vertexProjectId = freezed,Object? vertexLocation = freezed,}) {
   return _then(_self.copyWith(
 prompt: null == prompt ? _self.prompt : prompt // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -71,7 +71,8 @@ as String,model: null == model ? _self.model : model // ignore: cast_nullable_to
 as String,historyLen: null == historyLen ? _self.historyLen : historyLen // ignore: cast_nullable_to_non_nullable
 as int,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,genTitlePrompt: freezed == genTitlePrompt ? _self.genTitlePrompt : genTitlePrompt // ignore: cast_nullable_to_non_nullable
+as String,lastResponseId: freezed == lastResponseId ? _self.lastResponseId : lastResponseId // ignore: cast_nullable_to_non_nullable
+as String?,genTitlePrompt: freezed == genTitlePrompt ? _self.genTitlePrompt : genTitlePrompt // ignore: cast_nullable_to_non_nullable
 as String?,genTitleModel: freezed == genTitleModel ? _self.genTitleModel : genTitleModel // ignore: cast_nullable_to_non_nullable
 as String?,imgModel: freezed == imgModel ? _self.imgModel : imgModel // ignore: cast_nullable_to_non_nullable
 as String?,audioModel: freezed == audioModel ? _self.audioModel : audioModel // ignore: cast_nullable_to_non_nullable
@@ -171,10 +172,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String prompt,  String url,  String key,  String model,  int historyLen,  String id,  String name,  String? genTitlePrompt,  String? genTitleModel,  String? imgModel,  String? audioModel,  String? tskrModel,  String? altrModel,  String? wrkrModel,  String? trnscrbModel,  String? defaultTranslateLanguage,  String? file,  String? image,  String? audio,  bool? isVertex,  String? vertexProjectId,  String? vertexLocation)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String prompt,  String url,  String key,  String model,  int historyLen,  String id,  String name,  String? lastResponseId,  String? genTitlePrompt,  String? genTitleModel,  String? imgModel,  String? audioModel,  String? tskrModel,  String? altrModel,  String? wrkrModel,  String? trnscrbModel,  String? defaultTranslateLanguage,  String? file,  String? image,  String? audio,  bool? isVertex,  String? vertexProjectId,  String? vertexLocation)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatConfig() when $default != null:
-return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_that.id,_that.name,_that.genTitlePrompt,_that.genTitleModel,_that.imgModel,_that.audioModel,_that.tskrModel,_that.altrModel,_that.wrkrModel,_that.trnscrbModel,_that.defaultTranslateLanguage,_that.file,_that.image,_that.audio,_that.isVertex,_that.vertexProjectId,_that.vertexLocation);case _:
+return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_that.id,_that.name,_that.lastResponseId,_that.genTitlePrompt,_that.genTitleModel,_that.imgModel,_that.audioModel,_that.tskrModel,_that.altrModel,_that.wrkrModel,_that.trnscrbModel,_that.defaultTranslateLanguage,_that.file,_that.image,_that.audio,_that.isVertex,_that.vertexProjectId,_that.vertexLocation);case _:
   return orElse();
 
 }
@@ -192,10 +193,10 @@ return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String prompt,  String url,  String key,  String model,  int historyLen,  String id,  String name,  String? genTitlePrompt,  String? genTitleModel,  String? imgModel,  String? audioModel,  String? tskrModel,  String? altrModel,  String? wrkrModel,  String? trnscrbModel,  String? defaultTranslateLanguage,  String? file,  String? image,  String? audio,  bool? isVertex,  String? vertexProjectId,  String? vertexLocation)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String prompt,  String url,  String key,  String model,  int historyLen,  String id,  String name,  String? lastResponseId,  String? genTitlePrompt,  String? genTitleModel,  String? imgModel,  String? audioModel,  String? tskrModel,  String? altrModel,  String? wrkrModel,  String? trnscrbModel,  String? defaultTranslateLanguage,  String? file,  String? image,  String? audio,  bool? isVertex,  String? vertexProjectId,  String? vertexLocation)  $default,) {final _that = this;
 switch (_that) {
 case _ChatConfig():
-return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_that.id,_that.name,_that.genTitlePrompt,_that.genTitleModel,_that.imgModel,_that.audioModel,_that.tskrModel,_that.altrModel,_that.wrkrModel,_that.trnscrbModel,_that.defaultTranslateLanguage,_that.file,_that.image,_that.audio,_that.isVertex,_that.vertexProjectId,_that.vertexLocation);case _:
+return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_that.id,_that.name,_that.lastResponseId,_that.genTitlePrompt,_that.genTitleModel,_that.imgModel,_that.audioModel,_that.tskrModel,_that.altrModel,_that.wrkrModel,_that.trnscrbModel,_that.defaultTranslateLanguage,_that.file,_that.image,_that.audio,_that.isVertex,_that.vertexProjectId,_that.vertexLocation);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -212,10 +213,10 @@ return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String prompt,  String url,  String key,  String model,  int historyLen,  String id,  String name,  String? genTitlePrompt,  String? genTitleModel,  String? imgModel,  String? audioModel,  String? tskrModel,  String? altrModel,  String? wrkrModel,  String? trnscrbModel,  String? defaultTranslateLanguage,  String? file,  String? image,  String? audio,  bool? isVertex,  String? vertexProjectId,  String? vertexLocation)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String prompt,  String url,  String key,  String model,  int historyLen,  String id,  String name,  String? lastResponseId,  String? genTitlePrompt,  String? genTitleModel,  String? imgModel,  String? audioModel,  String? tskrModel,  String? altrModel,  String? wrkrModel,  String? trnscrbModel,  String? defaultTranslateLanguage,  String? file,  String? image,  String? audio,  bool? isVertex,  String? vertexProjectId,  String? vertexLocation)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatConfig() when $default != null:
-return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_that.id,_that.name,_that.genTitlePrompt,_that.genTitleModel,_that.imgModel,_that.audioModel,_that.tskrModel,_that.altrModel,_that.wrkrModel,_that.trnscrbModel,_that.defaultTranslateLanguage,_that.file,_that.image,_that.audio,_that.isVertex,_that.vertexProjectId,_that.vertexLocation);case _:
+return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_that.id,_that.name,_that.lastResponseId,_that.genTitlePrompt,_that.genTitleModel,_that.imgModel,_that.audioModel,_that.tskrModel,_that.altrModel,_that.wrkrModel,_that.trnscrbModel,_that.defaultTranslateLanguage,_that.file,_that.image,_that.audio,_that.isVertex,_that.vertexProjectId,_that.vertexLocation);case _:
   return null;
 
 }
@@ -227,7 +228,7 @@ return $default(_that.prompt,_that.url,_that.key,_that.model,_that.historyLen,_t
 @JsonSerializable()
 
 class _ChatConfig extends ChatConfig {
-  const _ChatConfig({this.prompt = '', this.url = ChatConfigX.defaultUrl, this.key = '', this.model = '', this.historyLen = ChatConfigX.defaultHistoryLen, this.id = ChatConfigX.defaultId, this.name = '', this.genTitlePrompt, this.genTitleModel, this.imgModel, this.audioModel, this.tskrModel, this.altrModel, this.wrkrModel, this.trnscrbModel, this.defaultTranslateLanguage, this.file, this.image, this.audio, this.isVertex, this.vertexProjectId, this.vertexLocation}): super._();
+  const _ChatConfig({this.prompt = '', this.url = ChatConfigX.defaultUrl, this.key = '', this.model = '', this.historyLen = ChatConfigX.defaultHistoryLen, this.id = ChatConfigX.defaultId, this.name = '', this.lastResponseId, this.genTitlePrompt, this.genTitleModel, this.imgModel, this.audioModel, this.tskrModel, this.altrModel, this.wrkrModel, this.trnscrbModel, this.defaultTranslateLanguage, this.file, this.image, this.audio, this.isVertex, this.vertexProjectId, this.vertexLocation}): super._();
   factory _ChatConfig.fromJson(Map<String, dynamic> json) => _$ChatConfigFromJson(json);
 
 @override@JsonKey() final  String prompt;
@@ -237,6 +238,7 @@ class _ChatConfig extends ChatConfig {
 @override@JsonKey() final  int historyLen;
 @override@JsonKey() final  String id;
 @override@JsonKey() final  String name;
+@override final  String? lastResponseId;
 @override final  String? genTitlePrompt;
 @override final  String? genTitleModel;
 @override final  String? imgModel;
@@ -267,12 +269,12 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatConfig&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.url, url) || other.url == url)&&(identical(other.key, key) || other.key == key)&&(identical(other.model, model) || other.model == model)&&(identical(other.historyLen, historyLen) || other.historyLen == historyLen)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.genTitlePrompt, genTitlePrompt) || other.genTitlePrompt == genTitlePrompt)&&(identical(other.genTitleModel, genTitleModel) || other.genTitleModel == genTitleModel)&&(identical(other.imgModel, imgModel) || other.imgModel == imgModel)&&(identical(other.audioModel, audioModel) || other.audioModel == audioModel)&&(identical(other.tskrModel, tskrModel) || other.tskrModel == tskrModel)&&(identical(other.altrModel, altrModel) || other.altrModel == altrModel)&&(identical(other.wrkrModel, wrkrModel) || other.wrkrModel == wrkrModel)&&(identical(other.trnscrbModel, trnscrbModel) || other.trnscrbModel == trnscrbModel)&&(identical(other.defaultTranslateLanguage, defaultTranslateLanguage) || other.defaultTranslateLanguage == defaultTranslateLanguage)&&(identical(other.file, file) || other.file == file)&&(identical(other.image, image) || other.image == image)&&(identical(other.audio, audio) || other.audio == audio)&&(identical(other.isVertex, isVertex) || other.isVertex == isVertex)&&(identical(other.vertexProjectId, vertexProjectId) || other.vertexProjectId == vertexProjectId)&&(identical(other.vertexLocation, vertexLocation) || other.vertexLocation == vertexLocation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatConfig&&(identical(other.prompt, prompt) || other.prompt == prompt)&&(identical(other.url, url) || other.url == url)&&(identical(other.key, key) || other.key == key)&&(identical(other.model, model) || other.model == model)&&(identical(other.historyLen, historyLen) || other.historyLen == historyLen)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.lastResponseId, lastResponseId) || other.lastResponseId == lastResponseId)&&(identical(other.genTitlePrompt, genTitlePrompt) || other.genTitlePrompt == genTitlePrompt)&&(identical(other.genTitleModel, genTitleModel) || other.genTitleModel == genTitleModel)&&(identical(other.imgModel, imgModel) || other.imgModel == imgModel)&&(identical(other.audioModel, audioModel) || other.audioModel == audioModel)&&(identical(other.tskrModel, tskrModel) || other.tskrModel == tskrModel)&&(identical(other.altrModel, altrModel) || other.altrModel == altrModel)&&(identical(other.wrkrModel, wrkrModel) || other.wrkrModel == wrkrModel)&&(identical(other.trnscrbModel, trnscrbModel) || other.trnscrbModel == trnscrbModel)&&(identical(other.defaultTranslateLanguage, defaultTranslateLanguage) || other.defaultTranslateLanguage == defaultTranslateLanguage)&&(identical(other.file, file) || other.file == file)&&(identical(other.image, image) || other.image == image)&&(identical(other.audio, audio) || other.audio == audio)&&(identical(other.isVertex, isVertex) || other.isVertex == isVertex)&&(identical(other.vertexProjectId, vertexProjectId) || other.vertexProjectId == vertexProjectId)&&(identical(other.vertexLocation, vertexLocation) || other.vertexLocation == vertexLocation));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,prompt,url,key,model,historyLen,id,name,genTitlePrompt,genTitleModel,imgModel,audioModel,tskrModel,altrModel,wrkrModel,trnscrbModel,defaultTranslateLanguage,file,image,audio,isVertex,vertexProjectId,vertexLocation]);
+int get hashCode => Object.hashAll([runtimeType,prompt,url,key,model,historyLen,id,name,lastResponseId,genTitlePrompt,genTitleModel,imgModel,audioModel,tskrModel,altrModel,wrkrModel,trnscrbModel,defaultTranslateLanguage,file,image,audio,isVertex,vertexProjectId,vertexLocation]);
 
 
 
@@ -283,7 +285,7 @@ abstract mixin class _$ChatConfigCopyWith<$Res> implements $ChatConfigCopyWith<$
   factory _$ChatConfigCopyWith(_ChatConfig value, $Res Function(_ChatConfig) _then) = __$ChatConfigCopyWithImpl;
 @override @useResult
 $Res call({
- String prompt, String url, String key, String model, int historyLen, String id, String name, String? genTitlePrompt, String? genTitleModel, String? imgModel, String? audioModel, String? tskrModel, String? altrModel, String? wrkrModel, String? trnscrbModel, String? defaultTranslateLanguage, String? file, String? image, String? audio, bool? isVertex, String? vertexProjectId, String? vertexLocation
+ String prompt, String url, String key, String model, int historyLen, String id, String name, String? lastResponseId, String? genTitlePrompt, String? genTitleModel, String? imgModel, String? audioModel, String? tskrModel, String? altrModel, String? wrkrModel, String? trnscrbModel, String? defaultTranslateLanguage, String? file, String? image, String? audio, bool? isVertex, String? vertexProjectId, String? vertexLocation
 });
 
 
@@ -300,7 +302,7 @@ class __$ChatConfigCopyWithImpl<$Res>
 
 /// Create a copy of ChatConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? prompt = null,Object? url = null,Object? key = null,Object? model = null,Object? historyLen = null,Object? id = null,Object? name = null,Object? genTitlePrompt = freezed,Object? genTitleModel = freezed,Object? imgModel = freezed,Object? audioModel = freezed,Object? tskrModel = freezed,Object? altrModel = freezed,Object? wrkrModel = freezed,Object? trnscrbModel = freezed,Object? defaultTranslateLanguage = freezed,Object? file = freezed,Object? image = freezed,Object? audio = freezed,Object? isVertex = freezed,Object? vertexProjectId = freezed,Object? vertexLocation = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? prompt = null,Object? url = null,Object? key = null,Object? model = null,Object? historyLen = null,Object? id = null,Object? name = null,Object? lastResponseId = freezed,Object? genTitlePrompt = freezed,Object? genTitleModel = freezed,Object? imgModel = freezed,Object? audioModel = freezed,Object? tskrModel = freezed,Object? altrModel = freezed,Object? wrkrModel = freezed,Object? trnscrbModel = freezed,Object? defaultTranslateLanguage = freezed,Object? file = freezed,Object? image = freezed,Object? audio = freezed,Object? isVertex = freezed,Object? vertexProjectId = freezed,Object? vertexLocation = freezed,}) {
   return _then(_ChatConfig(
 prompt: null == prompt ? _self.prompt : prompt // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -309,7 +311,8 @@ as String,model: null == model ? _self.model : model // ignore: cast_nullable_to
 as String,historyLen: null == historyLen ? _self.historyLen : historyLen // ignore: cast_nullable_to_non_nullable
 as int,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,genTitlePrompt: freezed == genTitlePrompt ? _self.genTitlePrompt : genTitlePrompt // ignore: cast_nullable_to_non_nullable
+as String,lastResponseId: freezed == lastResponseId ? _self.lastResponseId : lastResponseId // ignore: cast_nullable_to_non_nullable
+as String?,genTitlePrompt: freezed == genTitlePrompt ? _self.genTitlePrompt : genTitlePrompt // ignore: cast_nullable_to_non_nullable
 as String?,genTitleModel: freezed == genTitleModel ? _self.genTitleModel : genTitleModel // ignore: cast_nullable_to_non_nullable
 as String?,imgModel: freezed == imgModel ? _self.imgModel : imgModel // ignore: cast_nullable_to_non_nullable
 as String?,audioModel: freezed == audioModel ? _self.audioModel : audioModel // ignore: cast_nullable_to_non_nullable

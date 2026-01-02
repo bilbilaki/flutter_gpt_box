@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
     SystemUIs.setTransparentNavigationBar(context);
  WidgetsFlutterBinding.ensureInitialized();
 
-  // Optional: makes system UI match true-black style.
+  
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     systemNavigationBarColor: Color(0xFF000000),
@@ -37,8 +37,8 @@ class MyApp extends StatelessWidget {
     const surface = Color(0xFF0B0B0F);
     const surface2 = Color(0xFF111118);
     const border = Color(0xFF24242C);
-    const accent = Color(0xFF7C4DFF); // premium violet accent
-    const accent2 = Color(0xFF00E5FF); // cyan hint (used subtly)
+    const accent = Color(0xFF7C4DFF); 
+    const accent2 = Color(0xFF00E5FF); 
      final base = ThemeData(
      brightness: Brightness.dark,
       useMaterial3: true,

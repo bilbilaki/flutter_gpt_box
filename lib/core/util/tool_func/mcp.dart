@@ -154,7 +154,7 @@ abstract class McpTools {
         // Build a valid JSON Schema for function parameters. OpenAI requires a
         // schema with `type: 'object'` and `properties` inside.
         // Normalize properties to a plain map
-        final propsRaw = e.inputSchema.properties;
+        final propsRaw = e.inputSchema.description;
         final properties = <String, dynamic>{};
         try {
           if (propsRaw != null)
@@ -167,9 +167,9 @@ abstract class McpTools {
           'type': 'object',
           'properties': properties,
         };
-        if (e.inputSchema.required != null &&
-            (e.inputSchema.required?.isNotEmpty ?? false)) {
-          params['required'] = e.inputSchema.required;
+        if (e.inputSchema.title != null &&
+            (e.inputSchema.title?.isNotEmpty ?? false)) {
+          params['required'] = e.inputSchema.title;
         }
 
         tools.add(
@@ -235,8 +235,9 @@ abstract class McpTools {
         }
         // Force top-level type to 'object' and ensure properties exists
         params['type'] = 'object';
-        if (!(params['properties'] is Map))
+        if (params['properties'] is! Map) {
           params['properties'] = <String, dynamic>{};
+        }
         tools.add(
           ChatCompletionTool(
             type: ChatCompletionToolType.function,
@@ -323,7 +324,7 @@ abstract class McpTools {
     try {
       onToolLog('Calling [$serverName] $toolName...');
       final res = await client.callTool(
-        CallToolRequestParams(name: toolName, arguments: args),
+        CallToolRequest(name: toolName, arguments: args),
       );
 
       String resultText = '';

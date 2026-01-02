@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../app.dart';
 import 'entries.dart';
 import 'repo_loader.dart';
 import 'screens/pkg_search_screen.dart';
@@ -247,6 +248,19 @@ class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+       leading: IconButton(
+             icon: const Icon(Icons.arrow_back),
+             onPressed: () {
+                                   Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MyApp(),
+          ),
+        );// This pops the screen and goes back
+             },
+           ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32.0),

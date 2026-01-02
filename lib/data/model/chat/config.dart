@@ -21,6 +21,7 @@ abstract class ChatConfig with _$ChatConfig {
     @Default(ChatConfigX.defaultHistoryLen) int historyLen,
     @Default(ChatConfigX.defaultId) String id,
     @Default('') String name,
+    String? lastResponseId,
     String? genTitlePrompt,
     String? genTitleModel,
     String? imgModel,
@@ -62,6 +63,7 @@ extension ChatConfigX on ChatConfig {
   static const isVertex = false;
   static const vertexProjectId = '';
   static const vertexLocation = '';
+  static const lastResponseId = null;
 
   static const defaultOne = ChatConfig(
     id: defaultId,
@@ -76,6 +78,7 @@ extension ChatConfigX on ChatConfig {
     isVertex: isVertex,
     vertexProjectId: vertexProjectId,
     vertexLocation: vertexLocation,
+    lastResponseId: lastResponseId,
     // audioModel: defaultaudioModel,
     // trnscrbModel: defaulttrnscrbModel,
     // tskrModel: defaulttaskrModel,
@@ -126,6 +129,7 @@ extension ChatConfigX on ChatConfig {
       file: params_['file'],
       image: params_['image'],
       audio: params_['audio'],
+      lastResponseId: params_['lastResponseId']??lastResponseId,
       historyLen: params_['historyLen'] ?? defaultHistoryLen,
       tskrModel: params_['TaskerModel'] ?? defaulttaskrModel,
       audioModel: params_['AudioModel'] ?? defaultaudioModel,

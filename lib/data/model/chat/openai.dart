@@ -2,7 +2,7 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:gpt_box/data/model/chat/history/history.dart';
 
 abstract final class OpenAIConvertor {
-  static ChatHistory toChatHistory(Map session) {
+  static ChatHistory toChatHistory(Map session, {String?lastResponseId}) {
     if (session['title'] is! String ||
         session['mapping'] is! Map<String, dynamic>) {
       throw ArgumentError(
@@ -54,6 +54,6 @@ abstract final class OpenAIConvertor {
       // Log error or handle gracefully, for now just continue with partial items
     }
 
-    return ChatHistory.noid(items: items, name: title);
+    return ChatHistory.noid(lastResponseId: lastResponseId,items: items, name: title);
   }
 }

@@ -46,9 +46,6 @@ class InternalMcpServer {
       case 'filemanager':
         onToolLog('[$serverName]  Managing Files...');
         return await TfFileManager.instance.run(mockCall, arguments, onToolLog);
-      case 'pdfmanager':
-        onToolLog('[$serverName]  Useing PDF Tools...');
-        return await TfPdfManager.instance.run(mockCall, arguments, onToolLog);
       case 'webbuilder':
         onToolLog('[$serverName]  Useing Web Builder Tools please wait...');
         return await TfWebBuilder.instance.run(mockCall, arguments, onToolLog);

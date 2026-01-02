@@ -1,9 +1,98 @@
-/// OpenAI chat request related funcs
 part of 'home.dart';
+bool _useResponsesApi(ChatConfig cfg) {
+  final u = cfg.url.trim().toLowerCase();
+  return u.startsWith('https://api.openai.com');
+}
 
+String _buildPinnedInstructions(ChatConfig cfg) {
+  final memories = Stores.mcp.memories.get();
+  final parts = <String>[
+    if (cfg.prompt.trim().isNotEmpty) cfg.prompt.trim(),
+    if (memories.isNotEmpty) memories.join('\n'),
+  ];
+  return parts.join('\n\n').trim();
+}
+
+Future<List<ResponseTool>> _responsesToolsForChat(ChatHistory chat) async {
+  final chatScopeUseMcp = chat.settings?.useTools != false;
+  if (!chatScopeUseMcp) return const [];
+
+  final availableMcp = await OpenAIFuncCalls.tools;
+  if (availableMcp.isEmpty) return const [];
+
+  return availableMcp.map((t) {
+    final fn = t.function;
+    final params = fn.parameters == null
+        ? <String, dynamic>{'type': 'object', 'properties': {}}
+        : Map<String, dynamic>.from(fn.parameters!);
+
+    // Ensure schema validity
+    params['type'] = 'object';
+    if (params['properties'] is! Map) params['properties'] = <String, dynamic>{};
+
+    return FunctionTool(
+      name: fn.name,
+      description: fn.description,
+      parameters: params,
+    );
+  }).toList();
+}
+
+class _RespFuncCall {
+  final String callId;
+  final String name;
+  final Map<String, dynamic> arguments;
+
+  _RespFuncCall({required this.callId, required this.name, required this.arguments});
+}
+
+_RespFuncCall? _tryParseRespFunctionCall(Map<String, dynamic> raw) {
+  // We mainly care about "response.output_item.added" or items with type "function_call".
+  final type = raw['type']?.toString();
+  final item = raw['output_item'];
+  final map = item is Map<String, dynamic> ? item : raw;
+
+  final t = map['type']?.toString() ?? type ?? '';
+
+  if (!t.contains('function_call')) return null;
+
+  final callId = (map['id'] ?? map['call_id'])?.toString();
+  final name = map['name']?.toString();
+  final argsAny = map['arguments'];
+
+  if (callId == null || name == null) return null;
+
+  Map<String, dynamic> args;
+  try {
+    if (argsAny is String) {
+      args = jsonDecode(argsAny) is Map<String, dynamic>
+          ? Map<String, dynamic>.from(jsonDecode(argsAny))
+          : <String, dynamic>{};
+    } else if (argsAny is Map) {
+      args = Map<String, dynamic>.from(argsAny);
+    } else {
+      args = <String, dynamic>{};
+    }
+  } catch (_) {
+    args = <String, dynamic>{};
+  }
+
+  return _RespFuncCall(callId: callId, name: name, arguments: args);
+}
+
+Map<String, dynamic> _toolOutputInput({
+  required String callId,
+  required String outputText,
+}) {
+  return {
+    'type': 'tool_output',
+    'tool_call_id': callId,
+    'output': outputText,
+  };
+}
 bool _validChatCfg(BuildContext context) {
   final config = Cfg.current;
-  final urlEmpty = config.url == 'https://api.openai.com' || config.url.isEmpty;
+  final urlEmpty = config.url == 'https://api.openai.com/v1';
   if (urlEmpty && config.key.isEmpty) {
     final msg = l10n.emptyFields('${l10n.secretKey} | Api Url');
     Loggers.app.warning(msg);
@@ -13,23 +102,16 @@ bool _validChatCfg(BuildContext context) {
   return true;
 }
 
-/// Assumption that context len = 3:
-/// - History len = 0 => [prompt]
-/// - History len = 1 => [prompt, idx0]
-/// - 2 => [prompt, idx0, idx1]
-/// - n >= 3 => [prompt, idxn-2, idxn-1]
 Future<Iterable<ChatCompletionMessage>> _historyCarried(
   ChatHistory workingChat,
 ) async {
   final config = Cfg.current;
 
-  // #106
   final ignoreCtxCons = workingChat.settings?.ignoreContextConstraint == true;
   if (ignoreCtxCons) {
     return Future.wait(workingChat.items.map((e) => e.toOpenAI()));
   }
 
-  // Build system prompt from configured prompt and MCP memories with safe delimiters
   final memories = Stores.mcp.memories.get();
   final promptParts = <String>[
     if (config.prompt.isNotEmpty) config.prompt.trim(),
@@ -43,7 +125,6 @@ Future<Iterable<ChatCompletionMessage>> _historyCarried(
         ).toOpenAI()
       : null;
 
-  // #101
   if (workingChat.settings?.headTailMode == true) {
     final first = await workingChat.items.firstOrNull?.toOpenAI();
     return [if (prompt != null) prompt, if (first != null) first];
@@ -51,12 +132,11 @@ Future<Iterable<ChatCompletionMessage>> _historyCarried(
 
   var count = 0;
   final msgs = <ChatCompletionMessage>[];
-  // Respect history length exactly; do not exceed configured limit
+
   for (final item in workingChat.items.reversed) {
     if (count > config.historyLen) break;
     if (item.role.isSystem) continue;
 
-    // NEW: skip huge tool outputs unless they are very recent
     final isTool = item.role.isTool;
     final rawLen = item.toMarkdown.length;
     if (isTool && rawLen > 4000 && count > 2) {
@@ -72,12 +152,9 @@ Future<Iterable<ChatCompletionMessage>> _historyCarried(
   return msgs.reversed;
 }
 
-/// Auto select model and send the request
 void _onCreateRequest(BuildContext context, String chatId) async {
   if (!_validChatCfg(context)) return;
 
-  // #18
-  // Prohibit users from starting chat in the initial chat
   if (_curChat?.isInitHelp ?? false) {
     final newId = _newChat().id;
     _switchChat(newId);
@@ -96,24 +173,227 @@ void _onCreateRequest(BuildContext context, String chatId) async {
 
   final func = switch ((chatType, _filesPicked.value)) {
     (ChatType.text, _) => _onCreateText,
-    //    ss.response == true ? _onCreateResponse :
     (ChatType.img, _) => _onCreateImg,
-    (ChatType.audio, _) =>
-      _onAudioModel, // audio generation (TTS-like) streaming
-    (ChatType.voice, _) => _onTtsModel, // voice in + voice out
-    (ChatType.voicejustin, _) => _onCreateText, // voice in + text out (stream)
+    (ChatType.audio, _) => _onAudioModel,
+    (ChatType.voice, _) => _onTtsModel,
+    (ChatType.voicejustin, _) => _onCreateText,
     (ChatType.autoenglishtrans, _) => _onCreateTextTranslated,
   };
 
   return await func(context, chatId, input, _filesPicked.value);
 }
+Future<void> _onCreateTextResponses(
+  BuildContext context,
+  String chatId,
+  String input,
+  List<String> files,
+) async {
+  final workingChat0 = allHistories[chatId];
+  if (workingChat0 == null) {
+    final msg = 'Chat($chatId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
 
+  final cfg = Cfg.current;
+  final questionContents = <ChatContent>[ChatContent.text(input)];
+
+  for (final file in files) {
+    if (!modelUseFilePath) {
+      final content = await contentFromPath(file);
+      questionContents.add(content);
+    } else {
+      questionContents.add(
+        ChatContent.text('For Using Tools with file operation use this File Path: $file'),
+      );
+      modelUseFilePath = false;
+    }
+  }
+
+  final question = ChatHistoryItem.gen(role: ChatRole.user, content: questionContents);
+
+  // update UI history (same pattern as current)
+  workingChat0.items.add(question);
+  inputCtrl.clear();
+  _chatRN.notify();
+  _autoScroll(chatId);
+  _filesPicked.value = [];
+
+  final titleCompleter = await genChatTitle(context, chatId, cfg);
+
+  final assistReply = ChatHistoryItem.single(role: ChatRole.assist);
+  workingChat0.items.add(assistReply);
+  _chatRN.notify();
+
+  final mcpLogItem = ChatHistoryItem.single(role: ChatRole.tool, raw: '');
+  bool mcpLogShown = false;
+
+  void showMcpLogIfNeeded() {
+    if (mcpLogShown) return;
+    workingChat0.items.add(mcpLogItem);
+    mcpLogShown = true;
+    _chatRN.notify();
+    _autoScroll(chatId);
+  }
+
+  void onToolLog(String s) {
+    showMcpLogIfNeeded();
+    final c = ChatContent.text(s);
+    if (mcpLogItem.content.isEmpty) {
+      mcpLogItem.content.add(c);
+    } else {
+      mcpLogItem.content[0] = c;
+    }
+    _chatItemRNMap[mcpLogItem.id]?.notify();
+  }
+
+  _loadingChatIds.value.add(chatId);
+  _loadingChatIds.notify();
+  _autoHideCtrl.autoHideEnabled = false;
+
+  final responses = ResponsesService();
+  final tools = await _responsesToolsForChat(workingChat0);
+  final instructions = _buildPinnedInstructions(cfg);
+
+  // We must not mutate ChatHistory directly (it’s immutable fields), so we will replace the map entry when updating lastResponseId.
+  String? previousId = workingChat0.lastResponseId;
+
+  final assistRawBuffer = StringBuffer();
+
+  try {
+    // tool continuation input payload
+    List<dynamic>? nextInputArray;
+
+    while (true) {
+      final req = ResponsesRequest(
+        model: cfg.model,
+        previousResponseId: previousId,
+        tools: tools,
+        toolChoice: tools.isEmpty ? 'none' : 'auto',
+        extra: {
+          if (previousId == null && instructions.isNotEmpty) 'instructions': instructions,
+        },
+        input: nextInputArray == null ? question.toMarkdown : null,
+        inputs: nextInputArray, // serialized to "input" by toJson()
+      );
+
+      final calls = <_RespFuncCall>[];
+      String? responseIdSeen;
+
+      await for (final chunk in responses.stream(req)) {
+        if (!_loadingChatIds.value.contains(chatId)) {
+          // user stopped / cancelled
+          break;
+        }
+
+        responseIdSeen ??= chunk.id;
+
+        // Text delta
+        final delta = chunk.deltaText;
+        if (delta != null && delta.isNotEmpty) {
+          assistRawBuffer.write(delta);
+          final parts = splitDataUrisToChatContents(assistRawBuffer.toString());
+          assistReply.content
+            ..clear()
+            ..addAll(parts);
+          _chatItemRNMap[assistReply.id]?.notify();
+          _autoScroll(chatId);
+        }
+
+        // Tool call extraction
+        final call = _tryParseRespFunctionCall(chunk.raw);
+        if (call != null) calls.add(call);
+
+        if (chunk.raw['done'] == true) break;
+        if (chunk.raw['type']?.toString() == 'response.completed') break;
+      }
+
+      // Update lastResponseId
+      if (responseIdSeen != null) {
+        previousId = responseIdSeen;
+
+        // Replace chat in map with updated lastResponseId
+        final cur = allHistories[chatId];
+        if (cur != null && cur.lastResponseId != previousId) {
+          final ne = cur.copyWith(l: previousId);
+          allHistories[chatId] = ne;
+          if (_curChatId.value == chatId) _curChat = ne;
+        }
+      }
+
+      if (calls.isEmpty) {
+        nextInputArray = null;
+        break;
+      }
+
+      // Execute tool calls and prepare tool outputs as next "input" array
+      final toolOutputs = <dynamic>[];
+      for (final c in calls) {
+        onToolLog('Calling tool: ${c.name}');
+        // Ask confirm only for internal tools where mapping exists (your existing logic does this earlier).
+        // Here we reuse your MCP handler through McpTools mapping; it will call internal server when applicable.
+        final safeFuncId = c.name; // OpenAI will call with the function name we provided (safe id)
+        final fakeToolCall = ChatCompletionMessageToolCall(
+          id: c.callId,
+          type: ChatCompletionMessageToolCallType.function,
+          function: ChatCompletionMessageFunctionCall(
+            name: safeFuncId,
+            arguments: jsonEncode(c.arguments),
+          ),
+        );
+
+        List<ChatContent>? out;
+        try {
+          out = await appResourcePool.withResource(() async {
+            return await McpTools.handle(fakeToolCall, onToolLog);
+          });
+        } catch (e, s) {
+          _onErr(e, s, chatId, 'Responses tool call');
+        }
+
+        final outputText = (out == null || out.isEmpty)
+            ? ''
+            : out.map((e) => e.raw).join('\n');
+
+        toolOutputs.add(_toolOutputInput(callId: c.callId, outputText: outputText));
+      }
+
+      nextInputArray = toolOutputs;
+      // continue loop -> send tool outputs to model
+    }
+
+    // Remove mcp log item if it was only placeholder
+    if (mcpLogShown && mcpLogItem.content.isEmpty) {
+      workingChat0.items.remove(mcpLogItem);
+    }
+
+    _storeChat(chatId);
+    await titleCompleter?.future;
+    await Future.delayed(const Duration(milliseconds: 300));
+  } catch (e, s) {
+    _onErr(e, s, chatId, 'Responses');
+  } finally {
+    responses.dispose();
+    _onStopStreamSub(chatId);
+    _loadingChatIds.value.remove(chatId);
+    _loadingChatIds.notify();
+    _autoHideCtrl.autoHideEnabled = true;
+
+    // cleanup UI log node
+    _chatItemRNMap.remove(mcpLogItem.id)?.dispose();
+  }
+}
 Future<void> _onCreateText(
   BuildContext context,
   String chatId,
   String input,
   List<String> files,
 ) async {
+  if (_useResponsesApi(Cfg.current)) {
+    _onCreateTextResponses(context, chatId, input, files);
+    return;
+  }
   final workingChat = allHistories[chatId];
   if (workingChat == null) {
     final msg = 'Chat($chatId) not found';
@@ -126,7 +406,6 @@ Future<void> _onCreateText(
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
     if (!modelUseFilePath) {
-      // Ensure images are sent as base64 data URL
       final content = await contentFromPath(file);
       questionContents.add(content);
     } else if (modelUseFilePath) {
@@ -154,15 +433,12 @@ Future<void> _onCreateText(
 
   final mcpCompatible = Cfg.isMcpCompatible();
 
-  // #104
   final chatScopeUseMcp = workingChat.settings?.useTools != false;
 
-  // #111
   final availableMcp = await OpenAIFuncCalls.tools;
   final isMcpEmpty = availableMcp.isEmpty;
 
   if (mcpCompatible && chatScopeUseMcp && !isMcpEmpty) {
-    // Used for logging mcp call resp
     final mcpReply = ChatHistoryItem.single(role: ChatRole.tool, raw: '');
     workingChat.items.add(mcpReply);
     _chatRN.notify();
@@ -245,7 +521,7 @@ Future<void> _onCreateText(
   workingChat.items.add(assistReply);
   _chatRN.notify();
   _filesPicked.value = [];
-  // Accumulate assistant raw output to avoid repeated joins on each delta
+
   final assistRawBuffer = StringBuffer();
 
   try {
@@ -256,7 +532,6 @@ Future<void> _onCreateText(
 
         final content = delta.content;
         if (content != null) {
-          // Append new chunk and re-segment once against accumulated buffer
           assistRawBuffer.write(content);
           final parts = splitDataUrisToChatContents(assistRawBuffer.toString());
           assistReply.content
@@ -283,10 +558,8 @@ Future<void> _onCreateText(
 
         _storeChat(chatId);
 
-        // Wait for db to store the chat
         await titleCompleter?.future;
         await Future.delayed(const Duration(milliseconds: 300));
-        //    BakSync.instance.sync();
       },
       onError: (e, s) {
         _onErr(e, s, chatId, 'Listen text stream');
@@ -306,7 +579,6 @@ Future<void> _onCreateImg(
   String input,
   List<String> files,
 ) async {
-  // Use provided input instead of reading from controller
   final prompt = input;
   if (prompt.isEmpty) return;
   _imeFocus.unfocus();
@@ -345,12 +617,10 @@ Future<void> _onCreateImg(
     final uri = Uri.parse('${cfg.url}/images/generations');
     final request = await client.postUrl(uri);
 
-    // Set headers
     request.headers.set('Content-Type', 'application/json');
     request.headers.set('Accept', 'application/json');
     request.headers.set('Authorization', 'Bearer ${cfg.key}');
 
-    // Prepare request body with b64_json format
     final body = jsonEncode({
       'model': imgModel,
       'prompt': prompt,
@@ -358,7 +628,6 @@ Future<void> _onCreateImg(
     });
     request.write(body);
 
-    // Send request and get response
     final response = await request.close();
     final responseBody = await response.transform(utf8.decoder).join();
 
@@ -366,7 +635,6 @@ Future<void> _onCreateImg(
       throw Exception('HTTP ${response.statusCode}: $responseBody');
     }
 
-    // Parse JSON response manually
     final Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
     final List<dynamic>? dataList = jsonResponse['data'];
 
@@ -374,26 +642,21 @@ Future<void> _onCreateImg(
       throw Exception('No data in response');
     }
 
-    // Build response text with base64 images embedded
     final responseBuffer = StringBuffer();
     for (final item in dataList) {
-      // Handle b64_json format
       final b64Json = item['b64_json'];
       if (b64Json != null && b64Json.toString().isNotEmpty) {
-        // Create data URI for automatic detection by splitDataUrisToChatContents
         final dataUri = 'data:image/jpeg;base64,${b64Json}';
         responseBuffer.write(dataUri);
         Loggers.app.info('Image generated (base64)');
       }
 
-      // Also handle URL format as fallback
       final url = item['url'];
       if (url != null && url.toString().isNotEmpty) {
         responseBuffer.write(url.toString());
         Loggers.app.info('Image generated: $url');
       }
 
-      // Log revised prompt if available
       final revisedPrompt = item['revised_prompt'];
       if (revisedPrompt != null && revisedPrompt.toString().isNotEmpty) {
         Loggers.app.info('Revised prompt: $revisedPrompt');
@@ -404,7 +667,7 @@ Future<void> _onCreateImg(
       final msg = 'Create image: empty response or no image data returned';
       Loggers.app.warning(msg);
       context.showSnackBar(msg);
-      // Remove empty assistant reply
+
       workingChat.items.remove(assistReply);
       _chatRN.notify();
       return;
@@ -417,18 +680,15 @@ Future<void> _onCreateImg(
     _chatRN.notify();
     _autoScroll(chatId);
 
-    // Show success message
     context.showSnackBar('Image generated successfully');
 
-    // Close HTTP client
     client.close();
   } catch (e, s) {
-    // Enhanced error logging
     Loggers.app.severe('Create image error: $e\n$s');
-    // Remove empty assistant reply on error
+
     workingChat.items.remove(assistReply);
     _chatRN.notify();
-    // _onErr handles removing loading state and enabling auto-hide
+
     _onErr(e, s, chatId, 'Create image');
   } finally {
     _loadingChatIds.value.remove(chatId);
@@ -501,8 +761,6 @@ Future<Completer<void>?> genChatTitle(
   }
 }
 
-/// Remove the [ChatHistoryItem] behind this [item], and resend the [item] like
-/// [_onCreateText], but append the result after this [item] instead of at the end.
 void _onReplay({
   required BuildContext context,
   required String chatId,
@@ -510,7 +768,6 @@ void _onReplay({
 }) async {
   if (!_validChatCfg(context)) return;
 
-  // If is receiving the reply, ignore this action
   if (_loadingChatIds.value.contains(chatId)) {
     return;
   }
@@ -523,7 +780,6 @@ void _onReplay({
     return;
   }
 
-  // Find the item, then delete all items behind it and itself
   final replayMsgIdx = chatHistory.items.indexOf(item);
   if (replayMsgIdx == -1) {
     final msg = 'Replay Chat($chatId) item($item) not found';
@@ -533,7 +789,6 @@ void _onReplay({
   }
   chatHistory.items.removeRange(replayMsgIdx, chatHistory.items.length);
 
-  // Each item has only one text content inputed by user
   final text = item.content.firstWhereOrNull((e) => e.type.isText)?.raw;
   if (text != null) {
     inputCtrl.text = text;
@@ -551,7 +806,7 @@ void _onReplay({
 void _onErr(Object e, StackTrace s, String chatId, String action) {
   Loggers.app.warning('$action: $e');
   _onStopStreamSub(chatId);
-  // Ensure loading state is removed and auto-hide is enabled on error
+
   _loadingChatIds.value.remove(chatId);
   _loadingChatIds.notify();
   _autoHideCtrl.autoHideEnabled = true;
@@ -560,7 +815,6 @@ void _onErr(Object e, StackTrace s, String chatId, String action) {
   final workingChat = allHistories[chatId];
   if (workingChat == null) return;
 
-  // If previous msg is assistant reply and it's empty, remove it
   if (workingChat.items.isNotEmpty) {
     final last = workingChat.items.last;
     final role = last.role;
@@ -570,7 +824,6 @@ void _onErr(Object e, StackTrace s, String chatId, String action) {
     }
   }
 
-  // Add error msg to the chat
   workingChat.items.add(
     ChatHistoryItem.single(
       type: ChatContentType.text,
@@ -583,10 +836,6 @@ void _onErr(Object e, StackTrace s, String chatId, String action) {
 
   if (Stores.setting.saveErrChat.get()) _storeChat(chatId);
 }
-
-/// =========================
-/// Audio helpers/utilities
-/// =========================
 
 final AudioRecorder _audioRecorder = AudioRecorder();
 
@@ -670,12 +919,12 @@ Uint8List wavFromPcm16(
   header.add(ascii.encode('WAVE'));
   header.add(ascii.encode('fmt '));
   header.add(_intToBytes(16, 4));
-  header.add(_intToBytes(1, 2)); // PCM
+  header.add(_intToBytes(1, 2));
   header.add(_intToBytes(channels, 2));
   header.add(_intToBytes(sampleRate, 4));
   header.add(_intToBytes(byteRate, 4));
   header.add(_intToBytes(blockAlign, 2));
-  header.add(_intToBytes(16, 2)); // bits per sample
+  header.add(_intToBytes(16, 2));
   header.add(ascii.encode('data'));
   header.add(_intToBytes(dataLen, 4));
   header.add(pcmBytes);
@@ -724,7 +973,6 @@ Future<String> _pathToDataUrl(String path) async {
   return 'data:$mime;base64,$b64';
 }
 
-// Helper: split a string that may contain data:image/...;base64,... URIs into ChatContent pieces.
 List<ChatContent> splitDataUrisToChatContents(String s) {
   final dataUriRe = RegExp(
     r'(data:(?:image|audio)\/[^;\s]+;base64,[A-Za-z0-9+/=\r\n]+)',
@@ -890,7 +1138,6 @@ Future<void> _onAudioModel(
       },
       onDone: () async {
         try {
-          // Persist audio
           if (audioDataBuffer.isNotEmpty) {
             final path = await _saveBase64ToFile(
               audioDataBuffer.toString(),
@@ -1116,7 +1363,7 @@ Future<void> _onTtsModel(
               role: ChatRole.user,
             );
             final con = (await _historyCarried(
-              ChatHistory(items: [ttsMsg], id: Uuid().v4()),
+              ChatHistory(lastResponseId: null,items: [ttsMsg], id: Uuid().v4()),
             )).toList();
 
             final ttsStream = Cfg.client.createChatCompletionStream(
@@ -1245,7 +1492,6 @@ Future<void> _onCreateTextTranslated(
   final questionContents = <ChatContent>[ChatContent.text(translated)];
   for (final file in files) {
     if (!modelUseFilePath) {
-      // Ensure images are sent as base64 data URL
       final content = await contentFromPath(file);
       questionContents.add(content);
     } else if (modelUseFilePath) {
@@ -1273,10 +1519,8 @@ Future<void> _onCreateTextTranslated(
 
   final mcpCompatible = Cfg.isMcpCompatible();
 
-  // #104
   final chatScopeUseMcp = workingChat.settings?.useTools != false;
 
-  // #111
   final availableMcp = await OpenAIFuncCalls.tools;
   final isMcpEmpty = availableMcp.isEmpty;
 
@@ -1400,10 +1644,8 @@ Future<void> _onCreateTextTranslated(
 
         _storeChat(chatId);
 
-        // Wait for db to store the chat
         await titleCompleter?.future;
         await Future.delayed(const Duration(milliseconds: 300));
-        //   BakSync.instance.sync();
       },
       onError: (e, s) {
         _onErr(e, s, chatId, 'Listen text stream');

@@ -18,7 +18,6 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
   bool _isLoading = false;
   String _error = '';
 
-  // Search settings
   String _selectedSearchTool = 'web_search';
   bool _enableImageUnderstanding = false;
   bool _enableVideoUnderstanding = false;

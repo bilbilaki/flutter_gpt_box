@@ -21,6 +21,7 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
       content: (fields[1] as List).cast<ChatContent>(),
       createdAt: fields[2] as DateTime,
       id: fields[3] as String,
+      lastResponseId: fields[11] as String?,
       toolCallId: fields[4] as String?,
       toolCalls: (fields[5] as List?)?.cast<ChatCompletionMessageToolCall>(),
       reasoning: fields[6] as String?,
@@ -34,7 +35,7 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
   @override
   void write(BinaryWriter writer, ChatHistoryItem obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.role)
       ..writeByte(1)
@@ -56,7 +57,9 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
       ..writeByte(9)
       ..write(obj.totalTokens)
       ..writeByte(10)
-      ..write(obj.nanobenana);
+      ..write(obj.nanobenana)
+      ..writeByte(11)
+      ..write(obj.lastResponseId);
   }
 
   @override
@@ -130,6 +133,7 @@ class ChatContentAdapter extends TypeAdapter<ChatContent> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ChatContent(
+      lastResponseId: fields[3] as String?,
       type: fields[0] as ChatContentType,
       raw: fields[1] as String,
       id: fields[2] as String,
@@ -139,13 +143,15 @@ class ChatContentAdapter extends TypeAdapter<ChatContent> {
   @override
   void write(BinaryWriter writer, ChatContent obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.type)
       ..writeByte(1)
       ..write(obj.raw)
       ..writeByte(2)
-      ..write(obj.id);
+      ..write(obj.id)
+      ..writeByte(3)
+      ..write(obj.lastResponseId);
   }
 
   @override
@@ -219,6 +225,7 @@ class ChatHistoryAdapter extends TypeAdapter<ChatHistory> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ChatHistory(
+      lastResponseId: fields[10] as String?,
       items: (fields[1] as List).cast<ChatHistoryItem>(),
       id: fields[0] as String,
       name: fields[2] as String?,
@@ -232,7 +239,7 @@ class ChatHistoryAdapter extends TypeAdapter<ChatHistory> {
   @override
   void write(BinaryWriter writer, ChatHistory obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -246,7 +253,9 @@ class ChatHistoryAdapter extends TypeAdapter<ChatHistory> {
       ..writeByte(8)
       ..write(obj.colorIndicator)
       ..writeByte(9)
-      ..write(obj.folderId);
+      ..write(obj.folderId)
+      ..writeByte(10)
+      ..write(obj.lastResponseId);
   }
 
   @override
@@ -280,6 +289,7 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       historyLen: fields[29] == null ? 7 : (fields[29] as num).toInt(),
       id: fields[30] == null ? 'defaultId' : fields[30] as String,
       name: fields[31] == null ? '' : fields[31] as String,
+      lastResponseId: fields[47] as String?,
       genTitlePrompt: fields[32] as String?,
       genTitleModel: fields[33] as String?,
       imgModel: fields[34] as String?,
@@ -301,7 +311,7 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(22)
+      ..writeByte(23)
       ..writeByte(25)
       ..write(obj.prompt)
       ..writeByte(26)
@@ -345,7 +355,9 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       ..writeByte(45)
       ..write(obj.vertexProjectId)
       ..writeByte(46)
-      ..write(obj.vertexLocation);
+      ..write(obj.vertexLocation)
+      ..writeByte(47)
+      ..write(obj.lastResponseId);
   }
 
   @override

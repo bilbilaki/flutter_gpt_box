@@ -64,6 +64,6 @@ Map<String, dynamic> _$ChatFolderToJson(ChatFolder instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
-      'colorIndicator': instance.colorIndicator,
-      'isExpanded': instance.isExpanded,
+      'colorIndicator': ?instance.colorIndicator,
+      'isExpanded': ?instance.isExpanded,
     };

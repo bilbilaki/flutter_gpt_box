@@ -2,18 +2,21 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
+import '../../../data/res/openai.dart';
 
 class Config {
-  String apiKey = "";
-  String baseUrl = "";
+  String apiKey = Cfg.current.key;
+  String baseUrl = Cfg.current.url;
   String proxyUrl = "";
-  String currentModel = "";
+  String currentModel = Cfg.current.model;
   bool autoAccept = true;
   bool firstSetup = true;
 
   static Future<Config> load() async {
     final path = _getConfigPath();
-    final file = File(path);
+    final file = File(await path);
     if (!await file.exists()) return Config();
 
     try {
@@ -33,7 +36,7 @@ class Config {
 
   Future<void> save() async {
     final path = _getConfigPath();
-    final file = File(path);
+    final file = File(await path);
     await file.parent.create(recursive: true);
     final encoder = JsonEncoder.withIndent("  ");
     await file.writeAsString(
@@ -48,17 +51,36 @@ class Config {
     );
   }
 
-  static String _getConfigPath() {
-    final home = Platform.isWindows
-        ? Platform.environment['USERPROFILE']
-        : Platform.environment['HOME'];
-    Directory(p.join(home!, '.config', 'ai2dart')).existsSync()
-        ? null
-        : Directory(p.join(home, '.config', 'ai2dart')).createSync();
-    File(p.join(home, '.config', 'ai2dart', 'config.json')).existsSync()
-        ? null
-        : File(p.join(home, '.config', 'ai2dart', 'config.json')).createSync();
-    return p.join(home, '.config', 'ai2dart', 'config.json');
+  static Future<String> _getConfigPath() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      // Use internal app storage (application support directory)
+      final appDir = await getApplicationSupportDirectory();
+      final configDir = Directory(p.join(appDir.path, 'ai2dart'));
+      if (!configDir.existsSync()) {
+        configDir.createSync(recursive: true);
+      }
+      final configFile = File(p.join(configDir.path, 'config.json'));
+      if (!configFile.existsSync()) {
+        configFile.createSync();
+      }
+      return configFile.path;
+    } else {
+      // Existing behavior for desktop platforms
+      final home = Platform.isWindows
+          ? Platform.environment['USERPROFILE']
+          : Platform.environment['HOME'];
+      final configDirPath = p.join(home!, '.config', 'ai2dart');
+      final configDir = Directory(configDirPath);
+      if (!configDir.existsSync()) {
+        configDir.createSync(recursive: true);
+      }
+      final configFilePath = p.join(configDirPath, 'config.json');
+      final configFile = File(configFilePath);
+      if (!configFile.existsSync()) {
+        configFile.createSync();
+      }
+      return configFilePath;
+    }
   }
 }
 

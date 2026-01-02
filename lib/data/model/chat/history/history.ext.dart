@@ -4,7 +4,7 @@ typedef OaiHistoryItem = ChatCompletionMessage;
 typedef OaiContent = ChatCompletionMessageContentPart;
 
 extension ChatHistoryX on ChatHistory {
-  static ChatHistory get empty => ChatHistory.noid(items: []);
+  static ChatHistory get empty => ChatHistory.noid(lastResponseId: null,items: []);
 
   String get toMarkdown {
     final sb = StringBuffer();
@@ -16,6 +16,7 @@ extension ChatHistoryX on ChatHistory {
   }
 
   static ChatHistory get example => ChatHistory.noid(
+    lastResponseId: null,
     name: l10n.help,
     items: [
       ChatHistoryItem.single(
@@ -40,8 +41,11 @@ extension ChatHistoryX on ChatHistory {
     bool? isPinned,
     String? colorIndicator,
     String? folderId,
+    String? l
   }) {
     return ChatHistory(
+      // Preserve lastResponseId unless an explicit override is provided.
+      lastResponseId: l ?? lastResponseId,
       id: id,
       items: items ?? this.items,
       name: name ?? this.name,
@@ -56,7 +60,7 @@ extension ChatHistoryX on ChatHistory {
 
   bool containsKeywords(List<String> keywords) {
     return items.any(
-      (e) => e.content.any((e) => keywords.any((e) => e.contains(e))),
+      (e) => e.content.any((e) => keywords.any((k)=> e.raw.contains(k))),
     );
   }
 }
@@ -91,6 +95,7 @@ extension ChatHistoryItemX on ChatHistoryItem {
       id: id ?? this.id,
       toolCallId: toolCallId ?? this.toolCallId,
       reasoning: reasoning ?? this.reasoning,
+      lastResponseId: lastResponseId,
     );
   }
 
@@ -164,11 +169,11 @@ extension ChatContentX on ChatContent {
     }
   }
 
-  ChatContent copyWith({ChatContentType? type, String? raw, String? id}) {
+  ChatContent copyWith({ChatContentType? type, String? raw, String? id, String? lastResponseId}) {
     return ChatContent(
       type: type ?? this.type,
       raw: raw ?? this.raw,
-      id: id ?? this.id,
+      id: id ?? this.id, lastResponseId:lastResponseId??this.lastResponseId ,
     );
   }
 

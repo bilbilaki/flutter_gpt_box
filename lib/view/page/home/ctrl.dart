@@ -14,7 +14,6 @@ void _switchChat([String? id]) {
   _chatItemRNMap.clear();
   _chatRN.notify();
   Future.delayed(_durationMedium, () {
-    // Different chats have different height
     _chatFabRN.notify();
     if (Stores.setting.scrollAfterSwitch.get()) {
       _scrollBottom();
@@ -67,8 +66,6 @@ ChatHistory _newChat() {
     newHistory = ChatHistoryX.empty;
   }
 
-  /// Put newHistory to the first place, the default implementation of Dart's
-  /// Map will put the new item to the last place.
   allHistories = {newHistory.id: newHistory, ...allHistories};
   return newHistory;
 }
@@ -78,7 +75,6 @@ void _onTapDelChatItem(
   List<ChatHistoryItem> chatItems,
   ChatHistoryItem chatItem,
 ) async {
-  // Capture it.
   final chatId = _curChatId;
   final idx = chatItems.indexOf(chatItem) + 1;
   final result = await context.showRoundDialog<bool>(
@@ -102,10 +98,8 @@ void _onTapDeleteChat(String chatId, BuildContext context) {
     return;
   }
 
-  /// If items is empty, delete it directly
   if (entity.items.isEmpty) return _onDeleteChat(chatId);
 
-  /// #119
   final diffTS = DateTime.now().millisecondsSinceEpoch - _noChatDeleteConfirmTS;
   if (diffTS < 30 * 1000) {
     return _onDeleteChat(chatId);
@@ -184,12 +178,11 @@ void _onCloneChat(String chatId, BuildContext context) async {
     return;
   }
 
-  // Create a deep copy of the chat history
   final clonedItems = entity.items.map((item) {
     return ChatHistoryItem(
       role: item.role,
       content: item.content
-          .map((c) => ChatContent(type: c.type, raw: c.raw, id: c.id))
+          .map((c) => ChatContent(lastResponseId: null,type: c.type, raw: c.raw, id: c.id))
           .toList(),
       createdAt: item.createdAt,
       id: item.id,
@@ -208,6 +201,7 @@ void _onCloneChat(String chatId, BuildContext context) async {
     name: '${entity.name ?? l10n.untitled} (Copy)',
     settings: entity.settings,
     isPinned: entity.isPinned,
+    lastResponseId: entity.lastResponseId,
     colorIndicator: entity.colorIndicator,
     folderId: entity.folderId,
   );
@@ -233,7 +227,6 @@ void _onTogglePinChat(String chatId, BuildContext context) {
   _historyRN.notify();
   _storeChat(chatId);
 
-  // Re-sort to show pinned chats at the top
   _resortHistories();
 }
 
@@ -247,7 +240,7 @@ void _onSetColorIndicator(String chatId, BuildContext context) async {
   }
 
   final colors = [
-    null, // No color
+    null,
     'red',
     'orange',
     'yellow',
@@ -370,7 +363,6 @@ void _onDeleteFolder(String folderId, BuildContext context) async {
   final folder = _allFolders.value[folderId];
   if (folder == null) return;
 
-  // Check if folder has chats
   final chatsInFolder = allHistories.values.where(
     (h) => h.folderId == folderId,
   );
@@ -391,7 +383,6 @@ void _onDeleteFolder(String folderId, BuildContext context) async {
 
   if (confirmed != true) return;
 
-  // Move all chats out of the folder
   for (final chat in chatsInFolder) {
     final updated = chat.copyWith(folderId: null)..save();
     allHistories[chat.id] = updated;
@@ -432,7 +423,6 @@ void _onToggleFolderExpanded(String folderId) {
 void _resortHistories() {
   final entries = allHistories.entries.toList();
 
-  // Sort: pinned first, then by last modified time
   entries.sort((a, b) {
     final aPinned = a.value.isPinned ?? false;
     final bPinned = b.value.isPinned ?? false;
@@ -440,7 +430,6 @@ void _resortHistories() {
     if (aPinned && !bPinned) return -1;
     if (!aPinned && bPinned) return 1;
 
-    // Both pinned or both not pinned, sort by time
     final now = DateTime.now();
     final aTime = a.value.items.lastOrNull?.createdAt ?? now;
     final bTime = b.value.items.lastOrNull?.createdAt ?? now;
@@ -451,7 +440,6 @@ void _resortHistories() {
   _historyRN.notify();
 }
 
-/// Used in send btn and [_onCreateText]
 void _onStopStreamSub(String chatId) async {
   _chatStreamSubs[chatId]?.cancel();
   _loadingChatIds.value.remove(chatId);
@@ -553,24 +541,16 @@ Future<void> _onTapFilePick(BuildContext context) async {
       await _showFilePathUsageConfirmationDialog(context);
 
   if (isModelUsingFilePathConfirmed == true) {
-    // User pressed 'Yes'
     print('User confirmed: Model *will* use file paths for tools.');
-    // You can now proceed with logic that utilizes the file paths
-    // for tool integration (e.g., passing paths to a backend service,
-    // or a local tool execution).
-    // Access the paths from _filesPicked.value
+
     for (String path in _filesPicked.value) {
       print('Path for tool usage: $path');
     }
   } else if (isModelUsingFilePathConfirmed == false) {
-    // User pressed 'No'
     print(
       'User denied: Model *will not* use file paths for tools. Perhaps only content is needed.',
     );
-    // You might decide to clear the paths, or process the files differently
-    // (e.g., load file content directly without using their paths externally).
   } else {
-    // Dialog was dismissed without explicit 'Yes' or 'No' (unlikely with barrierDismissible: false)
     print('Confirmation dialog was dismissed without a clear choice.');
   }
 }
@@ -578,20 +558,17 @@ Future<void> _onTapFilePick(BuildContext context) async {
 Future<bool?> _showFilePathUsageConfirmationDialog(BuildContext context) async {
   return showDialog<bool?>(
     context: context,
-    // Set barrierDismissible to false to force the user to make a choice
+
     barrierDismissible: false,
     builder: (BuildContext dialogContext) {
       return AlertDialog(
         title: const Text('Confirm File Path Usage'),
         content: const Text(
           'Is the model intended to use the *file path* (not content) of these files for tool integration?',
-          // Added clarity to the question
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () {
-              // User pressed 'No'
-              // Pop the dialog and return false
               Navigator.of(dialogContext).pop(false);
             },
             child: const Text('No'),
@@ -599,8 +576,7 @@ Future<bool?> _showFilePathUsageConfirmationDialog(BuildContext context) async {
           TextButton(
             onPressed: () {
               modelUseFilePath = true;
-              // User pressed 'Yes'
-              // Pop the dialog and return true
+
               Navigator.of(dialogContext).pop(true);
             },
             child: const Text('Yes'),
@@ -610,114 +586,10 @@ Future<bool?> _showFilePathUsageConfirmationDialog(BuildContext context) async {
     },
   );
 }
-// Set<String> _findAllDuplicateIds(Map<String, ChatHistory> allHistories) {
-//   final existTitles = <String, Set<String>>{}; // {"title": ["id"]}
-//   for (final item in allHistories.values) {
-//     final title = item.name ?? '';
-//     existTitles.putIfAbsent(title, () => {}).add(item.id);
-//   }
-
-//   final rmIds = <String>{};
-//   for (final entry in existTitles.entries) {
-//     /// If only one chat with the same title, skip
-//     if (entry.value.length == 1) continue;
-//     final ids = entry.value;
-
-//     /// If the title is the same, first compare whether the content is the same
-
-//     /// Collect all assist's reply content
-//     final contentMap = <String, List<String>>{}; // {"id": ["content"]}
-//     final timeMap = <String, int>{}; // {"id": time}
-//     for (final id in ids) {
-//       final history = allHistories[id];
-//       if (history == null) continue;
-//       for (final item in history.items) {
-//         /// Only compare assist's reply which is variety
-//         if (!item.role.isAssist) continue;
-//         final content = item.toMarkdown;
-//         contentMap.putIfAbsent(content, () => []).add(id);
-//         final time = timeMap[id];
-//         if (time == null || item.createdAt.millisecondsSinceEpoch > time) {
-//           timeMap[id] = item.createdAt.millisecondsSinceEpoch;
-//         }
-//       }
-//     }
-
-//     /// Find out the same content
-//     var anyDup = false;
-//     for (var idx = 0; idx < contentMap.length - 1; idx++) {
-//       final contentsA = contentMap.values.elementAt(idx);
-//       final contentsB = contentMap.values.elementAt(idx + 1);
-//       anyDup = contentsA.any((e) => contentsB.contains(e));
-//       if (anyDup) break;
-//     }
-
-//     /// If there is no same content, skip
-//     if (!anyDup) continue;
-
-//     /// If there is same content, delete the old one
-//     var latestTime = timeMap.values.first;
-//     for (final entry in timeMap.entries) {
-//       if (entry.value > latestTime) {
-//         latestTime = entry.value;
-//       }
-//     }
-
-//     rmIds.addAll(timeMap.entries
-//         .where((e) => e.value != latestTime)
-//         .map((e) => e.key)
-//         .toList());
-//   }
-//   return rmIds;
-// }
-
-// void _removeDuplicateHistory(BuildContext context) async {
-//   final rmIds = await compute(_findAllDuplicateIds, allHistories);
-//   if (rmIds.isEmpty) return;
-
-//   final rmCount = rmIds.length;
-//   final children = <Widget>[Text(l10n.rmDuplicationFmt(rmCount))];
-//   for (int idx = 0; idx < rmCount; idx++) {
-//     final id = rmIds.elementAt(idx);
-//     final item = allHistories[id];
-//     if (item == null) continue;
-//     children.add(Text(
-//       '${idx + 1}. ${item.items.firstOrNull?.toMarkdown ?? libL10n.empty}',
-//       maxLines: 1,
-//       overflow: TextOverflow.ellipsis,
-//       style: UIs.text12Grey,
-//     ));
-//   }
-//   context.showRoundDialog(
-//     title: l10n.attention,
-//     child: SingleChildScrollView(
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: children,
-//       ),
-//     ),
-//     actions: [
-//       TextButton(
-//         onPressed: () {
-//           for (final id in rmIds) {
-//             Stores.history.delete(id);
-//             allHistories.remove(id);
-//           }
-//           _historyRN.notify();
-//           if (!allHistories.keys.contains(_curChatId)) {
-//             _switchChat();
-//           }
-//         },
-//         child: Text(l10n.delete, style: UIs.textRed),
-//       ),
-//     ],
-//   );
-// }
 
 void _locateHistoryListener() {
   Fns.throttle(
     () {
-      // Calculate _curChatId is visible or not
       final idx = allHistories.keys.toList().indexOf(_curChatId.value);
       final offset = _historyScrollCtrl.offset;
       final height = _historyScrollCtrl.position.viewportDimension;
@@ -786,10 +658,9 @@ void _autoScroll(String chatId) {
   if (Stores.setting.scrollBottom.get()) {
     Fns.throttle(
       () {
-        // Only scroll to bottom when current chat is the working chat
         final isCurrentChat = chatId == _curChatId.value;
         if (!isCurrentChat) return;
-        // If users stop the scroll, then disable auto scroll
+
         if (_userStoppedScroll) return;
         _scrollBottom();
       },
@@ -807,8 +678,7 @@ void _scrollBottom() async {
       duration: _durationShort,
       curve: Curves.fastEaseInToSlowEaseOut,
     );
-    // Sometimes the scroll is not at the bottom due to the caclulation of
-    // [ListView.builder], so scroll again.
+
     _chatScrollCtrl.jumpTo(_chatScrollCtrl.position.maxScrollExtent);
   }
 }
@@ -841,66 +711,6 @@ void _onSwitchModel(BuildContext context, {bool notifyKey = false}) async {
     },
   );
 }
-
-// /// The chat type is determined by the following order:
-// /// Programmatically -> AI -> Text
-// Future<ChatType> _getChatType() async {
-//   return _getChatTypeByProg() ?? await _getChatTypeByAI() ?? ChatType.text;
-// }
-
-// /// Recognize the chat type by the question content programmatically.
-// ChatType? _getChatTypeByProg() {
-//   if (isWeb) return ChatType.text;
-
-//   final file = _filePicked.value;
-//   if (file != null) {
-//     final mime = file.mimeType;
-//     if (mime != null) {
-//       // If file is image
-//       if (mime.startsWith('image/')) {
-//         // explainImage / editImage
-//         if (inputCtrl.text.isNotEmpty) {
-//           return null;
-//         }
-//         return ChatType.varifyImage;
-//       }
-//       // If file is audio
-//       if (mime.startsWith('audio/')) {
-//         return ChatType.audioToText;
-//       }
-//     }
-//   }
-
-//   return null;
-// }
-
-// /// Send [inputCtrl.text] to OpenAI and get the chat type by the AI response.
-// Future<ChatType?> _getChatTypeByAI() async {
-//   if (inputCtrl.text.isEmpty) return null;
-
-//   final config = OpenAICfg.current;
-//   final result = await OpenAI.instance.chat.create(
-//     model: config.model,
-//     messages: [
-//       ChatHistoryItem.single(
-//         role: ChatRole.system,
-//         raw: '''
-// There are some types of chat:
-// ${ChatType.values.map((e) => e.name).join('/')}
-// Which is most proper type for this chat? (Only response the `code` of type, eg: `text`)
-// ''',
-//       ).toOpenAI,
-//       ChatHistoryItem.single(
-//         raw: inputCtrl.text,
-//         role: ChatRole.user,
-//       ).toOpenAI,
-//     ],
-//   );
-//   final type =
-//       result.choices.firstOrNull?.message.content?.firstOrNull?.text?.trim();
-//   if (type == null) return null;
-//   return ChatType.fromString(type);
-// }
 
 Future<void> _switchPage(HomePageEnum page) {
   return _pageCtrl.animateToPage(

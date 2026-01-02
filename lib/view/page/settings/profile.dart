@@ -507,13 +507,7 @@ final class _ProfilePageState extends State<ProfilePage>
               title: libL10n.edit,
               child: Input(controller: ctrl, maxLines: 11, autoFocus: true),
               actions: Btn.ok(onTap: () => context.pop(ctrl.text)).toList,
-              titleBuilder: (ctx) => IconButton(
-                tooltip: 'Prompt generator',
-                onPressed: () async {
-                  await _navigateToAdvancedPromptPage(context);
-                },
-                icon: const Icon(Icons.auto_awesome, size: 18),
-              ),
+           
             );
             if (result == null) return;
             Cfg.setTo(cfg: Cfg.current.copyWith(prompt: result));
@@ -554,27 +548,7 @@ final class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Future<void> _navigateToAdvancedPromptPage(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      _fadeRoute(PromptGeneratorScreen()),
-    ); // Replace AnotherPage with your desired page
-  }
 
-  Route<T> _fadeRoute<T>(Widget page) {
-    return PageRouteBuilder<T>(
-      pageBuilder: (_, __, ___) => page,
-      transitionsBuilder: (_, anim, __, child) {
-        return FadeTransition(
-          opacity: anim.drive(CurveTween(curve: Curves.easeInOut)),
-          child: child,
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 220),
-      reverseTransitionDuration: const Duration(milliseconds: 200),
-      opaque: true,
-      fullscreenDialog: true,
-    );
-  }
   // void _openPromptGenerator() {
   //   showDialog(
   //     context: context,
