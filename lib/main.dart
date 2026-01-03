@@ -1,22 +1,21 @@
-// ignore_for_file: avoid_print
-
 import 'dart:async';
 
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_box/app.dart';
-import 'package:gpt_box/core/util/sync.dart';
-import 'package:gpt_box/core/util/url.dart';
+import 'package:gpt_box/data/model/app/cache_translate.dart';
 import 'package:gpt_box/data/model/chat/history/hive_adapter.dart';
 import 'package:gpt_box/data/res/build_data.dart';
 import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/hive/hive_registrar.g.dart';
-import 'package:gpt_box/view/translator/configuration/translator_config.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
 
-late TranslatorConfig translatorConfig;
+final persistentCache = PersistentTranslationCache(
+  ttl: Duration(days: 365),
+  maxEntries: 5000,
+);
 
 Future<void> main() async {
   _runInZone(() async {
@@ -50,26 +49,15 @@ Future<void> _initApp() async {
 Future<void> _initDb() async {
   await Hive.initFlutter();
   Hive.registerAdapters();
-  // You are trying to register DateTimeAdapter (typeId 4) for type DateTime 
-  // but there is already a TypeAdapter for this type: DateTimeWithTimezoneAdapter (typeId 18). 
-  // Note that DateTimeAdapter will have no effect as DateTimeWithTimezoneAdapter takes precedence. 
-  // If you want to override the existing adapter, the typeIds must match.
-  // Hive.registerAdapter(DateTimeAdapter()); // 4
-  // Hive.registerAdapter(TranslatorConfigAdapter());//25
+  
+  
+  
+  
+  
+  
 
-  Hive.registerAdapter(ChatCompletionMessageToolCallAdapter()); // 9
-  Hive.registerAdapter(ChatCompletionMessageFunctionCallAdapter()); // 10
-  final configBox = await Hive.openBox<TranslatorConfig>('app_config');
-if (configBox.isEmpty) {
-    // Box is empty, this is the first run!
-    print("First run: Creating default configuration...");
-    translatorConfig = TranslatorConfig.withDefaults();
-    configBox.put('config', translatorConfig); // Save the new default config
-  } else {
-    // Box has data, load the existing configuration
-    print("Loading existing configuration...");
-    translatorConfig = configBox.get('config')!; // Load it from the box
-  }
+  Hive.registerAdapter(ChatCompletionMessageToolCallAdapter()); 
+  Hive.registerAdapter(ChatCompletionMessageFunctionCallAdapter()); 
   await PrefStore.shared.init();
   await Stores.init();
 }
@@ -85,7 +73,7 @@ void _setupLogger() {
 }
 
 Future<void> _initAppComponents() async {
-  // DeepLinks.appId = AppLink.host;
+  
   UserApi.init();
 
   final sets = Stores.setting;
@@ -101,10 +89,10 @@ Future<void> _initAppComponents() async {
   Cfg.applyClient();
   Cfg.updateModels();
 
-  // BakSync.instance.init();
-  // BakSync.instance.sync();
+  
+  
 
-  // if (Stores.setting.joinBeta.get()) AppUpdate.chan = AppUpdateChan.beta;
+  
 
-  // Stores.trash.autoDelete();
+  Stores.trash.autoDelete();
 }

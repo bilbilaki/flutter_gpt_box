@@ -4,50 +4,82 @@ final class TfHttpReq extends ToolFunc {
   static const instance = TfHttpReq._();
 
   const TfHttpReq._()
-      : super(
-          name: 'httpReq',
-          parametersSchema: const {
-            'type': 'object',
-            'properties': {
-              'method': {
-                'type': 'string',
-                'description': 'HTTP method, default GET',
-              },
-              'url': {
-                'type': 'string',
-                'description': 'URL',
-              },
-              'headers': {
-                'type': 'object',
-                'description': 'Headers map',
-              },
-              'body': {
-                'type': 'string',
-                'description': 'Request body',
-              },
-              'followRedirects': {
-                'type': 'integer',
-                'description': 'Max redirects to follow',
-              },
-              'truncateSize': {
-                'type': 'integer',
-                'description':
-                    'If user wants to save tokens, set it to the max size of the response body',
-              },
+    : super(
+        name: 'httpReq',
+        parametersSchema: const {
+          'type': 'object',
+          'properties': {
+            'method': {
+              'type': 'string',
+              'description':
+                  'The HTTP method to use (e.g., "GET" for fetching data, "POST" for submitting). Defaults to "GET" if omitted. Confirm the method with the user if not obvious (e.g., for APIs requiring POST).',
             },
-            'required': ['url'],
+            'url': {
+              'type': 'string',
+              'description':
+                  'The full URL endpoint (e.g., "https://api.github.com/users/octocat"). Required. Always verify and confirm the URL with the user before calling—use only trusted, public APIs or sites to avoid security risks.',
+            },
+            'headers': {
+              'type': 'object',
+              'description':
+                  'Optional key-value object for HTTP headers (e.g., {"Authorization": "Bearer token", "Content-Type": "application/json"}). Use for authentication or custom needs; never include sensitive data without user consent. Defaults to empty.',
+            },
+            'body': {
+              'type': 'string',
+              'description':
+                  'Optional request body as a string (e.g., JSON encoded as string: "{\"key\": \"value\"}"). Required for POST/PUT with data. For binary blobs, encode as base64 string. Inform the user if encoding is applied.',
+            },
+            'followRedirects': {
+              'type': 'integer',
+              'description':
+                  'Optional maximum number of redirects to follow (e.g., 5). Defaults to a reasonable limit (e.g., 10); set lower only if the user specifies to prevent infinite loops.',
+            },
+            'truncateSize': {
+              'type': 'integer',
+              'description':
+                  'Optional: Maximum size (in bytes) to truncate the response body if large (e.g., 10000 to save tokens). Use only if the user requests summarized or token-efficient responses (e.g., "Get a summary of the page"); otherwise, retrieve full content.',
+            },
           },
-        );
+          'required': ['url'],
+        },
+      );
 
   @override
   String get description => '''
-Send an HTTP request. It can be used for searching, downloading, etc.
+Use this tool to make HTTP requests for web-based tasks when the user explicitly requests external data (e.g., "Search Wikipedia for AI history" or "Get the latest GitHub issues for this repo"). Do not call unsolicited—base URLs/methods on user input and known public APIs (e.g., api.github.com, en.wikipedia.org/w/api.php, api.stackexchange.com). Ideal for searching, fetching APIs, or downloading content without built-in tools.
+The tool sends the request and returns the response as a string (headers, status, body). For JSON, it's a JSON string—parse it logically in your reasoning. For binaries/blobs, expect base64 encoding. Use returned data to inform the user directly.
 
-If user want to access some content having an json API, use the API directly.
-You can use all the APIs that you(AI model) know. Such as api.github.com, wikipedia, github, stackoverflow and etc.
+**Usage Steps (One Request Per Call for Focus):**
+1. **Simple GET Request (Default)**:
+   - Provide 'url' (e.g., "https://api.github.com/repos/user/repo").
+   - Optional: 'headers' for auth (e.g., GitHub token if user provides).
+   - Response: Status, headers, and body string. Summarize for the user (e.g., "Here's the repo info: [key details]").
+   - Example: User says "What's the weather?"—use a public API like openweathermap.org after confirming location.
 
-Both request/response body is String. If json, encode it into String.
-If blob, encode it into base64 String.''';
+2. **POST or Other Methods with Body**:
+   - Set 'method' to "POST", add 'body' (JSON as string), and 'headers' if needed (e.g., for API submissions).
+   - Confirm body/details with user (e.g., "Sending this JSON to the API—correct?").
+   - Useful for user-initiated actions like creating GitHub issues.
+
+3. **Advanced Options**:
+   - 'followRedirects': Adjust for sites with redirects (rarely needed).
+   - 'truncateSize': Set for long responses (e.g., full web pages)—offer full fetch if truncated (e.g., "Got a preview—want the complete response?").
+   - For multi-part tasks (e.g., fetch then process): Call sequentially, using first response to inform the next (e.g., get user ID from API, then fetch profile).
+
+4. **Handling Responses**:
+   - Check status code (e.g., 200 OK, 404 Not Found). If errors, inform user and suggest fixes (e.g., "API unavailable—try another URL?").
+   - Encoding: JSON is stringified; base64 for blobs—decode in reasoning if needed, but present raw to user unless specified.
+   - Integration: Use results to answer queries (e.g., "From Wikipedia: [excerpt]") without further tools unless complex.
+
+**Best Practices to Avoid Errors and Enhance Safety:**
+- Always confirm: URLs, methods, and sensitive params (e.g., API keys) with the user—do not fabricate or assume.
+- Trusted Sources Only: Stick to public APIs you know (e.g., GitHub, Wikipedia, Stack Overflow); warn about risks for unknown sites.
+- Token Efficiency: Use 'truncateSize' proactively for large content; summarize responses to keep conversations concise.
+- Multi-Requests: For chained ops (e.g., search then detail), use multiple calls—don't overload one request.
+- Privacy/Security: Avoid sending user data in bodies without explicit consent; no private or authenticated requests unless user provides creds.
+- Errors: If rate-limited or failed, suggest alternatives (e.g., "GitHub API hit limit—wait or use search?").
+
+Focus on user-requested web access—respect limits and ethics.''';
 
   @override
   String get l10nName => l10n.toolHttpReqName;
@@ -86,12 +118,7 @@ If blob, encode it into base64 String.''';
       data: body,
     );
 
-    const mimesBin = [
-      'application/octet-stream',
-      'image/',
-      'video/',
-      'audio/',
-    ];
+    const mimesBin = ['application/octet-stream', 'image/', 'video/', 'audio/'];
 
     const mimesString = [
       'text/',

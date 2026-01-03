@@ -1,5 +1,6 @@
 import 'package:fl_lib/fl_lib.dart';
 import 'package:gpt_box/data/store/config.dart';
+import 'package:gpt_box/data/store/folder.dart';
 import 'package:gpt_box/data/store/history.dart';
 import 'package:gpt_box/data/store/setting.dart';
 import 'package:gpt_box/data/store/tool.dart';
@@ -11,13 +12,14 @@ abstract final class Stores {
   static final config = ConfigStore.instance;
   static final mcp = McpStore.instance;
   static final trash = TrashStore.instance;
-
+  static final folder = FolderStore.instance;
   static final List<HiveStore> all = [
     setting,
     history,
     config,
     mcp,
     trash,
+    folder,
   ];
 
   static Future<void> init() async {

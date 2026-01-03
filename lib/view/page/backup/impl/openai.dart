@@ -6,9 +6,7 @@ Widget _buildOpenAI(BuildContext context) {
     leading: const Icon(MingCute.openai_fill),
     subtitle: SimpleMarkdown(
       data: l10n.restoreOpenaiTip(Urls.openaiRestoreDoc),
-      styleSheet: MarkdownStyleSheet(
-        p: UIs.textGrey,
-      ),
+      styleSheet: MarkdownStyleSheet(p: UIs.textGrey),
     ),
     trailing: const Icon(Icons.chevron_right),
     onTap: () => _onTapRestoreOpenAI(context),
@@ -19,9 +17,9 @@ void _onTapRestoreOpenAI(BuildContext context) async {
   final picked = await Pfs.pickFileString();
   if (picked == null) return;
 
-  final (chats, err) = await context.showLoadingDialog(fn: () async {
-    return await compute(
-      (params) async {
+  final (chats, err) = await context.showLoadingDialog(
+    fn: () async {
+      return await compute((params) async {
         final obj = json.decode(params) as List;
         final chats = <ChatHistory>[];
 
@@ -33,10 +31,9 @@ void _onTapRestoreOpenAI(BuildContext context) async {
           } catch (_) {}
         }
         return chats;
-      },
-      picked,
-    );
-  });
+      }, picked);
+    },
+  );
 
   if (err != null || chats == null) return;
 

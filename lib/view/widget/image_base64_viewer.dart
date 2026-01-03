@@ -6,6 +6,13 @@ import 'package:flutter/material.dart';
 
 /// A Flutter widget that displays an image from a Base64 string.
 /// Tapping the image will open a full-screen view with zoom and pan capabilities.
+import 'dart:io';
+import 'package:file_selector/file_selector.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+// ignore: must_be_immutable
 class Base64ImageDisplay extends StatelessWidget {
   /// The Base64 string representing the image data.
   final String base64String;
@@ -64,7 +71,7 @@ class Base64ImageDisplay extends StatelessWidget {
           );
     }
 
-    if (imageBytes == null || imageBytes.isEmpty) {
+    if (imageBytes.isEmpty) {
       // Handle cases where the decoded bytes are empty (e.g., empty base64 string)
       return noImageWidget ??
           _buildDefaultErrorWidget(
@@ -87,8 +94,14 @@ class Base64ImageDisplay extends StatelessWidget {
                     before: Image.memory(base64Decode(bas!)),
                     after: Image.memory(imageBytes!),
                     onValueChanged: (value) {
-                      value = value;
-                      postCallback;
+                      // Note: value parameter in onValueChanged is already the updated value.
+                      // If you want to update the widget's `value` property, you might need a StatefulWidget
+                      // or use a state management solution.
+                      // For this example, if it's meant to trigger a redraw, it won't directly
+                      // update the StatelessWidget's `value`.
+                      // This line `value = value;` only reassigns the local parameter, not the instance field.
+                      // If `postCallback` is meant to be called, ensure it is.
+                      postCallback?.call();
                     },
                   )
                 : FullScreenImageViewer(
@@ -99,7 +112,7 @@ class Base64ImageDisplay extends StatelessWidget {
         );
       },
       child: Image.memory(
-        imageBytes!, // `imageBytes` is guaranteed non-null here
+        imageBytes, // `imageBytes` is guaranteed non-null here
         fit: fit,
         width: width,
         height: height,
@@ -149,6 +162,107 @@ class FullScreenImageViewer extends StatelessWidget {
     this.title,
   }) : super(key: key);
 
+  Future<void> _saveImage(BuildContext context) async {
+    // 1. Request permissions for Android if running on Android
+    if (Platform.isAndroid) {
+      var status = await Permission.storage.request();
+      if (!status.isGranted) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Storage permission not granted.')),
+        );
+        return;
+      }
+    }
+
+    // 2. Define accepted file types (for example, PNG, JPEG)
+    const XTypeGroup pngTypeGroup = XTypeGroup(
+      label: 'PNG Images',
+      extensions: <String>['png'],
+    );
+    const XTypeGroup jpgTypeGroup = XTypeGroup(
+      label: 'JPEG Images',
+      extensions: <String>['jpg', 'jpeg'],
+    );
+    final List<XTypeGroup> acceptedTypeGroups = <XTypeGroup>[
+      pngTypeGroup,
+      jpgTypeGroup,
+    ];
+
+    // 3. Suggest a default file name
+    final String suggestedName =
+        'image_${DateTime.now().millisecondsSinceEpoch}.png';
+
+    try {
+      // 4. Open a save file dialog
+      // This will open a directory selector and allow the user to type a file name.
+      final patht = await getSaveLocation(
+        suggestedName: suggestedName,
+        acceptedTypeGroups: acceptedTypeGroups,
+      );
+      final defPath = await _getTargetDirectory('');
+      final String path = patht?.path ?? defPath.path;
+      if (path == '') {
+        // User canceled the file selection
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Image save canceled.')));
+        return;
+      }
+
+      // 5. Write the image bytes to the selected path
+      final File file = File(path);
+      await file.writeAsBytes(imageBytes);
+
+      // 6. Provide user feedback
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Image saved successfully to: $path')),
+      );
+    } catch (e) {
+      // Handle any errors during file saving
+      print('Error saving image: $e');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save image: $e')));
+    }
+  }
+
+  Future<Directory> _getTargetDirectory(String userSubdir) async {
+    // Determine the base download directory per platform.
+    late final Directory baseDir;
+    if (Platform.isAndroid) {
+      baseDir = Directory('/storage/emulated/0/Download');
+    } else if (Platform.isLinux) {
+      baseDir = Directory(p.join(Platform.environment['HOME']!, 'Downloads'));
+    } else if (Platform.isWindows) {
+      baseDir = Directory(
+        p.join(Platform.environment['USERPROFILE']!, 'Downloads'),
+      );
+    } else {
+      final Directory? downloadsDir = await getDownloadsDirectory();
+      baseDir = downloadsDir ?? await getApplicationDocumentsDirectory();
+    }
+
+    // App-specific subfolder structure.
+    const String appFolderName = 'GPTBOX';
+    const String downloadsSubFolderName = 'Images';
+    String appDownloadsPath = p.join(
+      baseDir.path,
+      appFolderName,
+      downloadsSubFolderName,
+    );
+
+    // Append user-provided subdirectory if any.
+    if (userSubdir.isNotEmpty) {
+      appDownloadsPath = p.join(appDownloadsPath, userSubdir);
+    }
+
+    return Directory(appDownloadsPath);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -160,6 +274,13 @@ class FullScreenImageViewer extends StatelessWidget {
         backgroundColor: Colors.transparent, // Transparent AppBar over image
         iconTheme: const IconThemeData(color: Colors.white), // White back arrow
         elevation: 0, // No shadow for the AppBar
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () => _saveImage(context),
+            tooltip: 'Download Image',
+          ),
+        ],
       ),
       body: Center(
         // InteractiveViewer allows users to zoom and pan the image

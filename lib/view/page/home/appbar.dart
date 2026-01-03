@@ -5,30 +5,28 @@ final class _CustomAppBar extends CustomAppBar {
 
   @override
   Widget build(BuildContext context) {
-    final title = _appbarTitleVN.listenVal(
-      (val) {
-        return AnimatedSwitcher(
-          duration: _durationMedium,
-          switchInCurve: Easing.standardDecelerate,
-          switchOutCurve: Easing.standardDecelerate,
-          transitionBuilder: (child, animation) => SlideTransitionX(
-            position: animation,
-            child: FadeTransition(opacity: animation, child: child),
+    final title = _appbarTitleVN.listenVal((val) {
+      return AnimatedSwitcher(
+        duration: _durationMedium,
+        switchInCurve: Easing.standardDecelerate,
+        switchOutCurve: Easing.standardDecelerate,
+        transitionBuilder: (child, animation) => SlideTransitionX(
+          position: animation,
+          child: FadeTransition(opacity: animation, child: child),
+        ),
+        // Use a SizedBox to avoid the title jumping when switching chats.
+        child: SizedBox(
+          width: context.windowSize.width * 0.5,
+          child: Text(
+            val ?? l10n.untitled,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.left,
+            style: UIs.text15,
           ),
-          // Use a SizedBox to avoid the title jumping when switching chats.
-          child: SizedBox(
-            width: context.windowSize.width * 0.5,
-            child: Text(
-              val ?? l10n.untitled,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.left,
-              style: UIs.text15,
-            ),
-          ),
-        );
-      },
-    );
+        ),
+      );
+    });
 
     final subtitle = Cfg.vn.listen(() {
       return Cfg.chatType.listenVal((typ) {
@@ -74,7 +72,7 @@ final class _CustomAppBar extends CustomAppBar {
                     Icons.keyboard_arrow_down,
                     size: 15,
                     color: Colors.grey,
-                  )
+                  ),
                 ],
               ),
             ),
@@ -84,8 +82,8 @@ final class _CustomAppBar extends CustomAppBar {
       actions: [
         ValueListenableBuilder(
           valueListenable: _curPage,
-          builder: (_, page, _) => page.buildAppbarActions(context),
-        )
+          builder: (_, page, __) => page.buildAppbarActions(context),
+        ),
       ],
     );
   }

@@ -7,14 +7,12 @@ final class _IntroPage extends StatelessWidget {
 
   const _IntroPage(this.pages);
 
-  static const _builders = {
-    1: _buildAppSettings,
-  };
+  static const _builders = {1: _buildAppSettings};
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      // To fix the l10n issue
+      
       key: UniqueKey(),
       builder: (context, cons) {
         final padTop = cons.maxHeight * .12;
@@ -106,7 +104,9 @@ final class _IntroPage extends StatelessWidget {
     }
     if (!big) {
       child = Padding(
-          padding: const EdgeInsets.symmetric(vertical: 13), child: child);
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        child: child,
+      );
     }
     return Center(child: child);
   }

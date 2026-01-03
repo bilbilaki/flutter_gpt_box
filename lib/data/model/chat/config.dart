@@ -21,13 +21,28 @@ abstract class ChatConfig with _$ChatConfig {
     @Default(ChatConfigX.defaultHistoryLen) int historyLen,
     @Default(ChatConfigX.defaultId) String id,
     @Default('') String name,
+    String? lastResponseId,
     String? genTitlePrompt,
     String? genTitleModel,
     String? imgModel,
+    String? audioModel,
+    String? tskrModel,
+    String? altrModel,
+    String? wrkrModel,
+    String? trnscrbModel,
+    String? defaultTranslateLanguage,
+
     // Newly added nullable fields
     String? file,
     String? image,
     String? audio,
+    bool? isVertex,
+    String? vertexProjectId,
+    String? vertexLocation,
+    @Default('') String proxyHost,
+    @Default(0) int proxyPort,
+    @Default(ChatConfigX.defaultProxyType) String proxyType,
+    @Default(false) bool proxyEnabled,
   }) = _ChatConfig;
 
   factory ChatConfig.fromJson(Map<String, dynamic> json) =>
@@ -43,6 +58,21 @@ extension ChatConfigX on ChatConfig {
   static const defaultUrl = 'https://api.openai.com/v1';
   static const defaultHistoryLen = 7;
   static const defaultImgModel = 'dall-e-3';
+  static const defaultaudioModel = 'gpt-4o-mini-audio-preview';
+  static const defaulttrnscrbModel = 'gpt-4o-mini-transcribe-preview';
+  static const defaulttaskrModel = 'gemini-2.5-flash';
+  static const defaultaltrModel = 'gemini-2.5-flash-lite';
+  static const defaultwrkrModel = 'gpt-4.1-mini';
+  static const defaultTranslateLanguage = 'English';
+  static const isVertex = false;
+  static const vertexProjectId = '';
+  static const vertexLocation = '';
+  static const defaultProxyHost = '';
+  static const defaultProxyPort = 0;
+  static const defaultProxyType = 'http';
+  static const defaultProxyEnabled = false;
+  static const lastResponseId = null;
+
   static const defaultOne = ChatConfig(
     id: defaultId,
     prompt: '',
@@ -51,13 +81,28 @@ extension ChatConfigX on ChatConfig {
     model: '',
     historyLen: defaultHistoryLen,
     name: '',
+    imgModel: defaultImgModel,
+    defaultTranslateLanguage: 'English',
+    isVertex: isVertex,
+    vertexProjectId: vertexProjectId,
+    vertexLocation: vertexLocation,
+    proxyHost: defaultProxyHost,
+    proxyPort: defaultProxyPort,
+    proxyType: defaultProxyType,
+    proxyEnabled: defaultProxyEnabled,
+    lastResponseId: lastResponseId,
+    // audioModel: defaultaudioModel,
+    // trnscrbModel: defaulttrnscrbModel,
+    // tskrModel: defaulttaskrModel,
+    // altrModel: defaultaltrModel,
+    // wrkrModel: defaultwrkrModel,
   );
 
   String get displayName => switch (id) {
-        // Corresponding as `id == defaultId && name.isEmpty`
-        defaultId when name.isEmpty => l10n.defaulT,
-        _ => name,
-      };
+    // Corresponding as `id == defaultId && name.isEmpty`
+    defaultId when name.isEmpty => l10n.defaulT,
+    _ => name,
+  };
 
   void save() => Stores.config.put(this);
 
@@ -96,7 +141,23 @@ extension ChatConfigX on ChatConfig {
       file: params_['file'],
       image: params_['image'],
       audio: params_['audio'],
+      lastResponseId: params_['lastResponseId']??lastResponseId,
       historyLen: params_['historyLen'] ?? defaultHistoryLen,
+      tskrModel: params_['TaskerModel'] ?? defaulttaskrModel,
+      audioModel: params_['AudioModel'] ?? defaultaudioModel,
+      altrModel: params_['AlterModel'] ?? defaultaltrModel,
+
+      wrkrModel: params_['TaskerModel'] ?? defaultwrkrModel,
+      trnscrbModel: params_['TaskerModel'] ?? defaulttrnscrbModel,
+      defaultTranslateLanguage:
+          params_['defaultTranslateLanguage'] ?? defaultTranslateLanguage,
+      isVertex: params_['isVertex'],
+      vertexProjectId: params_['vertexProjectId'],
+      vertexLocation: params_['vertexLocation'],
+      proxyHost: params_['proxyHost'] ?? defaultProxyHost,
+      proxyPort: params_['proxyPort'] ?? defaultProxyPort,
+      proxyType: params_['proxyType'] ?? defaultProxyType,
+      proxyEnabled: params_['proxyEnabled'] ?? defaultProxyEnabled,
     );
   }
 }

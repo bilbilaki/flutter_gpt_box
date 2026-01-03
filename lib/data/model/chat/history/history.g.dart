@@ -7,6 +7,7 @@ part of 'history.dart';
 // **************************************************************************
 
 ChatHistory _$ChatHistoryFromJson(Map<String, dynamic> json) => ChatHistory(
+  lastResponseId: json['lastResponseId'] as String?,
   items: (json['items'] as List<dynamic>)
       .map((e) => ChatHistoryItem.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -15,14 +16,21 @@ ChatHistory _$ChatHistoryFromJson(Map<String, dynamic> json) => ChatHistory(
   settings: json['settings'] == null
       ? null
       : ChatSettings.fromJson(json['settings'] as Map<String, dynamic>),
+  isPinned: json['isPinned'] as bool?,
+  colorIndicator: json['colorIndicator'] as String?,
+  folderId: json['folderId'] as String?,
 );
 
 Map<String, dynamic> _$ChatHistoryToJson(ChatHistory instance) =>
     <String, dynamic>{
       'id': instance.id,
       'items': instance.items,
-      if (instance.name case final value?) 'name': value,
-      if (instance.settings case final value?) 'settings': value,
+      'name': ?instance.name,
+      'lastResponseId': ?instance.lastResponseId,
+      'settings': ?instance.settings,
+      'isPinned': ?instance.isPinned,
+      'colorIndicator': ?instance.colorIndicator,
+      'folderId': ?instance.folderId,
     };
 
 ChatHistoryItem _$ChatHistoryItemFromJson(Map<String, dynamic> json) =>
@@ -33,6 +41,7 @@ ChatHistoryItem _$ChatHistoryItemFromJson(Map<String, dynamic> json) =>
           .toList(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       id: json['id'] as String,
+      lastResponseId: json['lastResponseId'] as String?,
       toolCallId: json['toolCallId'] as String?,
       toolCalls: (json['toolCalls'] as List<dynamic>?)
           ?.map(
@@ -54,13 +63,14 @@ Map<String, dynamic> _$ChatHistoryItemToJson(ChatHistoryItem instance) =>
       'content': instance.content,
       'createdAt': instance.createdAt.toIso8601String(),
       'id': instance.id,
-      if (instance.toolCallId case final value?) 'toolCallId': value,
-      if (instance.toolCalls case final value?) 'toolCalls': value,
-      if (instance.reasoning case final value?) 'reasoning': value,
-      if (instance.inputTokens case final value?) 'inputTokens': value,
-      if (instance.outputTokens case final value?) 'outputTokens': value,
-      if (instance.totalTokens case final value?) 'totalTokens': value,
-      if (instance.nanobenana case final value?) 'nanobenana': value,
+      'toolCallId': ?instance.toolCallId,
+      'toolCalls': ?instance.toolCalls,
+      'reasoning': ?instance.reasoning,
+      'lastResponseId': ?instance.lastResponseId,
+      'inputTokens': ?instance.inputTokens,
+      'outputTokens': ?instance.outputTokens,
+      'totalTokens': ?instance.totalTokens,
+      'nanobenana': ?instance.nanobenana,
     };
 
 const _$ChatRoleEnumMap = {
@@ -68,9 +78,11 @@ const _$ChatRoleEnumMap = {
   ChatRole.assist: 'assist',
   ChatRole.system: 'system',
   ChatRole.tool: 'tool',
+  ChatRole.ask: 'ask',
 };
 
 ChatContent _$ChatContentFromJson(Map<String, dynamic> json) => ChatContent(
+  lastResponseId: json['lastResponseId'] as String?,
   type: $enumDecode(_$ChatContentTypeEnumMap, json['type']),
   raw: json['raw'] as String,
   id: json['id'] as String,
@@ -79,6 +91,7 @@ ChatContent _$ChatContentFromJson(Map<String, dynamic> json) => ChatContent(
 Map<String, dynamic> _$ChatContentToJson(ChatContent instance) =>
     <String, dynamic>{
       'type': _$ChatContentTypeEnumMap[instance.type]!,
+      'lastResponseId': ?instance.lastResponseId,
       'raw': instance.raw,
       'id': instance.id,
     };

@@ -13,7 +13,9 @@ List<T> fromJsonList<T>(List? json, T Function(Map<String, dynamic>) fromJson) {
 }
 
 Map<String, T> fromJsonMap<T>(
-    Map? json, T Function(Map<String, dynamic>) fromJson) {
+  Map? json,
+  T Function(Map<String, dynamic>) fromJson,
+) {
   final map = <String, T>{};
   if (json == null) {
     return map;

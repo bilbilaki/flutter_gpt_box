@@ -74,11 +74,11 @@ final class _ResPageState extends State<ResPage>
       //   ),
       _ResType.audio => const SizedBox(),
       _ResType.image => ImageCard(
-          key: ValueKey(entity.path),
-          imageUrl: entity.path,
-          heroTag: entity.path,
-          onRet: (p0) => _onImageRet(p0, entity, idx),
-        ),
+        key: ValueKey(entity.path),
+        imageUrl: entity.path,
+        heroTag: entity.path,
+        onRet: (p0) => _onImageRet(p0, entity, idx),
+      ),
     };
 
     return SlideTransitionX(
@@ -128,13 +128,9 @@ final class _ResPageState extends State<ResPage>
       await File(entity.path).delete();
       // Wait for hero anime
       await Future.delayed(_dur + Durations.medium1);
-      _listKey.currentState?.removeItem(
-        idx,
-        (_, anime) {
-          return _buildTile(idx, anime);
-        },
-        duration: _dur,
-      );
+      _listKey.currentState?.removeItem(idx, (_, anime) {
+        return _buildTile(idx, anime);
+      }, duration: _dur);
       await Future.delayed(_dur);
       _filesList.removeAt(idx);
     }
@@ -151,13 +147,12 @@ final class _ResPageState extends State<ResPage>
 
 enum _ResType {
   image,
-  audio,
-  ;
+  audio;
 
   Directory get dir => switch (this) {
-        audio => Directory(Paths.audio),
-        image => Directory(Paths.img),
-      };
+    audio => Directory(Paths.audio),
+    image => Directory(Paths.img),
+  };
 
   Future<List<FileSystemEntity>> get all async {
     final files = dir.list();
@@ -165,10 +160,11 @@ enum _ResType {
   }
 
   IconData get icon => switch (this) {
-        audio => Icons.audiotrack,
-        image => Icons.image,
-      };
+    audio => Icons.audiotrack,
+    image => Icons.image,
+  };
 
-  _ResType get next => _ResType
-      .values[(_ResType.values.indexOf(this) + 1) % _ResType.values.length];
+  _ResType get next =>
+      _ResType.values[(_ResType.values.indexOf(this) + 1) %
+          _ResType.values.length];
 }

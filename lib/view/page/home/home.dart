@@ -4,18 +4,19 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gpt_box/core/util/sync.dart';
+import 'package:gpt_box/core/util/file_type.dart';
 import 'package:gpt_box/core/util/url.dart';
-import 'package:gpt_box/data/model/canvas_result.dart';
 //import 'package:flutter_tiktoken/flutter_tiktoken.dart';
 import 'package:gpt_box/data/model/chat/history/share.dart';
 import 'package:gpt_box/core/util/chat_title.dart';
 import 'package:gpt_box/core/util/tool_func/tool.dart';
 import 'package:gpt_box/data/model/chat/config.dart';
+import 'package:gpt_box/data/model/chat/folder.dart';
 import 'package:gpt_box/data/model/chat/history/history.dart';
 import 'package:gpt_box/data/model/chat/history/view.dart';
 import 'package:gpt_box/data/model/chat/type.dart';
@@ -26,23 +27,27 @@ import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/data/store/dummy.dart';
 import 'package:gpt_box/data/store/setting.dart';
+import 'package:gpt_box/main.dart' show persistentCache;
+import 'package:gpt_box/view/loader/main.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
-import 'package:gpt_box/view/page/home/settings_drawer.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
-import 'package:gpt_box/view/translator/interfaces/chunker_translator.dart';
-import 'package:gpt_box/view/widget/canvas_free.dart';
-import 'package:gpt_box/view/widget/voice_assistant.dart';
+import 'package:gpt_box/view/widget/x_ai_search_fantasy.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:typed_data';
-
 import 'package:audioplayers/audioplayers.dart';
 import 'package:openai_dart/openai_dart.dart' as openai;
+import 'package:path_provider/path_provider.dart';
 import 'package:siri_wave/siri_wave.dart';
 // import 'package:image_picker/image_picker.dart';
 import 'package:openai_dart/openai_dart.dart' hide Image;
 import 'package:path/path.dart' as p;
 import 'package:record/record.dart';
-import 'package:screenshot/screenshot.dart';
+import 'package:uuid/uuid.dart';
+import 'package:pool/pool.dart';
+
+import 'package:http/http.dart' as http;
+
+import '../../widget/voice_assistant.dart';
 part '../../widget/audio.dart';
 part 'chat.dart';
 part 'history.dart';
@@ -54,13 +59,29 @@ part 'appbar.dart';
 part 'bottom/bottom.dart';
 part 'bottom/settings.dart';
 part 'bottom/picked_files.dart';
-part 'url_scheme.dart';
 part 'req.dart';
 part 'md_copy.dart';
 part 'trash.dart';
+part 'settings_drawer.dart';
+part 'bottom/chatmessage_translator.dart';
+part 'package:gpt_box/core/responses/responses_service.dart';
+part 'package:gpt_box/core/responses/responses_models.dart';
+part 'package:gpt_box/core/responses/web_search_helpers.dart';
+part 'package:gpt_box/core/responses/codex_local_shell.dart';
+part 'package:gpt_box/core/responses/chat_tool_call.dart';
 
+//part '../../widget/v1.dart';
 final aiSettings = AiSettings();
 
+// Global resource pool to limit concurrent heavy operations (file IO, base64, tool calls).
+// Size tuned conservatively; adjust based on profiling. Timeout omitted to avoid unintended failures.
+final Pool appResourcePool = Pool(8); // limit to 8 concurrent heavy tasks
+
+// Global key to access the Home Scaffold from places that are not descendants
+// of the Scaffold in the widget tree (e.g., bottomNavigationBar content).
+final GlobalKey<ScaffoldState> homeScaffoldKey = GlobalKey<ScaffoldState>();
+
+bool modelUseFilePath = false;
 const int kTtsSampleRate =
     24000; // OpenAI TTS default for pcm16. Adjust if your API returns a different rate.
 SettingStore get ss => SettingStore.instance;
@@ -144,7 +165,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 
   static void afterRestore() {
-    _allHistories = Stores.history.fetchAll();
+    allHistories = Stores.history.fetchAll();
+    _allFolders.value = Stores.folder.fetchAll();
     _historyRN.notify();
     _chatRN.notify();
     _switchChat();
@@ -184,6 +206,7 @@ class _HomePageState extends State<HomePage>
     return ExitConfirm(
       onPop: (_) => ExitConfirm.exitApp(),
       child: Scaffold(
+        key: homeScaffoldKey,
         appBar: _CustomAppBar(),
         endDrawer: AiSettingsDrawerHive(),
         endDrawerEnableOpenDragGesture: true,
@@ -195,7 +218,8 @@ class _HomePageState extends State<HomePage>
 
   @override
   FutureOr<void> afterFirstLayout(BuildContext context) {
-    _allHistories = Stores.history.fetchAll();
+    allHistories = Stores.history.fetchAll();
+    _allFolders.value = Stores.folder.fetchAll();
     _refreshTimeTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted) _timeRN.notify();
     });
@@ -303,3 +327,4 @@ final class _Body extends StatelessWidget {
     });
   }
 }
+

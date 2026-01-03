@@ -9,6 +9,19 @@ class _ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<_ChatPage>
     with AutomaticKeepAliveClientMixin {
+  final Map<int, String?> _translatedOverviews = {};
+  final Map<int, bool> _isTranslatingMap = {};
+  final _translator = MovieTvTranslator();
+  Future<void> _translateOverviewForEpisode(int key, String original) async {
+    setState(() => _isTranslatingMap[key] = true);
+    try {
+      final translated = await _translator.mainTreanslator(original);
+      setState(() => _translatedOverviews[key] = translated);
+    } finally {
+      setState(() => _isTranslatingMap[key] = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -72,9 +85,9 @@ class _ChatPageState extends State<_ChatPage>
         final item = _curChat?.items;
         if (item == null) return UIs.placeholder;
         final listView = ListView.builder(
-          key: Key(_curChatId.value), // Used for animation
+          key: Key(_curChatId.value),
           controller: _chatScrollCtrl,
-          padding: const EdgeInsets.all(7),
+          padding: const EdgeInsets.all(1),
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -93,10 +106,7 @@ class _ChatPageState extends State<_ChatPage>
                 : AxisDirection.down,
             child: child,
           ),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 77),
-            child: listView,
-          ),
+          child: listView,
         );
       },
     );
@@ -128,7 +138,6 @@ class _ChatPageState extends State<_ChatPage>
     }
 
     final title = switch (chatItem.role) {
-      // User & System msgs have no loading status
       ChatRole.user ||
       ChatRole.system => ChatRoleTitle(role: chatItem.role, loading: false),
       ChatRole.tool || ChatRole.assist => _loadingChatIds.listenVal((chats) {
@@ -136,35 +145,40 @@ class _ChatPageState extends State<_ChatPage>
         final isWorking = chats.contains(_curChatId.value) && isLast;
         return ChatRoleTitle(role: chatItem.role, loading: isWorking);
       }),
+
+      ChatRole.ask || ChatRole.assist => _loadingChatIds.listenVal((chats) {
+        final isLast = chatItems.length - 1 == idx;
+        final isWorking = chats.contains(_curChatId.value) && isLast;
+        return ChatRoleTitle(role: chatItem.role, loading: isWorking);
+      }),
     };
 
     final child = Padding(
-      padding: const EdgeInsets.only(top: 11, left: 11, right: 11, bottom: 2),
+      padding: const EdgeInsets.only(top: 8, left: 11, right: 11, bottom: 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           title,
-          UIs.height13,
+          const SizedBox(height: 6),
           ListenBuilder(
             listenable: node,
             builder: () {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Keep existing content rendering (text/images/etc.)
                   ChatHistoryContentView(
                     chatItem: chatItem,
                     postCallback: () {
                       setState(() {});
                     },
                   ),
-                  // Append audio players if any audio contents exist
+
                   _audioPlayersFor(chatItem),
                 ],
               );
             },
           ).paddingSymmetric(horizontal: 2),
-          UIs.height13,
+          const SizedBox(height: 6),
         ],
       ),
     );
@@ -212,23 +226,17 @@ class _ChatPageState extends State<_ChatPage>
     );
   }
 
-  // Treat both file paths and data URLs as audio
   bool looksLikeAudioDataUrl(String s) {
     final v = s.trim().toLowerCase();
-    return (v.contains('data:audio/') == true ||
-            v.contains('data:image/') == true)
-        ? true
-        : false;
+    return (v.contains('data:audio/') == true) ? true : false;
   }
 
   bool _isAudioContent(ChatContent c) {
-    // File path with audio extension
     if (c.type.isFile && isAudioPath(c.raw)) return true;
-    // Inline base64 audio data url
+
     if (c.type.isText && looksLikeAudioDataUrl(c.raw)) return true;
-    // Fallback: if content claims to be audio in your model (if any)
-    return c.type.isAudio; // uncomment if you have such a type
-    // return false;
+
+    return c.type.isAudio;
   }
 
   Widget _audioPlayersFor(ChatHistoryItem item) {
@@ -248,7 +256,6 @@ class _ChatPageState extends State<_ChatPage>
   }
 
   Widget audioTileFor(ChatContent c) {
-    // Case 1: file path stored in raw
     if (isAudioPath(c.raw)) {
       final f = File(c.raw);
       return FutureBuilder<Uint8List>(
@@ -265,16 +272,11 @@ class _ChatPageState extends State<_ChatPage>
             sampleRate: kTtsSampleRate,
             channels: 1,
           );
-          return AudioPlayerTile(
-            bytes: ensured,
-            file: f,
-            // autoPlay: true, // enable if you want first-time autoplay
-          );
+          return AudioPlayerTile(bytes: ensured, file: f);
         },
       );
     }
 
-    // Case 2: data URL like "data:audio/wav;base64,...." (or raw PCM16)
     if (c.type.isText && looksLikeAudioDataUrl(c.raw)) {
       try {
         final comma = c.raw.indexOf(',');
@@ -291,7 +293,6 @@ class _ChatPageState extends State<_ChatPage>
       }
     }
 
-    // Fallback: treat raw as base64 string if any
     try {
       final comma = c.raw.indexOf(',');
       final body = comma >= 0 ? c.raw.substring(comma + 1) : c.raw;
@@ -306,20 +307,6 @@ class _ChatPageState extends State<_ChatPage>
       return audioError('Unsupported audio payload');
     }
   }
-
-  // Case 2: data URL like "data:audio/wav;base64,...." (or raw PCM16)
-  //   } else if (v.contains('data:image/') == true) {
-  //     return Padding(
-  //       padding: const EdgeInsets.symmetric(vertical: 8.0),
-  //       child: ClipRRect(
-  //         //   borderRadius: theme.codeBlockRadius,
-  //         child: Base64ImageDisplay(fit: BoxFit.cover, base64String: c.raw,),
-  //       ),
-  //     );
-  //   }
-  //   // Fallback: return an empty widget if nothing matches
-  //   return const SizedBox.shrink();
-  // }
 
   Future<Uint8List> _readFileBytesSafe(File f) async {
     try {
@@ -365,6 +352,10 @@ class _ChatPageState extends State<_ChatPage>
     List<ChatHistoryItem> chatItems,
     ChatHistoryItem chatItem,
   ) {
+    final int key = chatItems.index(chatItem);
+
+    final String? translated = _translatedOverviews[key];
+
     final replayEnabled = chatItem.role.isUser;
     const size = 18.0;
     final color = context.theme.iconTheme.color?.withValues(alpha: 0.8);
@@ -509,22 +500,13 @@ extension on _ChatPageState {
   }
 }
 
-/// A widget that animates its child's visibility and size based on a boolean condition.
-///
-/// When [showContent] is true, the [child] fades in and expands.
-/// When [showContent] is false, the [child] fades out and collapses to a SizedBox.shrink().
 class AnimatedConditionalWidget extends StatefulWidget {
-  /// Whether the [child] should be shown.
-  /// Set to `true` to show content, `false` to hide.
   final bool showContent;
 
-  /// The widget to be animated in or out.
   final Widget child;
 
-  /// The duration of the animation.
   final Duration animationDuration;
 
-  /// Creates an [AnimatedConditionalWidget].
   const AnimatedConditionalWidget({
     super.key,
     required this.showContent,
@@ -551,7 +533,6 @@ class _AnimatedConditionalWidgetState extends State<AnimatedConditionalWidget>
       duration: widget.animationDuration,
     );
 
-    // Opacity animation: starts fading a bit earlier.
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -559,7 +540,6 @@ class _AnimatedConditionalWidgetState extends State<AnimatedConditionalWidget>
       ),
     );
 
-    // Size animation: starts expanding/collapsing a bit later.
     _sizeFactorAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -567,7 +547,6 @@ class _AnimatedConditionalWidgetState extends State<AnimatedConditionalWidget>
       ),
     );
 
-    // Initialize the state based on showContent
     if (widget.showContent) {
       _controller.forward();
     }
@@ -593,13 +572,9 @@ class _AnimatedConditionalWidgetState extends State<AnimatedConditionalWidget>
 
   @override
   Widget build(BuildContext context) {
-    // We use SizeTransition to animate the height.
-    // axisAlignment: -1.0 ensures the content collapses upwards (to the start of the axis).
-    // The child of SizeTransition will then be wrapped by FadeTransition for opacity.
     return SizeTransition(
       sizeFactor: _sizeFactorAnimation,
-      axisAlignment:
-          -1.0, // Aligns to the top when collapsing/expanding vertically.
+      axisAlignment: -1.0,
       child: FadeTransition(opacity: _opacityAnimation, child: widget.child),
     );
   }
@@ -618,7 +593,7 @@ class Base64Image extends StatelessWidget {
   final ImageRepeat repeat;
 
   const Base64Image({
-    Key? key,
+    super.key,
     required this.base64,
     this.width,
     this.height,
@@ -629,7 +604,7 @@ class Base64Image extends StatelessWidget {
     this.allowShrink = true,
     this.alignment = Alignment.center,
     this.repeat = ImageRepeat.noRepeat,
-  }) : super(key: key);
+  });
 
   Uint8List? _decodeBase64(String data) {
     try {
@@ -703,29 +678,4 @@ class AudioEvent extends ChatEvent {
 }
 
 final base64ImageRegex = RegExp(r'data:image\/\w+;base64,([A-Za-z0-9+/=]+)');
-final base64AudioRegex = RegExp(r'data:image\/\w+;base64,([A-Za-z0-9+/=]+)');
-
-// class ChatStreamTransformer
-//     extends StreamTransformerBase<String, ChatEvent> {
-//   @override
-//   Stream<ChatEvent> bind(StringBuffer stream) async* {
-//     final buffer = StringBuffer();
-
-//     await for (final chunk in stream) {
-//       buffer.write(chunk);
-
-//       final matches = base64ImageRegex.allMatches(buffer.toString());
-//       if (matches.isNotEmpty) {
-//         for (final match in matches) {
-//           final base64Data = match.group(1)!;
-//           final bytes = base64Decode(base64Data);
-//           yield ImageEvent(bytes);
-//         }
-//         // Remove matched content from buffer
-//         buffer.clear();
-//       } else {
-//         yield TextEvent(chunk);
-//       }
-//     }
-//   }
-// }
+final base64AudioRegex = RegExp(r'data:audio\/\w+;base64,([A-Za-z0-9+/=]+)');

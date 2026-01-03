@@ -5,12 +5,12 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_box/data/model/chat/history/history.dart';
 import 'package:gpt_box/view/page/home/home.dart';
-import 'package:gpt_box/view/widget/code.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:gpt_box/view/widget/image_base64_viewer.dart';
 import 'dart:convert';
 import 'package:flutter_markdown_latex/flutter_markdown_latex.dart';
-import 'package:before_after/before_after.dart';
+
+import '../../../../view/widget/code.dart';
 
 final class ChatRoleTitle extends StatelessWidget {
   final ChatRole role;

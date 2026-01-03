@@ -23,10 +23,7 @@ final class ApiBalanceState {
   final bool loading;
   final String? state;
 
-  const ApiBalanceState({
-    required this.loading,
-    this.state,
-  });
+  const ApiBalanceState({required this.loading, this.state});
 }
 
 enum ApiBalanceProvider {
@@ -35,8 +32,7 @@ enum ApiBalanceProvider {
   oneapi,
   openrouter,
   siliconflow,
-  avalai
-  ;
+  avalai;
 
   static ApiBalanceProvider? fromEndpoint(String value) {
     return switch (value) {
@@ -47,6 +43,7 @@ enum ApiBalanceProvider {
       _ when value.startsWith('https://openrouter.ai') => openrouter,
       _ when value.startsWith('https://api.siliconflow.cn') => siliconflow,
       _ when value.startsWith('https://api.avalai.org') => avalai,
+
       /// TODO: Change it to [oneapi] after correctly impl the [_refreshOneapi]
       _ => null,
     };
@@ -60,7 +57,6 @@ enum ApiBalanceProvider {
       openrouter => _refreshOpenrouter(),
       siliconflow => _refreshSiliconflow(),
       avalai => _refreshAvalAi(),
-
     };
   }
 
@@ -71,9 +67,7 @@ enum ApiBalanceProvider {
     final endpoint = 'https://openrouter.ai/api/v1/credits';
     final resp = await myDio.get(
       endpoint,
-      options: Options(headers: {
-        'Authorization': 'Bearer ${Cfg.current.key}',
-      }),
+      options: Options(headers: {'Authorization': 'Bearer ${Cfg.current.key}'}),
     );
     final data = (resp.data as Map<String, dynamic>)['data'];
     final usage = data['total_usage'] as num? ?? 0;
@@ -102,9 +96,7 @@ enum ApiBalanceProvider {
     const endpoint = 'https://api.deepseek.com/user/balance';
     final resp = await myDio.get(
       endpoint,
-      options: Options(headers: {
-        'Authorization': 'Bearer ${Cfg.current.key}',
-      }),
+      options: Options(headers: {'Authorization': 'Bearer ${Cfg.current.key}'}),
     );
     final data = resp.data as Map<String, dynamic>;
     final vals = <String>[];
@@ -153,25 +145,27 @@ enum ApiBalanceProvider {
     final quota = data['data']['quota'] as int? ?? 0;
     return '\$${(quota / 500000).toStringAsFixed(2)}';
   }
+
   Future<String> _refreshAvalAi() async {
     final resp = await myDio.get(
       'https://api.avalai.org/user/credit',
       options: Options(headers: {'Authorization': 'Bearer ${Cfg.current.key}'}),
     );
     final data = resp.data.toString();
-final vals = <String>[];
+    final vals = <String>[];
 
-final String remainingIrt = data;
-vals.add(remainingIrt);
+    final String remainingIrt = data;
+    vals.add(remainingIrt);
 
-// final String totalUnit = data.splitMapJoin('total_unit').toString();
-// vals.add('${totalUnit} Unit(s)');
+    // final String totalUnit = data.splitMapJoin('total_unit').toString();
+    // vals.add('${totalUnit} Unit(s)');
 
-// final String exchangeRate = data.splitMapJoin('exchange_rate').toString();
-// vals.add('Rate: ${exchangeRate}');
+    // final String exchangeRate = data.splitMapJoin('exchange_rate').toString();
+    // vals.add('Rate: ${exchangeRate}');
 
-return vals.join(' | ');
+    return vals.join(' | ');
   }
+
   /// ```json
   /// {
   ///  "code": 20000,

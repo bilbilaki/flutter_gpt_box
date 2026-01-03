@@ -4,7 +4,7 @@ typedef OaiHistoryItem = ChatCompletionMessage;
 typedef OaiContent = ChatCompletionMessageContentPart;
 
 extension ChatHistoryX on ChatHistory {
-  static ChatHistory get empty => ChatHistory.noid(items: []);
+  static ChatHistory get empty => ChatHistory.noid(lastResponseId: null,items: []);
 
   String get toMarkdown {
     final sb = StringBuffer();
@@ -16,15 +16,16 @@ extension ChatHistoryX on ChatHistory {
   }
 
   static ChatHistory get example => ChatHistory.noid(
-        name: l10n.help,
-        items: [
-          ChatHistoryItem.single(
-            role: ChatRole.system,
-            type: ChatContentType.text,
-            raw: l10n.initChatHelp(Urls.repoIssue, Urls.unilinkDoc),
-          ),
-        ],
-      );
+    lastResponseId: null,
+    name: l10n.help,
+    items: [
+      ChatHistoryItem.single(
+        role: ChatRole.system,
+        type: ChatContentType.text,
+        raw: l10n.initChatHelp(Urls.repoIssue, Urls.unilinkDoc),
+      ),
+    ],
+  );
 
   bool get isInitHelp =>
       name == l10n.help &&
@@ -37,12 +38,21 @@ extension ChatHistoryX on ChatHistory {
     List<ChatHistoryItem>? items,
     String? name,
     ChatSettings? settings,
+    bool? isPinned,
+    String? colorIndicator,
+    String? folderId,
+    String? l
   }) {
     return ChatHistory(
+      // Preserve lastResponseId unless an explicit override is provided.
+      lastResponseId: l ?? lastResponseId,
       id: id,
       items: items ?? this.items,
       name: name ?? this.name,
       settings: settings ?? this.settings,
+      isPinned: isPinned ?? this.isPinned,
+      colorIndicator: colorIndicator ?? this.colorIndicator,
+      folderId: folderId ?? this.folderId,
     );
   }
 
@@ -50,9 +60,7 @@ extension ChatHistoryX on ChatHistory {
 
   bool containsKeywords(List<String> keywords) {
     return items.any(
-      (e) => e.content.any(
-        (e) => keywords.any((e) => e.contains(e)),
-      ),
+      (e) => e.content.any((e) => keywords.any((k)=> e.raw.contains(k))),
     );
   }
 }
@@ -60,13 +68,15 @@ extension ChatHistoryX on ChatHistory {
 extension ChatHistoryItemX on ChatHistoryItem {
   String get toMarkdown {
     return content
-        .map((e) => switch (e.type) {
-              ChatContentType.text => e.raw,
-              ChatContentType.image => '![$id](${e.raw})',
-              ChatContentType.audio => '[$id](${e.raw})',
-              ChatContentType.file => '[$id](${e.raw})',
-          ChatContentType.nanobenana => '![$id](${e.raw})',
-            })
+        .map(
+          (e) => switch (e.type) {
+            ChatContentType.text => e.raw,
+            ChatContentType.image => '![$id](${e.raw})',
+            ChatContentType.audio => '[$id](${e.raw})',
+            ChatContentType.file => '[$id](${e.raw})',
+            ChatContentType.nanobenana => '![$id](${e.raw})',
+          },
+        )
         .join('\n');
   }
 
@@ -77,6 +87,12 @@ extension ChatHistoryItemX on ChatHistoryItem {
     @protected String? id,
     String? toolCallId,
     String? reasoning,
+    String? lastResponseId,
+    List<ChatCompletionMessageToolCall>? toolCalls,
+    int? inputTokens,
+    int? outputTokens,
+    int? totalTokens,
+    String? nanobenana,
   }) {
     return ChatHistoryItem(
       role: role ?? this.role,
@@ -84,7 +100,13 @@ extension ChatHistoryItemX on ChatHistoryItem {
       createdAt: createdAt ?? this.createdAt,
       id: id ?? this.id,
       toolCallId: toolCallId ?? this.toolCallId,
+      toolCalls: toolCalls ?? this.toolCalls,
       reasoning: reasoning ?? this.reasoning,
+      lastResponseId: lastResponseId ?? this.lastResponseId,
+      inputTokens: inputTokens ?? this.inputTokens,
+      outputTokens: outputTokens ?? this.outputTokens,
+      totalTokens: totalTokens ?? this.totalTokens,
+      nanobenana: nanobenana ?? this.nanobenana,
     );
   }
 
@@ -109,6 +131,11 @@ extension ChatHistoryItemX on ChatHistoryItem {
           toolCallId: toolCallId ?? '',
           content: content.map((e) => e.raw).join('\n'),
         );
+      case ChatRole.ask:
+        return ChatCompletionMessage.tool(
+          toolCallId: toolCallId ?? '',
+          content: content.map((e) => e.raw).join('\n'),
+        );
     }
   }
 }
@@ -129,7 +156,8 @@ extension ChatContentX on ChatContent {
         return OaiContent.text(text: raw);
       case ChatContentType.image:
         return OaiContent.image(
-            imageUrl: ChatCompletionMessageImageUrl(url: raw));
+          imageUrl: ChatCompletionMessageImageUrl(url: raw),
+        );
       case ChatContentType.file:
         final file = File(raw);
         final cachedMime = _cachedMimeMap[raw];
@@ -142,7 +170,8 @@ extension ChatContentX on ChatContent {
           final b64 = await _getBase64(file, mime);
           if (b64 != null) {
             return OaiContent.image(
-                imageUrl: ChatCompletionMessageImageUrl(url: b64));
+              imageUrl: ChatCompletionMessageImageUrl(url: b64),
+            );
           }
         }
         return OaiContent.text(text: raw);
@@ -151,15 +180,11 @@ extension ChatContentX on ChatContent {
     }
   }
 
-  ChatContent copyWith({
-    ChatContentType? type,
-    String? raw,
-    String? id,
-  }) {
+  ChatContent copyWith({ChatContentType? type, String? raw, String? id, String? lastResponseId}) {
     return ChatContent(
       type: type ?? this.type,
       raw: raw ?? this.raw,
-      id: id ?? this.id,
+      id: id ?? this.id, lastResponseId:lastResponseId??this.lastResponseId ,
     );
   }
 

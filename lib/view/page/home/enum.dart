@@ -2,8 +2,7 @@ part of 'home.dart';
 
 enum HomePageEnum {
   history,
-  chat,
-  ;
+  chat;
 
   static HomePageEnum fromIdx(int idx) => HomePageEnum.values[idx];
 
@@ -14,23 +13,23 @@ enum HomePageEnum {
     return switch ((this, _isDesktop.value)) {
       /// Find current chat in history list
       (HomePageEnum.history, _) || (_, true) => ValueListenableBuilder(
-          valueListenable: _locateHistoryBtn,
-          builder: (_, display, _) {
-            return AnimatedSwitcher(
-              duration: _durationShort,
-              transitionBuilder: (child, animation) =>
-                  ScaleTransition(scale: animation, child: child),
-              child: display
-                  ? FloatingActionButton(
-                      key: const Key('locate-history-btn'),
-                      onPressed: () => _gotoHistory(_curChatId.value),
-                      mini: true,
-                      child: const Icon(Icons.gps_fixed, size: 17),
-                    )
-                  : const SizedBox(key: Key('locate-history-btn-placeholder')),
-            );
-          },
-        ),
+        valueListenable: _locateHistoryBtn,
+        builder: (_, display, __) {
+          return AnimatedSwitcher(
+            duration: _durationShort,
+            transitionBuilder: (child, animation) =>
+                ScaleTransition(scale: animation, child: child),
+            child: display
+                ? FloatingActionButton(
+                    key: const Key('locate-history-btn'),
+                    onPressed: () => _gotoHistory(_curChatId.value),
+                    mini: true,
+                    child: const Icon(Icons.gps_fixed, size: 17),
+                  )
+                : const SizedBox(key: Key('locate-history-btn-placeholder')),
+          );
+        },
+      ),
       _ => UIs.placeholder,
     };
   }
@@ -55,12 +54,10 @@ enum HomePageEnum {
         tooltip: l10n.profile,
       ),
       IconButton(
-        onPressed: () => showSearch(
-          context: context,
-          delegate: _ChatSearchDelegate(),
-        ),
+        onPressed: () =>
+            showSearch(context: context, delegate: _ChatSearchDelegate()),
         icon: const Icon(Icons.search),
-      )
+      ),
     ];
 
     /// Put it here, or it's l10n string won't rebuild every time
@@ -76,14 +73,15 @@ enum HomePageEnum {
         continue;
       }
       items.insert(
-          0,
-          IconButton(
-            onPressed: () => Fns.throttle(() {
-              item.onTap();
-            }),
-            icon: Icon(item.icon),
-            tooltip: item.title,
-          ));
+        0,
+        IconButton(
+          onPressed: () => Fns.throttle(() {
+            item.onTap();
+          }),
+          icon: Icon(item.icon),
+          tooltip: item.title,
+        ),
+      );
     }
 
     return Row(children: items);

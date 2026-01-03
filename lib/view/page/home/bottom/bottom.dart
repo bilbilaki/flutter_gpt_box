@@ -18,14 +18,12 @@ final class _HomeBottomState extends State<_HomeBottom> {
     BoxShadow(color: Colors.white12, blurRadius: 3, offset: Offset(0, -0.5)),
   ];
 
-  // Hold-to-record runtime state
   bool _isRecording = false;
-  String? _recordingPath;
+ late Directory _recordingPath;
 
   @override
   void initState() {
     super.initState();
-    // Update token counter when user types
   }
 
   @override
@@ -33,36 +31,20 @@ final class _HomeBottomState extends State<_HomeBottom> {
     super.dispose();
   }
 
-  // void onTextChangedForTokens({String? modelText = ''}) {
-  //   final userText = inputCtrl.text;
-  //   // Only user text here; model text is added during streams (see token update hooks below)
-  //   // TokenCounter.updateFrom(userText: userText, modelText: '');
-  //   final u = userText;
-  //   final m = modelText ?? '';
-  //   String total;
-  //   total = u + m;
-
-  //   final encoding = tk.getEncoding('cl100k_base');
-  //   final xcounter = ss.currentTokenCount.get();
-  //  // _curPage.value == HomePageEnum.history;
-
-  //   final countr = encoding.encode(total).length;
-  //   ss.currentTokenCount.set(countr + xcounter);
-  //   // notifyListeners(); // Notify listeners that current token count has changed
-  // }
-
   Future<void> _startHoldRecord() async {
     if (_isRecording) return;
     if (!await _ensureRecordPermission()) {
       context.showSnackBar(l10n.emptyFields('Microphone permission'));
       return;
     }
-    final dir = await Directory.systemTemp.createTemp('rec_hold_');
-    _recordingPath = p.join(
-      dir.path,
-      'hold_${DateTime.now().millisecondsSinceEpoch}.wav',
-    );
-
+    final appdir = await getApplicationCacheDirectory();
+    _recordingPath= await Directory(
+          p.join(
+            appdir.path,
+            'rec_hold',
+            'record_${DateTime.now().millisecondsSinceEpoch}.wav',
+          ),
+    ).create();
     try {
       await _audioRecorder.start(
         const RecordConfig(
@@ -70,7 +52,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
           sampleRate: 16000,
           bitRate: 128000,
         ),
-        path: _recordingPath!,
+        path: _recordingPath.path,
       );
       setState(() => _isRecording = true);
     } catch (e) {
@@ -87,18 +69,23 @@ final class _HomeBottomState extends State<_HomeBottom> {
 
     if (cancel) return;
 
-    final path = _recordingPath;
-    _recordingPath = null;
-    if (path == null || !File(path).existsSync()) {
+    final path = _recordingPath.path;
+    if (!File(path).existsSync()) {
       context.showSnackBar('No audio captured');
+    
+
       return;
     }
 
-    // Route recorded audio: text + recorded audio -> stream textual answer
-    // This uses the existing voice input flow (VoiceJustInput) so it attaches the audio base64.
     final chatId = _curChatId.value;
-    final text = inputCtrl.text; // keep any current text
-    _onVoiceJustInput(context, chatId, text, [path]);
+    final text = inputCtrl.text;
+      final files = [File(path)];
+  if (files.isEmpty) return;
+  _filesPicked.value.addAll(files.map((e) => e.path).whereType<String>());
+  _filesPicked.notify();
+    _onCreateRequest(context, chatId);
+   // File(_recordingPath.path).deleteSync();
+   ////TODO thinking about how remove old files and implant result if find answer
   }
 
   @override
@@ -115,7 +102,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
     return Container(
       padding: isDesktop
           ? const EdgeInsets.only(left: 11, right: 11, top: 5, bottom: 17)
-          : const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+          : const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
         boxShadow: RNodes.dark.value ? _boxShadow : _boxShadowDark,
@@ -135,7 +122,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _PickedFilesPreview(), // now powered by AttachmentPreview adapter
+        _PickedFilesPreview(),
         _buildBottomFnsTwoRows(),
         _buildTextField(),
         SizedBox(height: MediaQuery.paddingOf(context).bottom),
@@ -143,145 +130,76 @@ final class _HomeBottomState extends State<_HomeBottom> {
     );
   }
 
-Widget _buildBottomFnsTwoRows() {
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          IconButton(
-            onPressed: () {
-              _switchChat(_newChat().id);
-              _historyRN.notify();
-              if (_curPage.value == HomePageEnum.history) {
-                _switchPage(HomePageEnum.chat);
-              }
-            },
-            icon: const Icon(MingCute.add_fill, size: 17),
-          ),
-          IconButton(
-            onPressed: () => _onTapDeleteChat(_curChatId.value, context),
-            icon: const Icon(Icons.delete, size: 19),
-          ),
-          _buildFileBtn(),
-          _buildSettingsBtn(), // existing chat settings
-          _buildOpenSettingsDrawerBtn(), // new: open Hive-backed drawer
-          _buildRight(),
-        ],
-      ),
-      const SizedBox(height: 6),
-      Row(
-        children: [
-          IconButton(
-            tooltip: 'Canvas',
-            icon: const Icon(Icons.edit_note_rounded, size: 19),
-            onPressed: () => _openCanvas(context, inputCtrl),
-          ),
-          IconButton(
-            tooltip: 'Translate Files',
-            icon: const Icon(Icons.translate, size: 19),
-            onPressed: () => _navigateToAnotherPage(context),
-          ),
-          IconButton(
-            tooltip: 'Voice mode',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => VoiceAssistantScreen(
-                    controller: VoiceSessionController(
-                      chatId: _curChatId.value,
-                      onUserPartial: (p) {
-                        // Optional: Show floating live transcript
-                      },
-                      onTtsChunk: (pcm) {
-                        // Hook for UI animations; playback handling can be implemented by you if needed
-                      },
-                    ),
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.record_voice_over, size: 20),
-          ),
-          const Spacer(),
-          UIs.width7,
-          _buildSwitchChatType(),
-          UIs.width7,
-        ],
-      ),
-    ],
-  );
-}
-
-Widget _buildBottomFnsScrollable() {
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    padding: const EdgeInsets.symmetric(horizontal: 8),
-    child: Row(
+  Widget _buildBottomFnsTwoRows() {
+    return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IconButton(
-          onPressed: () {
-            _switchChat(_newChat().id);
-            _historyRN.notify();
-            if (_curPage.value == HomePageEnum.history) {
-              _switchPage(HomePageEnum.chat);
-            }
-          },
-          icon: const Icon(MingCute.add_fill, size: 17),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                _switchChat(_newChat().id);
+                _historyRN.notify();
+                if (_curPage.value == HomePageEnum.history) {
+                  _switchPage(HomePageEnum.chat);
+                }
+              },
+              icon: const Icon(MingCute.add_fill, size: 17),
+            ),
+            IconButton(
+              onPressed: () => _onTapDeleteChat(_curChatId.value, context),
+              icon: const Icon(Icons.delete, size: 19),
+            ),
+            _buildFileBtn(),
+            _buildSettingsBtn(),
+            _buildOpenSettingsDrawerBtn(),
+            _buildRight(),
+            _buildFileSearchBtn(),
+            _buildVoiceChatBtn(),
+          ],
         ),
-        IconButton(
-          onPressed: () => _onTapDeleteChat(_curChatId.value, context),
-          icon: const Icon(Icons.delete, size: 19),
+        const SizedBox(height: 1),
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'X.Search',
+              icon: const Icon(Icons.one_x_mobiledata, size: 19),
+              onPressed: () => _navigateToPage(context, XAiSearchFantasy()),
+            ),
+
+            const Spacer(),
+            UIs.width7,
+            _buildSwitchChatType(),
+            UIs.width7,
+          ],
         ),
-        _buildFileBtn(),
-        _buildSettingsBtn(), // existing chat settings
-        _buildOpenSettingsDrawerBtn(), // new: open Hive-backed drawer
-        _buildRight(),
-        IconButton(
-          tooltip: 'Canvas',
-          icon: const Icon(Icons.edit_note_rounded, size: 19),
-          onPressed: () => _openCanvas(context, inputCtrl),
-        ),
-        IconButton(
-          tooltip: 'Translate Files',
-          icon: const Icon(Icons.translate, size: 19),
-          onPressed: () => _navigateToAnotherPage(context),
-        ),
-        IconButton(
-          tooltip: 'Voice mode',
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => VoiceAssistantScreen(
-                  controller: VoiceSessionController(
-                    chatId: _curChatId.value,
-                    onUserPartial: (p) {
-                      // Optional: Show floating live transcript
-                    },
-                    onTtsChunk: (pcm) {
-                      // Hook for UI animations; playback handling can be implemented by you if needed
-                    },
-                  ),
-                ),
-              ),
-            );
-          },
-          icon: const Icon(Icons.record_voice_over, size: 20),
-        ),
-        const SizedBox(width: 12),
-        UIs.width7,
-        _buildSwitchChatType(),
-        UIs.width7,
       ],
-    ),
-  );
-}
+    );
+  }
+
   Widget _buildSettingsBtn() {
     return IconButton(
       onPressed: _onTapSetting,
-      icon: const Icon(Icons.settings, size: 19),
+      icon: Icon(Icons.settings, size: 17),
+    );
+  }
+
+  Widget _buildFileSearchBtn() {
+    return IconButton(
+      onPressed: () async {
+        await _navigateToPage(context, GitLoaderApp());
+      },
+      icon: Icon(Icons.search, size: 17),
+    );
+  }
+
+  Widget _buildVoiceChatBtn() {
+    return IconButton(
+      onPressed: () async {
+        await _navigateToPage(context, VoiceAssistantScreen());
+      },
+      icon: Icon(Icons.voice_chat, size: 17),
     );
   }
 
@@ -289,15 +207,14 @@ Widget _buildBottomFnsScrollable() {
     return IconButton(
       tooltip: 'Open Settings Drawer',
       onPressed: () {
-        // Requires Scaffold with endDrawer: AiSettingsDrawerHive(...)
-        final scaffold = Scaffold.maybeOf(context);
-        if (scaffold == null) {
+        final state = homeScaffoldKey.currentState ?? Scaffold.maybeOf(context);
+        if (state == null) {
           context.showSnackBar('No Scaffold found for opening drawer.');
           return;
         }
-        scaffold.openEndDrawer();
+        state.openEndDrawer();
       },
-      icon: const Icon(Icons.tune, size: 19),
+      icon: Icon(Icons.tune, size: 17),
     );
   }
 
@@ -331,25 +248,6 @@ Widget _buildBottomFnsScrollable() {
   Widget _buildTextField() {
     return Column(
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'Tokens: ${ss.currentTokenCount.get()}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-
         Input(
           controller: inputCtrl,
           label: l10n.message,
@@ -357,8 +255,7 @@ Widget _buildBottomFnsScrollable() {
           action: TextInputAction.newline,
           maxLines: 5,
           minLines: 1,
-          type: TextInputType
-              .multiline, // Keep this, or 'Wrap' will not work on iOS
+          type: TextInputType.multiline,
           autoCorrect: true,
           suggestion: true,
           onTap: () async {
@@ -399,10 +296,10 @@ Widget _buildBottomFnsScrollable() {
                   icon: const Icon(Icons.stop),
                 );
               }
-              // Dynamic: if no text -> hold-to-record button; else -> send button
+
               return ListenableBuilder(
                 listenable: inputCtrl,
-                builder: (_, __) {
+                builder: (_, _) {
                   final hasText = inputCtrl.text.trim().isNotEmpty;
                   return Row(
                     mainAxisSize: MainAxisSize.min,
@@ -418,12 +315,12 @@ Widget _buildBottomFnsScrollable() {
                         Btn.icon(
                           onTap: () =>
                               _onCreateRequest(context, _curChatId.value),
-                          icon: const Icon(Icons.send, size: 19),
+                          icon: Icon(Icons.send, size: 18),
                         ),
                       IconButton(
                         tooltip: 'Prompt generator',
                         onPressed: _openPromptGenerator,
-                        icon: const Icon(Icons.auto_awesome, size: 20),
+                        icon: Icon(Icons.auto_awesome, size: 18),
                       ),
                     ],
                   );
@@ -476,18 +373,8 @@ Widget _buildBottomFnsScrollable() {
     });
   }
 
-  Future<void> _openCanvas(
-    BuildContext context,
-    TextEditingController inputCtrl,
-  ) async {
-    final result = await Navigator.of(
-      context,
-    ).push<CanvasResult>(_fadeRoute(const FreeCanvasPage()));
-    if (result == null) return;
-
-    for (final p in result.parts) {
-      inputCtrl.text = p.text;
-    }
+  Future<void> _navigateToPage(BuildContext context, Widget page) async {
+    await Navigator.of(context).push<void>(_fadeRoute(page));
   }
 
   Route<T> _fadeRoute<T>(Widget page) {
@@ -504,12 +391,6 @@ Widget _buildBottomFnsScrollable() {
       opaque: true,
       fullscreenDialog: true,
     );
-  }
-
-  Future<void> _navigateToAnotherPage(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      _fadeRoute( ChunkerInterfaceand()),
-    ); // Replace AnotherPage with your desired page
   }
 
   Widget _buildRoundRect(Widget child) {
@@ -535,17 +416,8 @@ Widget _buildBottomFnsScrollable() {
 
   Widget _buildRight() {
     return _curPage.listenVal((val) {
-      return val == HomePageEnum.chat ? _buildChatMeta() : _buildSyncChats();
+      return val == HomePageEnum.chat ? _buildChatMeta() : _buildChatMeta();
     });
-  }
-
-  Widget _buildSyncChats() {
-    final rs = BakSync.instance.remoteStorage;
-    if (rs == null) return UIs.placeholder;
-    return IconButton(
-      onPressed: _onTapSyncChats,
-      icon: const Icon(Icons.sync, size: 19),
-    );
   }
 
   Widget _buildChatMeta() {
@@ -575,10 +447,6 @@ $jsonRaw
       child: SingleChildScrollView(child: SimpleMarkdown(data: md)),
       actions: Btnx.oks,
     );
-  }
-
-  void _onTapSyncChats() async {
-    await BakSync.instance.sync();
   }
 }
 

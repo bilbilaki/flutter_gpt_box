@@ -4,19 +4,19 @@
 
 import 'package:hive_ce/hive.dart';
 import 'package:gpt_box/hive/hive_adapters.dart';
-import 'package:gpt_box/view/translator/configuration/translator_config.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
     registerAdapter(ChatConfigAdapter());
     registerAdapter(ChatContentAdapter());
     registerAdapter(ChatContentTypeAdapter());
+    registerAdapter(ChatFolderAdapter());
     registerAdapter(ChatHistoryAdapter());
     registerAdapter(ChatHistoryItemAdapter());
     registerAdapter(ChatRoleAdapter());
     registerAdapter(ChatSettingsAdapter());
     registerAdapter(ChatTypeAdapter());
-    registerAdapter(TranslatorConfigAdapter());
+    registerAdapter(DownloadItemAdapter());
   }
 }
 
@@ -25,11 +25,12 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
     registerAdapter(ChatConfigAdapter());
     registerAdapter(ChatContentAdapter());
     registerAdapter(ChatContentTypeAdapter());
+    registerAdapter(ChatFolderAdapter());
     registerAdapter(ChatHistoryAdapter());
     registerAdapter(ChatHistoryItemAdapter());
     registerAdapter(ChatRoleAdapter());
     registerAdapter(ChatSettingsAdapter());
     registerAdapter(ChatTypeAdapter());
-    registerAdapter(TranslatorConfigAdapter());
+    registerAdapter(DownloadItemAdapter());
   }
 }

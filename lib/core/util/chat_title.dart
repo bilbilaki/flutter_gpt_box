@@ -7,11 +7,12 @@ abstract final class ChatTitleUtil {
 
   static final claudeEndReg = RegExp(r'\[\]\(ID:\d+\|UUID:\S+');
 
-//   static const toolPrompt = '''
-// Only returns the toolCall part.
-// If there is no toolCall section returned, return the message as empty.''';
+  //   static const toolPrompt = '''
+  // Only returns the toolCall part.
+  // If there is no toolCall section returned, return the message as empty.''';
 
-  static const titlePrompt = '''
+  static const titlePrompt =
+      '''
 Generate a title for the user content behind `$userCotentLocator` with requirements: 
 0. you are generating a title, not a content.
 1. the language of the generated title should be the same as the user content
@@ -53,11 +54,7 @@ $userCotentLocator''';
     final models = Cfg.models.value;
     if (models == null || models.isEmpty) return null;
 
-    const preferedModels = [
-      'gemini-2.5-flash-lite',
-      'gpt-4.1-nano',
-      
-    ];
+    const preferedModels = ['gemini-2.5-flash-lite', 'gpt-4.1-nano'];
 
     for (final pModel in preferedModels) {
       for (final model in models) {

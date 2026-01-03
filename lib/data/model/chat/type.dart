@@ -10,8 +10,7 @@ enum ChatType {
   audio,
   voice,
   voicejustin,
-  autoenglishtrans
-  ;
+  autoenglishtrans;
 
   static ChatType? fromString(String? val) {
     return ChatType.values.firstWhereOrNull((e) => e.name == val);
@@ -26,22 +25,22 @@ enum ChatType {
   }
 
   IconData get icon => switch (this) {
-        text => Icons.text_fields,
-        img => Icons.image,
-        audio => Icons.record_voice_over,
-        voice => Icons.mic,
-        voicejustin => Icons.mic,
-        autoenglishtrans => Icons.translate
-      };
+    text => Icons.text_fields,
+    img => Icons.image,
+    audio => Icons.record_voice_over,
+    voice => Icons.mic,
+    voicejustin => Icons.mic,
+    autoenglishtrans => Icons.translate,
+  };
 
   String get name => switch (this) {
-        text => l10n.text,
-        img => l10n.image,
-        audio => l10n.audio,
-        voice => 'voice Chat',
-        voicejustin => 'voice Input',
-        autoenglishtrans => 'Auto Translate'
-      };
+    text => l10n.text,
+    img => l10n.image,
+    audio => l10n.audio,
+    voice => 'voice Chat',
+    voicejustin => 'voice Input',
+    autoenglishtrans => 'Auto Translate',
+  };
 
   static List<PopupMenuItem<ChatType>> get btns => ChatType.values
       .map(
@@ -61,22 +60,22 @@ enum ChatType {
 
 extension ChatTypeOfCfg on ChatType {
   String? get model => switch (this) {
-        ChatType.text => Cfg.current.model,
-        ChatType.img => Cfg.current.imgModel,
-        ChatType.audio=> 'gpt-4o-mini-audio-preview',
-        ChatType.voice=> Cfg.current.model,
-        ChatType.voicejustin => Cfg.current.model,
-        ChatType.autoenglishtrans => Cfg.current.model
-      };
+    ChatType.text => Cfg.current.model,
+    ChatType.img => Cfg.current.imgModel,
+    ChatType.audio => 'gpt-4o-mini-audio-preview',
+    ChatType.voice => Cfg.current.model,
+    ChatType.voicejustin => Cfg.current.model,
+    ChatType.autoenglishtrans => Cfg.current.model,
+  };
 
   ChatConfig copyWithModel(String model, {ChatConfig? cfg}) {
     cfg ??= Cfg.current;
     return switch (this) {
       ChatType.text => cfg.copyWith(model: model),
       ChatType.img => cfg.copyWith(imgModel: model),
-      ChatType.audio=> cfg.copyWith(model: 'gpt-4o-mini-audio-preview'),
-      ChatType.voice=> cfg.copyWith(model: model),
-      ChatType.voicejustin=> cfg.copyWith(model: model),
+      ChatType.audio => cfg.copyWith(model: 'gpt-4o-mini-audio-preview'),
+      ChatType.voice => cfg.copyWith(model: model),
+      ChatType.voicejustin => cfg.copyWith(model: model),
       ChatType.autoenglishtrans => cfg.copyWith(model: model),
     };
   }

@@ -29,8 +29,9 @@ class HistoryStore extends HiveStore {
     final sorted = map.entries.toList();
     sorted.sort(
       (a, b) =>
-          b.value.items.lastOrNull?.createdAt
-              .compareTo(a.value.items.lastOrNull?.createdAt ?? now) ??
+          b.value.items.lastOrNull?.createdAt.compareTo(
+            a.value.items.lastOrNull?.createdAt ?? now,
+          ) ??
           1,
     );
     return Map.fromEntries(sorted);

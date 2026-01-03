@@ -21,17 +21,37 @@ final class ChatHistory {
   @JsonKey(includeIfNull: false)
   final String? name;
   @JsonKey(includeIfNull: false)
+  final String? lastResponseId;
+
+  @JsonKey(includeIfNull: false)
   final ChatSettings? settings;
+  @JsonKey(includeIfNull: false)
+  final bool? isPinned;
+  @JsonKey(includeIfNull: false)
+  final String? colorIndicator;
+  @JsonKey(includeIfNull: false)
+  final String? folderId;
 
   ChatHistory({
+    required this.lastResponseId,
     required this.items,
     required this.id,
     this.name,
     this.settings,
+    this.isPinned,
+    this.colorIndicator,
+    this.folderId,
   });
 
-  ChatHistory.noid({required this.items, this.name, this.settings})
-    : id = shortid.generate();
+  ChatHistory.noid({
+   required this.lastResponseId,
+    required this.items,
+    this.name,
+    this.settings,
+    this.isPinned,
+    this.colorIndicator,
+    this.folderId,
+  }) : id = shortid.generate();
 
   factory ChatHistory.fromJson(Map<String, dynamic> json) =>
       _$ChatHistoryFromJson(json);
@@ -67,6 +87,8 @@ final class ChatHistoryItem {
   @JsonKey(includeIfNull: false)
   String? reasoning;
   @JsonKey(includeIfNull: false)
+  final String? lastResponseId;
+  @JsonKey(includeIfNull: false)
   final int? inputTokens; // New parameter for input token count
   @JsonKey(includeIfNull: false)
   final int? outputTokens; // New parameter for output token count
@@ -79,6 +101,7 @@ final class ChatHistoryItem {
     required this.content,
     required this.createdAt,
     required this.id,
+    this.lastResponseId,
     this.toolCallId,
     this.toolCalls,
     this.reasoning,
@@ -92,6 +115,7 @@ final class ChatHistoryItem {
     required this.role,
     required this.content,
     this.toolCallId,
+    this.lastResponseId,
     this.toolCalls,
     this.reasoning,
     this.inputTokens, // Initialize new parameter
@@ -108,12 +132,15 @@ final class ChatHistoryItem {
     DateTime? createdAt,
     this.toolCallId,
     this.toolCalls,
+    this.lastResponseId,
     this.reasoning,
     this.inputTokens, // Initialize new parameter
     this.outputTokens, // Initialize new parameter
     this.totalTokens,
-    this.nanobenana // Initialize new parameter
-  }) : content = [ChatContent.noid(type: type, raw: raw)],
+    this.nanobenana, // Initialize new parameter
+  }) : content = [
+         ChatContent.noid(lastResponseId: lastResponseId, type: type, raw: raw),
+       ],
        createdAt = createdAt ?? DateTime.now(),
        id = shortid.generate();
 
@@ -147,28 +174,36 @@ enum ChatContentType {
 @JsonSerializable()
 final class ChatContent with EquatableMixin {
   final ChatContentType type;
-
-  final String raw;
+  @JsonKey(includeIfNull: false)
+   String? lastResponseId;
+  late final String raw;
   @Default('')
   final String id;
 
-  ChatContent({required this.type, required this.raw, required String id})
-    : id = id.isEmpty ? shortid.generate() : id;
-  ChatContent.noid({required this.type, required this.raw})
-    : id = shortid.generate();
-  ChatContent.text(this.raw)
+  ChatContent({
+    required this.lastResponseId,
+    required this.type,
+    required this.raw,
+    required String id,
+  }) : id = id.isEmpty ? shortid.generate() : id;
+  ChatContent.noid({
+    required this.lastResponseId,
+    required this.type,
+    required this.raw,
+  }) : id = shortid.generate();
+  ChatContent.text(this.raw, {this.lastResponseId})
     : type = ChatContentType.text,
       id = shortid.generate();
-  ChatContent.audio(this.raw)
+  ChatContent.audio(this.raw, {this.lastResponseId})
     : type = ChatContentType.audio,
       id = shortid.generate();
-  ChatContent.image(this.raw)
+  ChatContent.image(this.raw, {this.lastResponseId})
     : type = ChatContentType.image,
       id = shortid.generate();
-  ChatContent.file(this.raw)
+  ChatContent.file(this.raw, {this.lastResponseId})
     : type = ChatContentType.file,
       id = shortid.generate();
-  ChatContent.nanobenana(this.raw)
+  ChatContent.nanobenana(this.raw, {this.lastResponseId})
     : type = ChatContentType.nanobenana,
       id = shortid.generate();
 
@@ -178,7 +213,7 @@ final class ChatContent with EquatableMixin {
   Map<String, dynamic> toJson() => _$ChatContentToJson(this);
 
   @override
-  List<Object?> get props => [type, raw, id];
+  List<Object?> get props => [lastResponseId, type, raw, id];
 }
 
 @JsonEnum()
@@ -186,18 +221,21 @@ enum ChatRole {
   user,
   assist,
   system,
-  tool;
+  tool,
+  ask;
 
   bool get isUser => this == user;
   bool get isAssist => this == assist;
   bool get isSystem => this == system;
   bool get isTool => this == tool;
+  bool get isAsk => this == ask;
 
   String get localized => switch (this) {
     user => Stores.setting.avatar.get(),
     assist => '🤖',
     system => '⚙️',
     tool => '🛠️',
+    ask => '🤖🛠️',
   };
 
   Color get color {
@@ -206,8 +244,9 @@ enum ChatRole {
       assist => UIs.primaryColor.withBlue(233),
       system => UIs.primaryColor.withRed(233),
       tool => UIs.primaryColor.withBlue(33),
+      ask => UIs.primaryColor.withBlue(300),
     };
-    return c.withValues(alpha: 0.5);
+    return c.withValues(alpha: 0.6);
   }
 
   static ChatRole? fromString(String? val) => switch (val) {

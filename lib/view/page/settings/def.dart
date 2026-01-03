@@ -14,28 +14,30 @@ enum SettingsTab {
   app,
   profile,
   tool,
-  bak,
   res,
-  about,
-  ;
+  bak,
+
+  about;
 
   String get i18n => switch (this) {
-        app => libL10n.app,
-        profile => l10n.profile,
-        tool => l10n.tool,
-        bak => libL10n.backup,
-        res => l10n.res,
-        about => libL10n.about,
-      };
+    app => libL10n.app,
+    profile => l10n.profile,
+    tool => l10n.tool,
+    res => l10n.res,
+    bak => libL10n.backup,
+
+    about => libL10n.about,
+  };
 
   Widget get page => switch (this) {
-        app => const AppSettingsPage(),
-        profile => const ProfilePage(),
-        tool => const McpPage(),
-        bak => const BackupPage(),
-        res => const ResPage(),
-        about => const AboutPage(),
-      };
+    app => const AppSettingsPage(),
+    profile => const ProfilePage(),
+    tool => const McpPage(),
+    res => const ResPage(),
+    bak => const BackupPage(),
+
+    about => const AboutPage(),
+  };
 
   static List<Tab> get tabs => values.map((e) => Tab(text: e.i18n)).toList();
 

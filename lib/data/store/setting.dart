@@ -33,7 +33,7 @@ class SettingStore extends HiveStore {
   // late final calcTokenLen = property('calcTokenLen', true);
 
   late final replay = propertyDefault('replay', false);
-
+  late final response = propertyDefault('response', false);
   late final hideTitleBar = propertyDefault('hideTitleBar', false);
 
   /// If it is false, delete without asking.
@@ -75,7 +75,7 @@ class SettingStore extends HiveStore {
     'groundingWithSearchEnabled',
     false,
   );
-  late final urlContextEnabled = propertyDefault('urlContextEnabled', false);
+  late final urlContextEnabled = propertyDefault('urlContextEnabled', true);
   late final safetySettingsEnabled = propertyDefault(
     'safetySettingsEnabled',
     false,

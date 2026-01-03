@@ -18,11 +18,7 @@ final class AudioPlayStatus {
     this.playing = false,
   });
 
-  AudioPlayStatus copyWith({
-    int? played,
-    int? total,
-    bool? playing,
-  }) {
+  AudioPlayStatus copyWith({int? played, int? total, bool? playing}) {
     return AudioPlayStatus(
       id: id,
       played: played ?? this.played,

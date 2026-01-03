@@ -36,19 +36,17 @@ abstract final class GPTNextConvertor {
       if (dateEnum == null) {
         continue;
       }
-      items.add(ChatHistoryItem(
-        role: roleEnum,
-        content: [contentEnum],
-        createdAt: dateEnum,
-        id: shortid.generate(),
-      ));
+      items.add(
+        ChatHistoryItem(
+          role: roleEnum,
+          content: [contentEnum],
+          createdAt: dateEnum,
+          id: shortid.generate(),
+        ),
+      );
     }
 
-    return ChatHistory(
-      id: shortid.generate(),
-      name: topic,
-      items: items,
-    );
+    return ChatHistory(lastResponseId: null,id: shortid.generate(), name: topic, items: items);
   }
 
   /// 2023/11/6 15:57:22
@@ -78,23 +76,17 @@ abstract final class GPTNextConvertor {
           'modelConfig': {
             'model': String model,
             'historyMessageCount': int historyMessageCount,
-          }
+          },
         },
       } = map;
-      cfg = cfg.copyWith(
-        model: model,
-        historyLen: historyMessageCount,
-      );
+      cfg = cfg.copyWith(model: model, historyLen: historyMessageCount);
     } catch (e) {
       // ignore
     }
 
     try {
       final {
-        'access-control': {
-          'openaiUrl': String url,
-          'openaiApiKey': String key,
-        },
+        'access-control': {'openaiUrl': String url, 'openaiApiKey': String key},
       } = map;
       cfg = cfg.copyWith(url: url, key: key);
     } catch (e) {

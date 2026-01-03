@@ -32,17 +32,34 @@ abstract class BackupV2 with _$BackupV2 implements Mergeable {
     required Map<String, Object?> trashes,
   }) = _BackupV2;
 
-  factory BackupV2.fromJson(Map<String, dynamic> json) => _$BackupV2FromJson(json);
+  factory BackupV2.fromJson(Map<String, dynamic> json) =>
+      _$BackupV2FromJson(json);
 
   @override
   Future<void> merge({bool force = false}) async {
     Loggers.app.info('Merging...');
 
     // Merge each store
-    await Mergeable.mergeStore(backupData: cfgs, store: Stores.config, force: force);
-    await Mergeable.mergeStore(backupData: tools, store: Stores.mcp, force: force);
-    await Mergeable.mergeStore(backupData: histories, store: Stores.history, force: force);
-    await Mergeable.mergeStore(backupData: trashes, store: Stores.trash, force: force);
+    await Mergeable.mergeStore(
+      backupData: cfgs,
+      store: Stores.config,
+      force: force,
+    );
+    await Mergeable.mergeStore(
+      backupData: tools,
+      store: Stores.mcp,
+      force: force,
+    );
+    await Mergeable.mergeStore(
+      backupData: histories,
+      store: Stores.history,
+      force: force,
+    );
+    await Mergeable.mergeStore(
+      backupData: trashes,
+      store: Stores.trash,
+      force: force,
+    );
 
     // Reload providers and notify listeners
     Provider.reload();

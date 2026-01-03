@@ -5,10 +5,7 @@ import 'package:openai_dart/openai_dart.dart';
 class PromptGeneratorDialog extends StatefulWidget {
   final ValueChanged<String> onPromptGenerated;
 
-  const PromptGeneratorDialog({
-    super.key,
-    required this.onPromptGenerated,
-  });
+  const PromptGeneratorDialog({super.key, required this.onPromptGenerated});
 
   @override
   State<PromptGeneratorDialog> createState() => _PromptGeneratorDialogState();
@@ -54,14 +51,19 @@ class _PromptGeneratorDialogState extends State<PromptGeneratorDialog> {
               onPressed: _isLoading ? null : _generate,
               icon: _isLoading
                   ? const SizedBox(
-                      width: 20, height: 20, child: CircularProgressIndicator())
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(),
+                    )
                   : const Icon(Icons.auto_awesome),
               label: const Text('Generate'),
             ),
             if (_generatedPrompt.isNotEmpty) ...[
               const Divider(height: 32),
-              Text('Generated Prompt:',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Generated Prompt:',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -71,7 +73,7 @@ class _PromptGeneratorDialogState extends State<PromptGeneratorDialog> {
                 ),
                 child: SelectableText(_generatedPrompt),
               ),
-            ]
+            ],
           ],
         ),
       ),
@@ -80,7 +82,8 @@ class _PromptGeneratorDialogState extends State<PromptGeneratorDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Close'),
         ),
-        if (_generatedPrompt.isNotEmpty && !_generatedPrompt.startsWith('Error'))
+        if (_generatedPrompt.isNotEmpty &&
+            !_generatedPrompt.startsWith('Error'))
           TextButton(
             onPressed: () {
               widget.onPromptGenerated(_generatedPrompt);
@@ -105,7 +108,9 @@ Future<String> generatePromptFromTopic(String topic) async {
             'you are prompt generator model that gets user input , give that details fix grammers , based on just input text and returning just ready to use prompt.'
             'Keep it concise but complete; include role, objectives, constraints, input format, and desired output.',
       ),
-      ChatCompletionUserMessage(content: ChatCompletionUserMessageContent.string('Topic: $topic')),
+      ChatCompletionUserMessage(
+        content: ChatCompletionUserMessageContent.string('Topic: $topic'),
+      ),
     ],
   );
   final resp = await Cfg.client.createChatCompletion(request: req);

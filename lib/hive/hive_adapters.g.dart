@@ -21,6 +21,7 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
       content: (fields[1] as List).cast<ChatContent>(),
       createdAt: fields[2] as DateTime,
       id: fields[3] as String,
+      lastResponseId: fields[11] as String?,
       toolCallId: fields[4] as String?,
       toolCalls: (fields[5] as List?)?.cast<ChatCompletionMessageToolCall>(),
       reasoning: fields[6] as String?,
@@ -34,7 +35,7 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
   @override
   void write(BinaryWriter writer, ChatHistoryItem obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.role)
       ..writeByte(1)
@@ -56,7 +57,9 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
       ..writeByte(9)
       ..write(obj.totalTokens)
       ..writeByte(10)
-      ..write(obj.nanobenana);
+      ..write(obj.nanobenana)
+      ..writeByte(11)
+      ..write(obj.lastResponseId);
   }
 
   @override
@@ -130,6 +133,7 @@ class ChatContentAdapter extends TypeAdapter<ChatContent> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ChatContent(
+      lastResponseId: fields[3] as String?,
       type: fields[0] as ChatContentType,
       raw: fields[1] as String,
       id: fields[2] as String,
@@ -139,13 +143,15 @@ class ChatContentAdapter extends TypeAdapter<ChatContent> {
   @override
   void write(BinaryWriter writer, ChatContent obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.type)
       ..writeByte(1)
       ..write(obj.raw)
       ..writeByte(2)
-      ..write(obj.id);
+      ..write(obj.id)
+      ..writeByte(3)
+      ..write(obj.lastResponseId);
   }
 
   @override
@@ -174,6 +180,8 @@ class ChatRoleAdapter extends TypeAdapter<ChatRole> {
         return ChatRole.system;
       case 3:
         return ChatRole.tool;
+      case 4:
+        return ChatRole.ask;
       default:
         return ChatRole.user;
     }
@@ -190,6 +198,8 @@ class ChatRoleAdapter extends TypeAdapter<ChatRole> {
         writer.writeByte(2);
       case ChatRole.tool:
         writer.writeByte(3);
+      case ChatRole.ask:
+        writer.writeByte(4);
     }
   }
 
@@ -215,17 +225,21 @@ class ChatHistoryAdapter extends TypeAdapter<ChatHistory> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ChatHistory(
+      lastResponseId: fields[10] as String?,
       items: (fields[1] as List).cast<ChatHistoryItem>(),
       id: fields[0] as String,
       name: fields[2] as String?,
       settings: fields[6] as ChatSettings?,
+      isPinned: fields[7] as bool?,
+      colorIndicator: fields[8] as String?,
+      folderId: fields[9] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatHistory obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -233,7 +247,15 @@ class ChatHistoryAdapter extends TypeAdapter<ChatHistory> {
       ..writeByte(2)
       ..write(obj.name)
       ..writeByte(6)
-      ..write(obj.settings);
+      ..write(obj.settings)
+      ..writeByte(7)
+      ..write(obj.isPinned)
+      ..writeByte(8)
+      ..write(obj.colorIndicator)
+      ..writeByte(9)
+      ..write(obj.folderId)
+      ..writeByte(10)
+      ..write(obj.lastResponseId);
   }
 
   @override
@@ -258,54 +280,96 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ChatConfig(
-      prompt: fields[0] == null ? '' : fields[0] as String,
-      url: fields[1] == null
+      prompt: fields[25] == null ? '' : fields[25] as String,
+      url: fields[26] == null
           ? 'https://api.openai.com/v1'
-          : fields[1] as String,
-      key: fields[2] == null ? '' : fields[2] as String,
-      model: fields[3] == null ? '' : fields[3] as String,
-      historyLen: fields[7] == null ? 7 : (fields[7] as num).toInt(),
-      id: fields[8] == null ? 'defaultId' : fields[8] as String,
-      name: fields[9] == null ? '' : fields[9] as String,
-      genTitlePrompt: fields[14] as String?,
-      genTitleModel: fields[15] as String?,
-      imgModel: fields[16] as String?,
-      file: fields[17] as String?,
-      image: fields[18] as String?,
-      audio: fields[19] as String?,
+          : fields[26] as String,
+      key: fields[27] == null ? '' : fields[27] as String,
+      model: fields[28] == null ? '' : fields[28] as String,
+      historyLen: fields[29] == null ? 7 : (fields[29] as num).toInt(),
+      id: fields[30] == null ? 'defaultId' : fields[30] as String,
+      name: fields[31] == null ? '' : fields[31] as String,
+      lastResponseId: fields[47] as String?,
+      genTitlePrompt: fields[32] as String?,
+      genTitleModel: fields[33] as String?,
+      imgModel: fields[34] as String?,
+      audioModel: fields[35] as String?,
+      tskrModel: fields[36] as String?,
+      altrModel: fields[37] as String?,
+      wrkrModel: fields[38] as String?,
+      trnscrbModel: fields[39] as String?,
+      defaultTranslateLanguage: fields[40] as String?,
+      file: fields[41] as String?,
+      image: fields[42] as String?,
+      audio: fields[43] as String?,
+      isVertex: fields[44] as bool?,
+      vertexProjectId: fields[45] as String?,
+      vertexLocation: fields[46] as String?,
+      proxyHost: fields[48] == null ? '' : fields[48] as String,
+      proxyPort: fields[49] == null ? 0 : (fields[49] as num).toInt(),
+      proxyType: fields[50] == null ? 'http' : fields[50] as String,
+      proxyEnabled: fields[51] == null ? false : fields[51] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(13)
-      ..writeByte(0)
+      ..writeByte(27)
+      ..writeByte(25)
       ..write(obj.prompt)
-      ..writeByte(1)
+      ..writeByte(26)
       ..write(obj.url)
-      ..writeByte(2)
+      ..writeByte(27)
       ..write(obj.key)
-      ..writeByte(3)
+      ..writeByte(28)
       ..write(obj.model)
-      ..writeByte(7)
+      ..writeByte(29)
       ..write(obj.historyLen)
-      ..writeByte(8)
+      ..writeByte(30)
       ..write(obj.id)
-      ..writeByte(9)
+      ..writeByte(31)
       ..write(obj.name)
-      ..writeByte(14)
+      ..writeByte(32)
       ..write(obj.genTitlePrompt)
-      ..writeByte(15)
+      ..writeByte(33)
       ..write(obj.genTitleModel)
-      ..writeByte(16)
+      ..writeByte(34)
       ..write(obj.imgModel)
-      ..writeByte(17)
+      ..writeByte(35)
+      ..write(obj.audioModel)
+      ..writeByte(36)
+      ..write(obj.tskrModel)
+      ..writeByte(37)
+      ..write(obj.altrModel)
+      ..writeByte(38)
+      ..write(obj.wrkrModel)
+      ..writeByte(39)
+      ..write(obj.trnscrbModel)
+      ..writeByte(40)
+      ..write(obj.defaultTranslateLanguage)
+      ..writeByte(41)
       ..write(obj.file)
-      ..writeByte(18)
+      ..writeByte(42)
       ..write(obj.image)
-      ..writeByte(19)
-      ..write(obj.audio);
+      ..writeByte(43)
+      ..write(obj.audio)
+      ..writeByte(44)
+      ..write(obj.isVertex)
+      ..writeByte(45)
+      ..write(obj.vertexProjectId)
+      ..writeByte(46)
+      ..write(obj.vertexLocation)
+      ..writeByte(47)
+      ..write(obj.lastResponseId)
+      ..writeByte(48)
+      ..write(obj.proxyHost)
+      ..writeByte(49)
+      ..write(obj.proxyPort)
+      ..writeByte(50)
+      ..write(obj.proxyType)
+      ..writeByte(51)
+      ..write(obj.proxyEnabled);
   }
 
   @override
@@ -408,6 +472,125 @@ class ChatSettingsAdapter extends TypeAdapter<ChatSettings> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ChatSettingsAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class DownloadItemAdapter extends TypeAdapter<DownloadItem> {
+  @override
+  final typeId = 20;
+
+  @override
+  DownloadItem read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return DownloadItem(
+      taskId: fields[0] as String,
+      url: fields[1] as String?,
+      filename: fields[2] as String?,
+      savedPath: fields[3] as String?,
+      status: fields[4] as DownloadUiStatus?,
+      progress: (fields[5] as num?)?.toDouble(),
+      expectedFileSize: (fields[6] as num?)?.toInt(),
+      networkSpeedBytesPerSec: (fields[7] as num?)?.toDouble(),
+      timeRemainingSeconds: (fields[8] as num?)?.toInt(),
+      group: fields[9] as String?,
+      openAfterComplete: fields[10] as bool?,
+      createdAt: fields[11] as DateTime?,
+      finishedAt: fields[12] as DateTime?,
+      displayName: fields[13] as String?,
+      metaData: fields[14] as String?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, DownloadItem obj) {
+    writer
+      ..writeByte(15)
+      ..writeByte(0)
+      ..write(obj.taskId)
+      ..writeByte(1)
+      ..write(obj.url)
+      ..writeByte(2)
+      ..write(obj.filename)
+      ..writeByte(3)
+      ..write(obj.savedPath)
+      ..writeByte(4)
+      ..write(obj.status)
+      ..writeByte(5)
+      ..write(obj.progress)
+      ..writeByte(6)
+      ..write(obj.expectedFileSize)
+      ..writeByte(7)
+      ..write(obj.networkSpeedBytesPerSec)
+      ..writeByte(8)
+      ..write(obj.timeRemainingSeconds)
+      ..writeByte(9)
+      ..write(obj.group)
+      ..writeByte(10)
+      ..write(obj.openAfterComplete)
+      ..writeByte(11)
+      ..write(obj.createdAt)
+      ..writeByte(12)
+      ..write(obj.finishedAt)
+      ..writeByte(13)
+      ..write(obj.displayName)
+      ..writeByte(14)
+      ..write(obj.metaData);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DownloadItemAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class ChatFolderAdapter extends TypeAdapter<ChatFolder> {
+  @override
+  final typeId = 21;
+
+  @override
+  ChatFolder read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return ChatFolder(
+      id: fields[0] as String,
+      name: fields[1] as String,
+      colorIndicator: fields[2] as String?,
+      isExpanded: fields[3] as bool?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, ChatFolder obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.name)
+      ..writeByte(2)
+      ..write(obj.colorIndicator)
+      ..writeByte(3)
+      ..write(obj.isExpanded);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatFolderAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

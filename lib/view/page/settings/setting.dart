@@ -15,6 +15,8 @@ import 'package:gpt_box/data/res/url.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/generated/l10n/l10n.dart';
 import 'package:gpt_box/view/page/backup/view.dart';
+import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
+import 'package:gpt_box/view/page/home/home.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:shortid/shortid.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -42,9 +44,10 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage>
     with SingleTickerProviderStateMixin {
   late final _tabCtrl = TabController(
-      length: SettingsTab.values.length,
-      vsync: this,
-      initialIndex: widget.args?.tabIndex.index ?? 0);
+    length: SettingsTab.values.length,
+    vsync: this,
+    initialIndex: widget.args?.tabIndex.index ?? 0,
+  );
 
   @override
   void dispose() {
@@ -99,7 +102,7 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     return MultiList(
       children: [
         [const CenterGreyTitle('App'), _buildApp()],
-        [CenterGreyTitle(l10n.chat), _buildAppChat()]
+        [CenterGreyTitle(l10n.chat), _buildAppChat()],
       ],
     );
   }
@@ -107,9 +110,11 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   Widget _buildApp() {
     final children = [
       _buildLocale(),
-      _buildColorSeed(),
+      // _buildColorSeed(),
       _buildThemeMode(),
-      _buildCheckUpdate(),
+      _buildResponseTitle(),
+
+      // _buildCheckUpdate(),
       _buildAppMore(),
     ];
     return Column(children: children.map((e) => e.cardx).toList());
@@ -119,12 +124,12 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     final children = [
       _buildUserName(),
       if (isMobile) _buildScrollSwitchChat(),
-      //_buildFontSize(),
+      // _buildFontSize(),
       _buildGenTitle(),
       _buildAutoScrollBottom(),
       _buildSoftWrap(),
       //_buildCalcTokenLen(),
-      //_buildReplay(),
+      // _buildReplay(),
       _buildMoreMore(),
     ];
     return Column(children: children.map((e) => e.cardx).toList());
@@ -133,7 +138,7 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   Widget _buildThemeMode() {
     return ValueListenableBuilder(
       valueListenable: _setStore.themeMode.listenable(),
-      builder: (_, val, _) => ListTile(
+      builder: (_, val, __) => ListTile(
         leading: const Icon(Icons.sunny),
         title: Text(l10n.themeMode),
         onTap: () async {
@@ -151,53 +156,45 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
             RNodes.app.notify(delay: true);
           }
         },
-        trailing: Text(
-          ThemeMode.values[val].name,
-          style: UIs.text13Grey,
-        ),
+        trailing: Text(ThemeMode.values[val].name, style: UIs.text13Grey),
       ),
     );
   }
 
-  Widget _buildColorSeed() {
-    return ValueListenableBuilder(
-      valueListenable: _setStore.themeColorSeed.listenable(),
-      builder: (_, val, _) {
-        final primaryColor = Color(val);
-        return ListTile(
-          leading: const Icon(Icons.colorize),
-          title: Text(l10n.themeColorSeed),
-          trailing: ClipOval(
-            child: Container(color: primaryColor, height: 27, width: 27),
-          ),
-          onTap: () async {
-            var color = primaryColor;
-            await context.showRoundDialog(
-              title: libL10n.select,
-              child: ColorPicker(
-                color: primaryColor,
-                onColorChanged: (c) => color = c,
-              ),
-              actions: Btn.ok(onTap: () {
-                _onSaveColor(color);
-                context.pop();
-              }).toList,
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _onSaveColor(Color c) {
-    _setStore.themeColorSeed.put(c.value255);
-    RNodes.app.notify(delay: true);
-  }
+  // Widget _buildColorSeed() {
+  //   return ValueListenableBuilder(
+  //     valueListenable: _setStore.themeColorSeed.listenable(),
+  //     builder: (_, val, _) {
+  //       final primaryColor = Color(val);
+  //       return ListTile(
+  //         leading: const Icon(Icons.colorize),
+  //         title: Text(l10n.themeColorSeed),
+  //         trailing: ClipOval(
+  //           child: Container(color: primaryColor, height: 27, width: 27),
+  //         ),
+  //         onTap: () async {
+  //           var color = primaryColor;
+  //           await context.showRoundDialog(
+  //             title: libL10n.select,
+  //             child: ColorPicker(
+  //               color: primaryColor,
+  //               onColorChanged: (c) => color = c,
+  //             ),
+  //             actions: Btn.ok(onTap: () {
+  //               _onSaveColor(color);
+  //               context.pop();
+  //             }).toList,
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _buildLocale() {
     return ValueListenableBuilder(
       valueListenable: _setStore.locale.listenable(),
-      builder: (_, val, _) => ListTile(
+      builder: (_, val, __) => ListTile(
         leading: const Icon(MingCute.translate_2_line),
         title: Text(libL10n.language),
         trailing: Text(
@@ -220,64 +217,29 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     );
   }
 
-  Widget _buildCheckUpdate() {
-    return ListTile(
-      leading: const Icon(Icons.update),
-      title: Text(l10n.autoCheckUpdate),
-      subtitle: ValueListenableBuilder(
-        valueListenable: AppUpdateIface.newestBuild,
-        builder: (_, val, _) {
-          final text = switch (val) {
-            null => '${l10n.current} v${BuildData.build}, ${l10n.clickToCheck}',
-            > BuildData.build => libL10n.versionHasUpdate(val),
-            _ => libL10n.versionUpdated(BuildData.build),
-          };
-          return Text(text, style: UIs.textGrey);
-        },
-      ),
-      onTap: () => Fns.throttle(
-        () => AppUpdateIface.doUpdate(
-          url: Urls.appUpdateCfg,
-          context: context,
-          build: BuildData.build,
-        ),
-      ),
-      trailing: StoreSwitch(prop: _setStore.autoCheckUpdate),
-    );
-  }
-
-  // Widget _buildFontSize() {
-  //   return ValueListenableBuilder(
-  //     valueListenable: _store.fontSize.listenable(),
-  //     builder: (_, val, __) => ListTile(
-  //       leading: const Icon(Icons.text_fields),
-  //       title: Text(l10n.fontSize),
-  //       trailing: Text(
-  //         val.toString(),
-  //         style: UIs.text13Grey,
-  //       ),
-  //       subtitle: Text(l10n.fontSizeSettingTip, style: UIs.text13Grey),
-  //       onTap: () async {
-  //         final ctrl = TextEditingController(text: val.toString());
-  //         final result = await context.showRoundDialog<String>(
-  //           title: l10n.fontSize,
-  //           child: Input(
-  //             icon: Icons.text_fields,
-  //             controller: ctrl,
-  //             hint: '12',
-  //             type: const TextInputType.numberWithOptions(decimal: true),
-  //           ),
-  //           actions: Btns.oks(onTap: () => context.pop(ctrl.text)),
-  //         );
-  //         if (result == null) return;
-  //         final newVal = double.tryParse(result);
-  //         if (newVal == null) {
-  //           context.showSnackBar('Invalid number: $result');
-  //           return;
-  //         }
-  //         _store.fontSize.put(newVal);
+  // Widget _buildCheckUpdate() {
+  //   return ListTile(
+  //     leading: const Icon(Icons.update),
+  //     title: Text(l10n.autoCheckUpdate),
+  //     subtitle: ValueListenableBuilder(
+  //       valueListenable: AppUpdateIface.newestBuild,
+  //       builder: (_, val, _) {
+  //         final text = switch (val) {
+  //           null => '${l10n.current} v${BuildData.build}, ${l10n.clickToCheck}',
+  //           > BuildData.build => libL10n.versionHasUpdate(val),
+  //           _ => libL10n.versionUpdated(BuildData.build),
+  //         };
+  //         return Text(text, style: UIs.textGrey);
   //       },
   //     ),
+  //     onTap: () => Fns.throttle(
+  //       () => AppUpdateIface.doUpdate(
+  //         url: Urls.appUpdateCfg,
+  //         context: context,
+  //         build: BuildData.build,
+  //       ),
+  //     ),
+  //     trailing: StoreSwitch(prop: _setStore.autoCheckUpdate),
   //   );
   // }
 
@@ -289,14 +251,19 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     );
   }
 
+  Widget _buildResponseTitle() {
+    return ListTile(
+      leading: const Icon(Icons.auto_awesome, size: 21),
+      title: Text("Using Response API?"),
+      trailing: StoreSwitch(prop: _setStore.response),
+    );
+  }
+
   Widget _buildAutoScrollBottom() {
     return ExpandTile(
       leading: const Icon(Icons.keyboard_arrow_down),
       title: Text(l10n.autoScrollBottom),
-      children: [
-        _buildScrollBottomOnMsg(),
-        _buildScrollAfterSwitch(),
-      ],
+      children: [_buildScrollBottomOnMsg(), _buildScrollAfterSwitch()],
     );
   }
 
@@ -331,22 +298,11 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   //   );
   // }
 
-  // Widget _buildReplay() {
-  //   return ListTile(
-  //     leading: const Icon(Icons.replay),
-  //     title: Text(l10n.replay),
-  //     trailing: StoreSwitch(prop: _store.replay),
-  //   );
-  // }
-
   Widget _buildAppMore() {
     return ExpandTile(
       leading: const Icon(MingCute.more_3_fill),
       title: Text(l10n.more),
-      children: [
-        _buildJoinBeta(),
-        if (isDesktop) _buildHideTitleBar(),
-      ],
+      children: [_buildJoinBeta(), if (isDesktop) _buildHideTitleBar()],
     );
   }
 
@@ -478,7 +434,9 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     return ListTile(
       leading: const Icon(Icons.delete),
       title: TipText(
-          l10n.emptyTrash, '${l10n.emptyTrashTip}\n${l10n.needRestart}'),
+        l10n.emptyTrash,
+        '${l10n.emptyTrashTip}\n${l10n.needRestart}',
+      ),
       onTap: () {
         context.showRoundDialog(
           title: l10n.emptyTrash,
@@ -491,9 +449,9 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
           actions: Btn.ok(onTap: () => onSave(_autoDelTrashCtrl.text)).toList,
         );
       },
-      trailing: _setStore.trashDays
-          .listenable()
-          .listenVal((days) => Text('$days ${libL10n.day}')),
+      trailing: _setStore.trashDays.listenable().listenVal(
+        (days) => Text('$days ${libL10n.day}'),
+      ),
     );
   }
 }

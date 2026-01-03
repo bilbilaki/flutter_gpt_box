@@ -8,18 +8,11 @@ class AboutPage extends StatelessWidget {
     return Scaffold(
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 17),
-        children: [
-          _buildUniLinks(),
-          _buildLicense(context),
-          _buildInfo(),
-        ],
+        children: [_buildUniLinks(), _buildLicense(context), _buildInfo()],
       ),
       bottomSheet: const Padding(
         padding: EdgeInsets.symmetric(vertical: 3, horizontal: 13),
-        child: Text(
-          'GPT Box v${BuildData.build}',
-          textAlign: TextAlign.center,
-        ),
+        child: Text('GPT Box v${BuildData.build}', textAlign: TextAlign.center),
       ),
     );
   }
@@ -40,7 +33,8 @@ class AboutPage extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(17),
         child: SimpleMarkdown(
-          data: '''
+          data:
+              '''
 ${GithubId.markdownStr}
 
 

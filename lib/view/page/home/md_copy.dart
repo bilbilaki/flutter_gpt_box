@@ -13,10 +13,7 @@ final class _MarkdownCopyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: Text(l10n.raw),
-        centerTitle: false,
-      ),
+      appBar: CustomAppBar(title: Text(l10n.raw), centerTitle: false),
       body: FutureWidget(
         future: compute((e) => e.toMarkdown, args),
         error: (e, s) => SimpleMarkdown(data: '$e\n\n$s'),
@@ -28,10 +25,7 @@ final class _MarkdownCopyPage extends StatelessWidget {
   Widget _buildBody(String? val) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 13),
-      child: SelectableText(
-        val ?? 'null',
-        autofocus: true,
-      ),
+      child: SelectableText(val ?? 'null', autofocus: true),
     );
   }
 }

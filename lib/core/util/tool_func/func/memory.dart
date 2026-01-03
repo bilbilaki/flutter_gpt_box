@@ -4,24 +4,28 @@ final class TfMemory extends ToolFunc {
   static const instance = TfMemory._();
 
   const TfMemory._()
-      : super(
-          name: 'memory',
-          parametersSchema: const {
-            'type': 'object',
-            'properties': {
-              'memory': {
-                'type': 'string',
-                'description': 'What to memorise, will be persisted in db.',
-              },
+    : super(
+        name: 'memory',
+        parametersSchema: const {
+          'type': 'object',
+          'properties': {
+            'memory': {
+              'type': 'string',
+              'description':
+                  'The text or information to store persistently in the database (e.g., "User\'s favorite color is blue" or "Key project deadline: Dec 15"). Keep it concise and relevant. Always confirm the exact details with the user before storing to ensure accuracy and consent.',
             },
           },
-        );
+          // Note: Only one memory item per call; for multiple, invoke sequentially
+        },
+      );
 
   @override
   String get description => '''
-If users want to memorise something, you(AI models) should call this function.
-Only call this func if users explicitly ask to memorise something.''';
+Use this tool to store user-specified information persistently when they explicitly request it (e.g., "Remember that my API key is abc123" or "Memorize this note for later"). Do not call unsolicited—only save what the user wants to recall later in conversations. The tool persists the memory in a database, making it available across sessions for reference (e.g., to inform future responses like "Based on your memorized preference...").
+Responses confirm storage (e.g., "Saved successfully") with a unique ID if needed for retrieval. Use memorized info ethically to enhance personalization without over-relying on it.
 
+
+Focus on user-driven persistence—enhance conversations without intruding.''';
   @override
   String get l10nName => l10n.memory;
 
