@@ -155,6 +155,7 @@ enum PkgSource {
   go,
   dart,
   python, // Added Python
+  rust,
 }
 
 class PackageModel {
@@ -163,6 +164,16 @@ class PackageModel {
   final String synopsis;
   final String info; // Composite info string
   final PkgSource source;
+  final String? host;
+  final String? owner;
+  final String? repo;
+  final int? imports;
+  final String? version;
+  final String? published;
+  final String? license;
+  final String? command;
+  final List<String> alerts;
+  final List<String> subPackages;
   final Map<String, String> meta;
 
   PackageModel({
@@ -171,6 +182,16 @@ class PackageModel {
     required this.synopsis,
     required this.info,
     required this.source,
+    this.host,
+    this.owner,
+    this.repo,
+    this.imports,
+    this.version,
+    this.published,
+    this.license,
+    this.command,
+    this.alerts = const [],
+    this.subPackages = const [],
     this.meta = const {},
   });
 }
@@ -246,13 +267,7 @@ class _SkeletonLine extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 // 2. SEARCH PAGE
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// 2. SEARCH PAGE
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-// 2. SEARCH PAGE
-// ---------------------------------------------------------------------------
+
 class GoPackageSearchPage extends StatefulWidget {
   const GoPackageSearchPage({super.key});
 
@@ -288,6 +303,8 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
         await _searchPubDev(q);
       } else if (_currentSource == PkgSource.python) {
         await _searchPyPi(q);
+      } else if (_currentSource == PkgSource.rust) {
+        await _searchCratesIo(q);
       }
     } catch (e) {
       _showSnack('Error: $e');
@@ -312,15 +329,70 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
 
       final name = linkTag.text.trim();
       final link = linkTag.attributes['href'] ?? '';
+      final relativePath = link.replaceFirst(RegExp(r'^/'), '');
+      final pathParts = relativePath.split('/');
+      final host = pathParts.isNotEmpty ? pathParts.first : null;
+      final owner = pathParts.length > 1 ? pathParts[1] : null;
+      final repo = pathParts.length > 2 ? pathParts[2] : null;
       final parentBox = headerDiv.parent;
 
       String desc = '';
       String infoText = '';
+      String? version;
+      String? published;
+      String? license;
+      int? importedBy;
+      String? command;
+      List<String> alerts = [];
+      List<String> subPackages = [];
 
       if (parentBox != null) {
         desc = parentBox.find('p', class_: 'SearchSnippet-synopsis')?.text.trim() ?? '';
-        infoText = parentBox.find('div', class_: 'SearchSnippet-infoLabel')
-                ?.getText().replaceAll(RegExp(r'\s+'), ' ').trim() ?? '';
+        infoText = parentBox
+                .find('div', class_: 'SearchSnippet-infoLabel')
+                ?.getText()
+                .replaceAll(RegExp(r'\s+'), ' ')
+                .trim() ??
+            '';
+
+        // Extract imported-by count
+        final importedMatch = RegExp(r'Imported by\s+([\d,]+)').firstMatch(infoText);
+        if (importedMatch != null) {
+          importedBy = int.tryParse(importedMatch.group(1)!.replaceAll(',', ''));
+        }
+
+        // Extract version and published date (version ... (date))
+        final versionMatch = RegExp(r'(v[\w\.\-\+]+)').firstMatch(infoText);
+        if (versionMatch != null) version = versionMatch.group(1);
+        final dateMatch = RegExp(r'\(([^)]+)\)').firstMatch(infoText);
+        if (dateMatch != null) published = dateMatch.group(1);
+
+        // Extract license
+        final licenseMatch = RegExp(r'License\s+([^\s]+)').firstMatch(infoText);
+        if (licenseMatch != null) license = licenseMatch.group(1);
+
+        // Chips: vulnerabilities / commands
+        final chipDivs = parentBox.findAll('div');
+        for (final chip in chipDivs) {
+          final cls = chip.attributes['class'] ?? '';
+          if (cls.contains('go-Chip--alert')) {
+            final text = chip.text.trim();
+            if (text.isNotEmpty) alerts.add(text);
+          } else if (cls.contains('go-Chip--inverted')) {
+            final text = chip.text.trim();
+            if (text.isNotEmpty) command = text;
+          }
+        }
+
+        // Sub packages (other packages row)
+        final subDiv = parentBox.find('div', class_: 'SearchSnippet-sub');
+        if (subDiv != null) {
+          final links = subDiv.findAll('a');
+          for (final a in links) {
+            final txt = a.text.trim();
+            if (txt.isNotEmpty) subPackages.add(txt);
+          }
+        }
       }
 
       foundPackages.add(PackageModel(
@@ -329,6 +401,16 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
         synopsis: desc,
         info: infoText,
         source: PkgSource.go,
+        host: host,
+        owner: owner,
+        repo: repo,
+        imports: importedBy,
+        version: version,
+        published: published,
+        license: license,
+        command: command,
+        alerts: alerts,
+        subPackages: subPackages,
       ));
     }
     setState(() => _packages = foundPackages);
@@ -421,6 +503,79 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
     setState(() => _packages = foundPackages);
   }
 
+  // --- RUST (CRATES.IO) SEARCH LOGIC ---
+  Future<void> _searchCratesIo(String q) async {
+    final url = Uri.parse('https://crates.io/search?q=$q');
+    final response = await http.get(url);
+    if (response.statusCode != 200) throw 'Network error: ${response.statusCode}';
+
+    final soup = BeautifulSoup(response.body);
+    final items = soup.findAll('li').where((li) {
+      final cls = li.attributes['class'] ?? '';
+      return cls.contains('crate-row');
+    }).toList();
+
+    final List<PackageModel> crates = [];
+
+    Bs4Element? _firstTagWithClass(Bs4Element root, String tag, String key) {
+      for (final el in root.findAll(tag)) {
+        final cls = el.attributes['class'] ?? '';
+        if (cls.contains(key)) return el;
+      }
+      return null;
+    }
+
+    for (final item in items) {
+      final row = item;
+      final nameTag = _firstTagWithClass(row, 'a', 'name');
+      final versionTag = _firstTagWithClass(row, 'span', 'version');
+      final descTag = _firstTagWithClass(row, 'div', 'description');
+
+      final name = nameTag?.text.trim() ?? 'Unknown';
+      final link = nameTag?.attributes['href'] ?? '';
+      final version = versionTag?.text.trim();
+      final synopsis = descTag?.text.trim() ?? '';
+
+      String? allTime;
+      String? recent;
+      String? updated;
+
+      for (final stat in row.findAll('*')) {
+        final cls = stat.attributes['class'] ?? '';
+        if (cls.contains('downloads') && !cls.contains('recent')) {
+          allTime ??= stat.text.trim();
+        } else if (cls.contains('recent-downloads')) {
+          recent ??= stat.text.trim();
+        } else if (cls.contains('updated-at')) {
+          updated ??= stat.text.trim();
+        }
+      }
+
+      final infoParts = <String>[];
+      if (version != null && version.isNotEmpty) infoParts.add(version);
+      if (allTime != null && allTime.isNotEmpty) infoParts.add('All-time: $allTime');
+      if (recent != null && recent.isNotEmpty) infoParts.add('Recent: $recent');
+      if (updated != null && updated.isNotEmpty) infoParts.add(updated);
+
+      crates.add(PackageModel(
+        name: name,
+        urlPath: link,
+        synopsis: synopsis,
+        info: infoParts.join(' • '),
+        source: PkgSource.rust,
+        host: 'crates.io',
+        version: version,
+        published: updated,
+        meta: {
+          if (allTime != null) 'all_time': allTime,
+          if (recent != null) 'recent': recent,
+        },
+      ));
+    }
+
+    setState(() => _packages = crates);
+  }
+
   void _showSnack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -449,6 +604,7 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
     if (_currentSource == PkgSource.go) hint = 'Search Go (e.g., fiber)';
     if (_currentSource == PkgSource.dart) hint = 'Search Dart (e.g., dio)';
     if (_currentSource == PkgSource.python) hint = 'Search PyPI (e.g., pandas)';
+    if (_currentSource == PkgSource.rust) hint = 'Search Rust crates (e.g., easytier)';
 
     return Scaffold(
       appBar: AppBar(
@@ -511,6 +667,12 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
                       label: 'Python',
                       isSelected: _currentSource == PkgSource.python,
                       onTap: () => setState(() => _currentSource = PkgSource.python),
+                    ),
+                    const SizedBox(width: 10),
+                    _SourceChip(
+                      label: 'Rust',
+                      isSelected: _currentSource == PkgSource.rust,
+                      onTap: () => setState(() => _currentSource = PkgSource.rust),
                     ),
                   ],
                 ),
@@ -639,8 +801,12 @@ class _PackageCard extends StatelessWidget {
         srcColor = const Color(0xFF3776AB); // Python Blue
         break;
       case PkgSource.go:
-      srcIcon = Icons.api;
+        srcIcon = Icons.api;
         srcColor = const Color(0xFF7C4DFF);
+        break;
+      case PkgSource.rust:
+        srcIcon = Icons.memory_rounded;
+        srcColor = const Color(0xFFFF7043); // Rust-ish accent
         break;
     }
 
@@ -669,25 +835,219 @@ class _PackageCard extends StatelessWidget {
                   const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF8F8FA3)),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
+              if (pkg.source == PkgSource.go)
+                Text(
+                  pkg.urlPath.replaceFirst(RegExp(r'^/'), ''),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: const Color(0xFF8F8FA3)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              if (pkg.source == PkgSource.go) const SizedBox(height: 8),
               if (pkg.synopsis.isNotEmpty)
                 Text(pkg.synopsis, style: subtitleStyle, maxLines: 3, overflow: TextOverflow.ellipsis),
               if (pkg.synopsis.isNotEmpty) const SizedBox(height: 10),
-              if (pkg.info.isNotEmpty)
-                Row(
-                  children: [
-                    const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF8F8FA3)),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(pkg.info, style: infoStyle, maxLines: 2, overflow: TextOverflow.ellipsis),
+              if (pkg.source == PkgSource.go) ...[
+                if (pkg.alerts.isNotEmpty || (pkg.command?.isNotEmpty ?? false))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        ...pkg.alerts
+                            .map((a) => _GlassChip(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.warning_amber_rounded,
+                                          size: 14, color: Color(0xFFFFB74D)),
+                                      const SizedBox(width: 6),
+                                      Text(a,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelMedium
+                                              ?.copyWith(color: Colors.white)),
+                                    ],
+                                  ),
+                                )),
+                        if (pkg.command != null && pkg.command!.isNotEmpty)
+                          _GlassChip(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.code_rounded,
+                                    size: 14, color: Color(0xFFB9B9C8)),
+                                const SizedBox(width: 6),
+                                Text(pkg.command!,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                _GoMetaInfo(pkg: pkg, infoStyle: infoStyle),
+              ] else if (pkg.source == PkgSource.rust) ...[
+                if (pkg.info.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      pkg.info,
+                      style: infoStyle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                _RustMetaInfo(pkg: pkg, infoStyle: infoStyle),
+              ] else ...[
+                if (pkg.info.isNotEmpty)
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF8F8FA3)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(pkg.info, style: infoStyle, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                  ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class _GoMetaInfo extends StatelessWidget {
+  final PackageModel pkg;
+  final TextStyle? infoStyle;
+  const _GoMetaInfo({required this.pkg, this.infoStyle});
+
+  Widget _metaRow(IconData icon, String text, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF8F8FA3)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: infoStyle ?? Theme.of(context).textTheme.labelMedium?.copyWith(color: const Color(0xFF8F8FA3)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> rows = [];
+
+    final hostOwner = [
+      if (pkg.host != null && pkg.host!.isNotEmpty) pkg.host,
+      if (pkg.owner != null && pkg.owner!.isNotEmpty) pkg.owner,
+      if (pkg.repo != null && pkg.repo!.isNotEmpty) pkg.repo,
+    ].whereType<String>().join(' / ');
+    if (hostOwner.isNotEmpty) {
+      rows.add(_metaRow(Icons.link_rounded, hostOwner, context));
+    }
+
+    if (pkg.imports != null) {
+      rows.add(_metaRow(Icons.import_export, "Imported by ${pkg.imports}", context));
+    }
+
+    final versionBits = [
+      if (pkg.version != null && pkg.version!.isNotEmpty) pkg.version,
+      if (pkg.published != null && pkg.published!.isNotEmpty) "(${pkg.published})",
+    ].whereType<String>().join(' ');
+    if (versionBits.isNotEmpty) {
+      rows.add(_metaRow(Icons.update_rounded, versionBits, context));
+    }
+
+    if (pkg.license != null && pkg.license!.isNotEmpty) {
+      rows.add(_metaRow(Icons.gavel_rounded, "License: ${pkg.license}", context));
+    }
+
+    if (pkg.subPackages.isNotEmpty) {
+      rows.add(
+        _metaRow(
+          Icons.apps_rounded,
+          "Also see: ${pkg.subPackages.take(4).join(', ')}",
+          context,
+        ),
+      );
+    }
+
+    if (rows.isEmpty && pkg.info.isNotEmpty) {
+      rows.add(_metaRow(Icons.info_outline_rounded, pkg.info, context));
+    }
+
+    return Column(children: rows);
+  }
+}
+
+class _RustMetaInfo extends StatelessWidget {
+  final PackageModel pkg;
+  final TextStyle? infoStyle;
+  const _RustMetaInfo({required this.pkg, this.infoStyle});
+
+  Widget _row(IconData icon, String text, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF8F8FA3)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: infoStyle ?? Theme.of(context).textTheme.labelMedium?.copyWith(color: const Color(0xFF8F8FA3)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+
+    final path = pkg.urlPath.replaceFirst(RegExp(r'^/'), '');
+    if (path.isNotEmpty) rows.add(_row(Icons.link_rounded, path, context));
+
+    if (pkg.version != null && pkg.version!.isNotEmpty) {
+      rows.add(_row(Icons.update_rounded, "Version: ${pkg.version}", context));
+    }
+
+    final allTime = pkg.meta['all_time'];
+    if (allTime != null && allTime.isNotEmpty) {
+      rows.add(_row(Icons.download_rounded, "All-time downloads: $allTime", context));
+    }
+
+    final recent = pkg.meta['recent'];
+    if (recent != null && recent.isNotEmpty) {
+      rows.add(_row(Icons.trending_up_rounded, "Recent: $recent", context));
+    }
+
+    if (pkg.published != null && pkg.published!.isNotEmpty) {
+      rows.add(_row(Icons.history_rounded, "Updated: ${pkg.published}", context));
+    }
+
+    return Column(children: rows);
   }
 }
 
@@ -942,6 +1302,8 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
       await _fetchDartContent();
     } else if (widget.package.source == PkgSource.python) {
       await _fetchPyPiContent();
+    } else if (widget.package.source == PkgSource.rust) {
+      await _fetchCrateContent();
     }
   }
 
@@ -1048,6 +1410,39 @@ class _PackageDetailPageState extends State<PackageDetailPage> {
       }
     } catch (e) {
       debugPrint("Error fetching Python details: $e");
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchCrateContent() async {
+    try {
+      final url = Uri.parse('https://crates.io${widget.package.urlPath}');
+      final response = await http.get(url);
+      if (response.statusCode != 200) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final soup = BeautifulSoup(response.body);
+      // Try to locate readme article
+      Bs4Element? readme;
+      for (final el in soup.findAll('article')) {
+        final cls = el.attributes['class'] ?? '';
+        if (cls.contains('readme')) {
+          readme = el;
+          break;
+        }
+      }
+      readme ??= soup.find('div', class_: 'readme');
+
+      final content = readme?.outerHtml ?? "<p>No readme found.</p>";
+
+      setState(() {
+        _htmlContent = content;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error fetching Rust crate details: $e");
       setState(() => _isLoading = false);
     }
   }

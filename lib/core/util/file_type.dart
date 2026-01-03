@@ -1,8 +1,11 @@
 import 'package:path/path.dart' as p;
 
-enum AppFileType { image, audio, directdoc, undirectdoc }
+enum AppFileType { image, audio, directdoc, undirectdoc, reversefiletotext }
 
-AppFileType getAppFileType(String filePath) {
+AppFileType getAppFileType(
+  String filePath, {
+  bool convertingfiletotextmessagebeforesending = false,
+}) {
   final ext = p.extension(filePath).toLowerCase();
 
   const imageExtensions = [
@@ -33,6 +36,8 @@ AppFileType getAppFileType(String filePath) {
     return AppFileType.audio;
   } else if (directDocExtensions.contains(ext)) {
     return AppFileType.directdoc;
+  } else if (convertingfiletotextmessagebeforesending) {
+    return AppFileType.reversefiletotext;
   } else {
     return AppFileType.undirectdoc;
   }

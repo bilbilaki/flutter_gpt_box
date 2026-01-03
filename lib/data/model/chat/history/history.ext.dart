@@ -87,6 +87,12 @@ extension ChatHistoryItemX on ChatHistoryItem {
     @protected String? id,
     String? toolCallId,
     String? reasoning,
+    String? lastResponseId,
+    List<ChatCompletionMessageToolCall>? toolCalls,
+    int? inputTokens,
+    int? outputTokens,
+    int? totalTokens,
+    String? nanobenana,
   }) {
     return ChatHistoryItem(
       role: role ?? this.role,
@@ -94,8 +100,13 @@ extension ChatHistoryItemX on ChatHistoryItem {
       createdAt: createdAt ?? this.createdAt,
       id: id ?? this.id,
       toolCallId: toolCallId ?? this.toolCallId,
+      toolCalls: toolCalls ?? this.toolCalls,
       reasoning: reasoning ?? this.reasoning,
-      lastResponseId: lastResponseId,
+      lastResponseId: lastResponseId ?? this.lastResponseId,
+      inputTokens: inputTokens ?? this.inputTokens,
+      outputTokens: outputTokens ?? this.outputTokens,
+      totalTokens: totalTokens ?? this.totalTokens,
+      nanobenana: nanobenana ?? this.nanobenana,
     );
   }
 

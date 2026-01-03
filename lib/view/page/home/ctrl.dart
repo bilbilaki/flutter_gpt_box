@@ -458,50 +458,62 @@ void _onShareChat(BuildContext context) async {
 
   final type = await context.showPickSingleDialog(
     title: l10n.share,
-    items: ['img', 'txt'],
+    items: ['clipboard', 'file'],
     display: (p0) => switch (p0) {
-      'txt' => l10n.text,
-      _ => l10n.image,
+      'file' => 'file',
+      _ => 'clipboard',
     },
   );
   if (type == null) return;
 
-  if (type == 'txt') {
-    final md = curChat.toMarkdown;
-    Pfs.copy(md);
+  final markdown = curChat.toMarkdown;
+  if (type == 'clipboard') {
+    Pfs.copy(markdown);
     context.showSnackBar(l10n.copied);
     return;
   }
 
-  final result = curChat.gen4Share(context);
-  var compressImg = false;
-  final (pic, err) = await context.showLoadingDialog(
-    fn: () async {
-      final raw = await _screenshotCtrl.captureFromLongWidget(
-        result,
-        context: context,
-        constraints: const BoxConstraints(maxWidth: 577),
-        pixelRatio: MediaQuery.devicePixelRatioOf(context),
-        delay: Durations.short4,
-      );
-      compressImg = Stores.setting.compressImg.get();
-      if (compressImg) {
-        return await ImageUtil.compress(raw, mime: 'image/png');
-      }
-      return raw;
-    },
-  );
-  if (err != null || pic == null) return;
+  await _exportChatMarkdown(context, curChat, markdown);
+}
 
-  final title = _curChat?.name ?? l10n.untitled;
-  final ext = compressImg ? 'jpg' : 'png';
-  final mime = compressImg ? 'image/jpeg' : 'image/png';
-  await Pfs.shareBytes(
-    bytes: pic,
-    title: title,
-    fileName: '$title.$ext',
-    mime: mime,
+Future<void> _exportChatMarkdown(
+  BuildContext context,
+  ChatHistory chat,
+  String markdown,
+) async {
+  final sanitized = _sanitizeFileName(chat.name ?? l10n.untitled);
+  final suggestedName = '${sanitized.isNotEmpty ? sanitized : 'chat'}.md';
+
+  try {
+    final location = await getSaveLocation(
+      suggestedName: suggestedName,
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'Markdown', extensions: ['md']),
+        XTypeGroup(label: 'Text', extensions: ['txt']),
+      ],
+    );
+    if (location == null) return;
+
+    final xfile = XFile.fromData(
+      utf8.encode(markdown),
+      mimeType: 'text/markdown',
+      name: p.basename(location.path),
+    );
+    await xfile.saveTo(location.path);
+
+    context.showSnackBar('Saved chat as Markdown: ${location.path}');
+  } catch (e) {
+    Loggers.app.warning('Export chat markdown failed: $e');
+    context.showSnackBar('Failed to save chat: $e');
+  }
+}
+
+String _sanitizeFileName(String name) {
+  final cleaned = name.trim().replaceAllMapped(
+    RegExp(r'[<>:"/\\|?*\x00-\x1F]+'),
+    (_) => '_',
   );
+  return cleaned.replaceAll(RegExp(r'\s+'), ' ');
 }
 
 Future<void> _onTapFilePick(BuildContext context) async {

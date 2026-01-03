@@ -47,8 +47,6 @@ final class _McpPageState extends State<McpPage>
         _buildSwitchTile(TfDownloader.instance),
         _buildSwitchTile(TfFileManager.instance),
         _buildSwitchTile(TfWebBuilder.instance),
-        _buildSwitchTile(TfPythonProjectBuilder.instance),
-        _buildSwitchTile(TfGoProjectBuilder.instance),
 
         _buildMemory(),
       ],

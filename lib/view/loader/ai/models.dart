@@ -1,4 +1,3 @@
-// TODO Implement this library.
 class Message {
   String role;
   String content;

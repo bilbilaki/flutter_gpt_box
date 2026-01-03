@@ -1,13 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:gpt_box/data/model/app/backup.dart';
 import 'package:gpt_box/data/model/app/backup2.dart';
 import 'package:gpt_box/data/model/app/utils.dart';
-import 'package:gpt_box/data/model/chat/gpt_next.dart';
 import 'package:gpt_box/data/model/chat/history/history.dart';
 import 'package:gpt_box/data/model/chat/openai.dart';
 import 'package:gpt_box/data/res/l10n.dart';
@@ -17,14 +14,11 @@ import 'package:gpt_box/view/page/home/home.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:webdav_client_plus/webdav_client_plus.dart';
 
 part 'impl/file.dart';
-part 'impl/gpt_next.dart';
 part 'impl/openai.dart';
 part 'impl/shared.dart';
 
-final _webdavLoading = ValueNotifier(false);
 
 final class BackupPage extends StatelessWidget {
   const BackupPage({super.key});
@@ -45,7 +39,6 @@ final class BackupPage extends StatelessWidget {
         ],
         [
           CenterGreyTitle(l10n.thirdParty),
-          _buildGPTNext(context),
           _buildOpenAI(context),
         ],
       ],

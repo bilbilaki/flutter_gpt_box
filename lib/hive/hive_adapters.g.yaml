@@ -93,7 +93,7 @@ types:
         index: 10
   ChatConfig:
     typeId: 6
-    nextIndex: 48
+    nextIndex: 52
     fields:
       prompt:
         index: 25
@@ -141,6 +141,14 @@ types:
         index: 46
       lastResponseId:
         index: 47
+      proxyHost:
+        index: 48
+      proxyPort:
+        index: 49
+      proxyType:
+        index: 50
+      proxyEnabled:
+        index: 51
   ChatType:
     typeId: 7
     nextIndex: 6

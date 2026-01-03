@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io'; // For Platform.isAndroid
-import 'package:android_package_installer/android_package_installer.dart'; // For APK installation
 
 import 'package:dio/dio.dart';
 import 'package:fl_lib/fl_lib.dart';
@@ -42,9 +41,6 @@ part 'func/contectsms.dart';
 part 'func/download.dart';
 part 'func/filemanager.dart';
 part 'func/webbuilder.dart';
-part 'func/python_project_builder.dart';
-part 'func/go_project_builder.dart';
-part 'func/type_script_builder.dart';
 
 abstract final class OpenAIFuncCalls {
   static const internalTools = [
@@ -58,8 +54,6 @@ abstract final class OpenAIFuncCalls {
     TfDownloader.instance,
     TfFileManager.instance,
     TfWebBuilder.instance,
-    TfPythonProjectBuilder.instance,
-    TfGoProjectBuilder.instance,
   ];
 
   static Future<Set<ChatCompletionTool>> get tools async {

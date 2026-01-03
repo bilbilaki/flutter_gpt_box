@@ -1,5 +1,7 @@
 part of 'setting.dart';
 
+const _proxyTypes = ['http', 'socks5'];
+
 final class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -61,6 +63,7 @@ final class _ProfilePageState extends State<ProfilePage>
         _buildQuickShare(),
         _buildPrompt(cfg.prompt),
         _buildHistoryLength(cfg.historyLen),
+        _buildProxySettings(cfg),
         //  _buildGenTitlePrompt(cfg.genTitlePrompt),
         //_buildFollowChatModel(),
       ];
@@ -607,6 +610,87 @@ final class _ProfilePageState extends State<ProfilePage>
         }
         Cfg.setTo(cfg: Cfg.current.copyWith(historyLen: newVal));
       },
+    );
+  }
+
+  Widget _buildProxySettings(ChatConfig cfg) {
+    final hostDisplay = cfg.proxyHost.isEmpty ? libL10n.empty : cfg.proxyHost;
+    final portDisplay =
+        cfg.proxyPort == 0 ? libL10n.empty : cfg.proxyPort.toString();
+    return Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.router),
+          title: Text('Proxy Enabled'),
+          trailing: Switch(
+            value: cfg.proxyEnabled,
+            onChanged: (value) {
+              Cfg.setTo(cfg: cfg.copyWith(proxyEnabled: value));
+            },
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.cloud),
+          title: Text('Proxy Host'),
+          trailing: Text(hostDisplay, style: UIs.textGrey),
+          onTap: () async {
+            final ctrl = TextEditingController(text: cfg.proxyHost);
+            final result = await context.showRoundDialog<String>(
+              title: libL10n.edit,
+              child: Input(
+                controller: ctrl,
+                hint: '127.0.0.1',
+                autoFocus: true,
+              ),
+              actions: Btn.ok(
+                onTap: () => context.pop(ctrl.text.trim()),
+              ).toList,
+            );
+            if (result == null) return;
+            Cfg.setTo(cfg: cfg.copyWith(proxyHost: result));
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.dns),
+          title: Text('Proxy Port'),
+          trailing: Text(portDisplay, style: UIs.textGrey),
+          onTap: () async {
+            final ctrl = TextEditingController(
+              text: cfg.proxyPort == 0 ? '' : cfg.proxyPort.toString(),
+            );
+            final result = await context.showRoundDialog<String>(
+              title: libL10n.edit,
+              child: Input(
+                controller: ctrl,
+                hint: '1080',
+                type: TextInputType.number,
+                autoFocus: true,
+              ),
+              actions: Btn.ok(
+                onTap: () => context.pop(ctrl.text.trim()),
+              ).toList,
+            );
+            if (result == null) return;
+            final parsed = int.tryParse(result) ?? 0;
+            Cfg.setTo(cfg: cfg.copyWith(proxyPort: parsed));
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.swap_horiz),
+          title: Text('Proxy Type'),
+          trailing: Text(cfg.proxyType, style: UIs.textGrey),
+          onTap: () async {
+            final selected = await context.showPickSingleDialog<String>(
+              items: _proxyTypes,
+              initial: cfg.proxyType,
+              title: 'Proxy Type',
+              actions: Btnx.oks,
+            );
+            if (selected == null) return;
+            Cfg.setTo(cfg: cfg.copyWith(proxyType: selected));
+          },
+        ),
+      ],
     );
   }
 

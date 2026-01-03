@@ -8,7 +8,6 @@ final _chatScrollCtrl = ScrollController()
 final _historyScrollCtrl = ScrollController()
   ..addListener(_locateHistoryListener);
 final _pageCtrl = PageController(initialPage: _curPage.value.index);
-final _screenshotCtrl = ScreenshotController();
 
 final _timeRN = RNode();
 

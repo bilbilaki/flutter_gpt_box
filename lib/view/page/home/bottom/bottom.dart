@@ -19,7 +19,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
   ];
 
   bool _isRecording = false;
-  String? _recordingPath;
+ late Directory _recordingPath;
 
   @override
   void initState() {
@@ -37,12 +37,14 @@ final class _HomeBottomState extends State<_HomeBottom> {
       context.showSnackBar(l10n.emptyFields('Microphone permission'));
       return;
     }
-    final dir = await Directory.systemTemp.createTemp('rec_hold_');
-    _recordingPath = p.join(
-      dir.path,
-      'hold_${DateTime.now().millisecondsSinceEpoch}.wav',
-    );
-
+    final appdir = await getApplicationCacheDirectory();
+    _recordingPath= await Directory(
+          p.join(
+            appdir.path,
+            'rec_hold',
+            'record_${DateTime.now().millisecondsSinceEpoch}.wav',
+          ),
+    ).create();
     try {
       await _audioRecorder.start(
         const RecordConfig(
@@ -50,7 +52,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
           sampleRate: 16000,
           bitRate: 128000,
         ),
-        path: _recordingPath!,
+        path: _recordingPath.path,
       );
       setState(() => _isRecording = true);
     } catch (e) {
@@ -67,18 +69,23 @@ final class _HomeBottomState extends State<_HomeBottom> {
 
     if (cancel) return;
 
-    final path = _recordingPath;
-    if (path == null || !File(path).existsSync()) {
+    final path = _recordingPath.path;
+    if (!File(path).existsSync()) {
       context.showSnackBar('No audio captured');
-      _recordingPath = null;
+    
 
       return;
     }
 
     final chatId = _curChatId.value;
     final text = inputCtrl.text;
-    _onAudioModel(context, chatId, text, [path]);
-    _recordingPath = null;
+      final files = [File(path)];
+  if (files.isEmpty) return;
+  _filesPicked.value.addAll(files.map((e) => e.path).whereType<String>());
+  _filesPicked.notify();
+    _onCreateRequest(context, chatId);
+   // File(_recordingPath.path).deleteSync();
+   ////TODO thinking about how remove old files and implant result if find answer
   }
 
   @override
@@ -159,11 +166,6 @@ final class _HomeBottomState extends State<_HomeBottom> {
               tooltip: 'X.Search',
               icon: const Icon(Icons.one_x_mobiledata, size: 19),
               onPressed: () => _navigateToPage(context, XAiSearchFantasy()),
-            ),
-            IconButton(
-              tooltip: 'Browser Automation',
-              icon: const Icon(Icons.auto_awesome_motion_sharp, size: 19),
-              onPressed: () => _navigateToPage(context, PDFGeneratorWidget()),
             ),
 
             const Spacer(),
@@ -297,7 +299,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
 
               return ListenableBuilder(
                 listenable: inputCtrl,
-                builder: (_, __) {
+                builder: (_, _) {
                   final hasText = inputCtrl.text.trim().isNotEmpty;
                   return Row(
                     mainAxisSize: MainAxisSize.min,

@@ -1,20 +1,19 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
-import 'package:sound_stream/sound_stream.dart';
 import 'package:openai_realtime_dart/openai_realtime_dart.dart';
 
 import '../../data/res/openai.dart';
-
- String _kOpenAiApiKey = Cfg.current.key;
 
 enum ScreenState {
   connecting,
@@ -24,6 +23,8 @@ enum ScreenState {
   thoughtBubble,
   voiceSelection,
 }
+
+enum VoiceInteractionMode { pushToTalk, live }
 
 class VoiceAssistantScreen extends StatefulWidget {
   const VoiceAssistantScreen({super.key});
@@ -35,8 +36,10 @@ class VoiceAssistantScreen extends StatefulWidget {
 class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     with TickerProviderStateMixin {
   late final VoiceSessionController _controller;
-  ScreenState _currentScreenState = ScreenState.connecting;
+  ScreenState _currentScreenState = ScreenState.voiceSelection;
   String _selectedVoice = 'alloy'; // Standard OpenAI voice
+  String _selectedModel = VoiceSessionController.defaultRealtimeModel;
+  VoiceInteractionMode _interactionMode = VoiceInteractionMode.pushToTalk;
 
   late AnimationController _visualizerAnimationController;
   late AnimationController _connectingAnimationController;
@@ -55,6 +58,14 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
       onAiSpeakingStatusChanged: (isSpeaking) {
         if (mounted) {
           setState(() => _isAiSpeaking = isSpeaking);
+          if (_interactionMode == VoiceInteractionMode.live) {
+            if (isSpeaking && _currentScreenState != ScreenState.thoughtBubble) {
+              _navigateTo(ScreenState.thoughtBubble);
+            } else if (!isSpeaking &&
+                _currentScreenState == ScreenState.thoughtBubble) {
+              _navigateTo(ScreenState.listeningIdle);
+            }
+          }
           if (!isSpeaking && _currentScreenState == ScreenState.thoughtBubble) {
              _navigateTo(ScreenState.listeningIdle);
           }
@@ -97,7 +108,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
 
   Future<void> _initSession() async {
     await _controller.initialize();
-    _navigateTo(ScreenState.connecting);
+    _navigateTo(ScreenState.voiceSelection);
   }
 
   @override
@@ -159,11 +170,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
 
     switch (newState) {
       case ScreenState.connecting:
-        _connectingAnimationController.forward(from: 0.0).then((_) {
-          if (_currentScreenState == ScreenState.connecting) {
-            _navigateTo(ScreenState.listeningIdle);
-          }
-        });
+        _connectingAnimationController.repeat(period: const Duration(seconds: 2));
         break;
       case ScreenState.listeningIdle:
         _visualizerAnimationController.forward(from: 0.0);
@@ -187,8 +194,199 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     }
   }
 
+  Future<void> _connect() async {
+    _navigateTo(ScreenState.connecting);
+    try {
+      await _controller.connect(
+        model: _selectedModel,
+        voice: _selectedVoice,
+        mode: _interactionMode,
+      );
+      if (!mounted) return;
+      _navigateTo(ScreenState.listeningIdle);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connect failed: $e')),
+      );
+      _navigateTo(ScreenState.voiceSelection);
+    }
+  }
+
+  void _showDevLogs() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.primaryBackground,
+      builder: (_) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.65,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Text(
+                        'Dev Logs',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => _controller.clearLogs(),
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Clear',
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Close',
+                    ),
+                  ],
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ValueListenableBuilder<List<String>>(
+                    valueListenable: _controller.logs,
+                    builder: (context, logs, _) {
+                      if (logs.isEmpty) {
+                        return const Center(
+                          child: Text('No logs yet'),
+                        );
+                      }
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: logs.length,
+                        itemBuilder: (context, i) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Text(
+                            logs[i],
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSessionSettings() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.primaryBackground,
+      builder: (_) {
+        var tmpModel = _selectedModel;
+        var tmpVoice = _selectedVoice;
+        var tmpMode = _interactionMode;
+        return SafeArea(
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Session',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    DropdownButtonFormField<String>(
+                      value: tmpModel,
+                      decoration: const InputDecoration(labelText: 'Realtime model'),
+                      items: VoiceSessionController.availableRealtimeModels
+                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setModalState(() => tmpModel = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: tmpVoice,
+                      decoration: const InputDecoration(labelText: 'Voice'),
+                      items: const [
+                        'alloy',
+                        'ash',
+                        'ballad',
+                        'coral',
+                        'echo',
+                        'sage',
+                        'shimmer',
+                        'verse',
+                      ].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setModalState(() => tmpVoice = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<VoiceInteractionMode>(
+                      value: tmpMode,
+                      decoration: const InputDecoration(labelText: 'Mode'),
+                      items: const [
+                        DropdownMenuItem(
+                          value: VoiceInteractionMode.pushToTalk,
+                          child: Text('Push-to-talk'),
+                        ),
+                        DropdownMenuItem(
+                          value: VoiceInteractionMode.live,
+                          child: Text('Live (auto VAD)'),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setModalState(() => tmpMode = v);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          setState(() {
+                            _selectedModel = tmpModel;
+                            _selectedVoice = tmpVoice;
+                            _interactionMode = tmpMode;
+                          });
+                          await _connect();
+                        },
+                        child: const Text('Apply & reconnect'),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _startTalk() async {
     try {
+      if (_interactionMode == VoiceInteractionMode.live) return;
+      await _controller.interrupt();
       await _controller.startRecording();
       _navigateTo(ScreenState.listeningSpeaking);
     } catch (e) {
@@ -199,6 +397,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
   }
 
   Future<void> _finishTalk() async {
+    if (_interactionMode == VoiceInteractionMode.live) return;
     _navigateTo(ScreenState.thinking);
     try {
       
@@ -224,9 +423,52 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
     return Scaffold(
       backgroundColor: AppColors.primaryBackground,
       body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: _buildScreenContent(),
+        child: Stack(
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _buildScreenContent(),
+            ),
+            Positioned(
+              top: 8,
+              left: 8,
+              right: 8,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: _showDevLogs,
+                    icon: const Icon(Icons.bug_report_outlined),
+                    tooltip: 'Dev logs',
+                  ),
+                  IconButton(
+                    onPressed: _showSessionSettings,
+                    icon: const Icon(Icons.tune),
+                    tooltip: 'Session settings',
+                  ),
+                  const Spacer(),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _controller.isConnected,
+                    builder: (context, connected, _) {
+                      return Text(
+                        connected ? 'Connected' : 'Disconnected',
+                        style: const TextStyle(fontSize: 12),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () async {
+                      await _controller.disconnect();
+                      if (!mounted) return;
+                      _navigateTo(ScreenState.voiceSelection);
+                    },
+                    icon: const Icon(Icons.power_settings_new),
+                    tooltip: 'Disconnect',
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -289,12 +531,21 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
           ),
         ),
         const SizedBox(height: 80),
-        const StatusTextAndIcon(text: 'Tap to speak', icon: Icons.mic_none),
+        StatusTextAndIcon(
+          text: _interactionMode == VoiceInteractionMode.live
+              ? 'Listening (auto)'
+              : 'Tap to speak',
+          icon: Icons.mic_none,
+        ),
         const Spacer(),
         BottomActionButtons(
-          onRecordPause: _startTalk,
+          onRecordPause: _interactionMode == VoiceInteractionMode.live
+              ? () async => _controller.interrupt()
+              : _startTalk,
           onCancel: _cancel,
-          recordButtonIcon: Icons.mic,
+          recordButtonIcon: _interactionMode == VoiceInteractionMode.live
+              ? Icons.stop_circle_outlined
+              : Icons.mic,
         ),
         const SizedBox(height: 20),
       ],
@@ -370,9 +621,13 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
         ),
         const Spacer(),
         BottomActionButtons(
-          onRecordPause: () => _navigateTo(ScreenState.listeningIdle),
+          onRecordPause: _interactionMode == VoiceInteractionMode.live
+              ? () async => _controller.interrupt()
+              : _startTalk,
           onCancel: _cancel,
-          recordButtonIcon: Icons.replay,
+          recordButtonIcon: _interactionMode == VoiceInteractionMode.live
+              ? Icons.stop_circle_outlined
+              : Icons.mic,
         ),
         const SizedBox(height: 20),
       ],
@@ -392,12 +647,56 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
               icon: const Icon(Icons.close),
               onPressed: () => Navigator.of(context).pop(),
             ),
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined),
+              onPressed: _showDevLogs,
+            ),
           ],
         ),
         Expanded(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedModel,
+                      decoration: const InputDecoration(labelText: 'Realtime model'),
+                      items: VoiceSessionController.availableRealtimeModels
+                          .map(
+                            (m) => DropdownMenuItem(value: m, child: Text(m)),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() => _selectedModel = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<VoiceInteractionMode>(
+                      value: _interactionMode,
+                      decoration: const InputDecoration(labelText: 'Mode'),
+                      items: const [
+                        DropdownMenuItem(
+                          value: VoiceInteractionMode.pushToTalk,
+                          child: Text('Push-to-talk'),
+                        ),
+                        DropdownMenuItem(
+                          value: VoiceInteractionMode.live,
+                          child: Text('Live (auto VAD)'),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() => _interactionMode = v);
+                      },
+                    ),
+                  ],
+                ),
+              ),
               Expanded(
                 child: Center(
                   child: AnimatedVoiceVisualizer(
@@ -413,7 +712,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: ConfirmButton(
-                  onPressed: () => _navigateTo(ScreenState.connecting),
+                  onPressed: _connect,
                 ),
               ),
             ],
@@ -428,15 +727,40 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
 
 
 class VoiceSessionController {
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  final PlayerStream _playerStream = PlayerStream();
-  StreamSubscription? _playerSubscription;
+  static const defaultRealtimeModel = 'gpt-4o-realtime-preview';
+  static const availableRealtimeModels = <String>[
+    'gpt-4o-realtime-preview',
+    'gpt-4o-mini-realtime-preview',
+  ];
 
-  final RealtimeClient _realtimeClient =
-      RealtimeClient(apiKey: _kOpenAiApiKey);
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final Queue<Uint8List> _wavQueue = Queue<Uint8List>();
+  StreamSubscription<void>? _playerCompleteSub;
+  BytesBuilder _pcmBuffer = BytesBuilder(copy: false);
+  bool _isPlaying = false;
+  bool _pendingSpeakOff = false;
+  static const int _sampleRateHz = 24000;
+  static const int _channels = 1;
+  static const int _minChunkMs = 250;
+  StreamSubscription<Uint8List>? _micStreamSub;
+
+  late final RealtimeClient _realtimeClient;
   Voice _currentVoice = Voice.alloy;
+  String _currentModel = defaultRealtimeModel;
   EventHandlerCallback? _conversationUpdatedHandler;
   EventHandlerCallback? _conversationCompletedHandler;
+  EventHandlerCallback? _conversationInterruptedHandler;
+  EventHandlerCallback? _speechStoppedHandler;
+  EventHandlerCallback? _errorHandler;
+  EventHandlerCallback? _allEventsHandler;
+
+  String? _currentAssistantItemId;
+  int _playedSamples = 0; // pcm16 samples played for the current assistant item
+  VoiceInteractionMode _mode = VoiceInteractionMode.pushToTalk;
+
+  final ValueNotifier<List<String>> logs = ValueNotifier<List<String>>([]);
+  final ValueNotifier<bool> isConnected = ValueNotifier<bool>(false);
 
   final void Function(bool isSpeaking)? onAiSpeakingStatusChanged;
   final void Function(Uint8List pcmChunk)? onAudioChunk;
@@ -446,9 +770,80 @@ class VoiceSessionController {
   VoiceSessionController({this.onAiSpeakingStatusChanged, this.onAudioChunk});
 
   Future<void> initialize() async {
-    await _playerStream.initialize();
+    await _audioPlayer.setReleaseMode(ReleaseMode.stop);
+    _playerCompleteSub = _audioPlayer.onPlayerComplete.listen((_) {
+      _isPlaying = false;
+      unawaited(_maybePlayNext());
+    });
+    _realtimeClient = RealtimeClient(apiKey: Cfg.current.key);
     _setupRealtimeHandlers();
-    await _connectRealtime();
+  }
+
+  void _log(String msg) {
+    final ts = DateTime.now().toIso8601String();
+    final next = [...logs.value, '[$ts] $msg'];
+    // keep last 400 lines
+    logs.value = next.length > 400 ? next.sublist(next.length - 400) : next;
+  }
+
+  void clearLogs() => logs.value = const [];
+
+  Future<void> connect({
+    required String model,
+    required String voice,
+    required VoiceInteractionMode mode,
+  }) async {
+    _mode = mode;
+    final targetVoice = _voiceFromName(voice);
+
+    final modelChanged = model != _currentModel;
+    if (_realtimeClient.isConnected() && modelChanged) {
+      _log('Model changed -> reconnect ($model)');
+      await disconnect();
+    }
+
+    _currentModel = model;
+    _currentVoice = targetVoice;
+
+    try {
+      _log('Connecting realtime: model=$_currentModel voice=${_currentVoice.name} mode=$_mode');
+      if (!_realtimeClient.isConnected()) {
+        await _realtimeClient.connect(model: _currentModel);
+      }
+      await _realtimeClient.updateSession(
+        voice: _currentVoice,
+        // Live mode relies on server VAD so we can loop automatically.
+        turnDetection: _mode == VoiceInteractionMode.live
+            ? const TurnDetection(type: TurnDetectionType.serverVad)
+            : null,
+      );
+      await _realtimeClient.waitForSessionCreated();
+      isConnected.value = true;
+      _log('Realtime connected (session created)');
+      if (_mode == VoiceInteractionMode.live) {
+        await startLive();
+      } else {
+        await stopLive();
+      }
+    } catch (e) {
+      isConnected.value = false;
+      _log('Connect error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> disconnect() async {
+    try {
+      _log('Disconnecting realtime');
+      await stopLive();
+      if (_realtimeClient.isConnected()) {
+        await _realtimeClient.disconnect();
+      }
+    } finally {
+      isConnected.value = false;
+      _currentAssistantItemId = null;
+      _playedSamples = 0;
+    }
   }
 
   Future<void> startRecording() async {
@@ -486,7 +881,7 @@ class VoiceSessionController {
     _currentVoice = targetVoice;
 
     if (!_realtimeClient.isConnected()) {
-      await _realtimeClient.connect(); // uses default realtime model
+      await _realtimeClient.connect(model: _currentModel);
     }
 
     await _realtimeClient.updateSession(voice: _currentVoice);
@@ -494,18 +889,64 @@ class VoiceSessionController {
   }
 
   void _setupRealtimeHandlers() {
-    _conversationUpdatedHandler = (event) async {
-      final ev = event as RealtimeEventConversationUpdated;
-      final delta = ev.result.delta;
-      final audio = delta?.audio;
-      if (audio != null && audio.isNotEmpty) {
-        onAiSpeakingStatusChanged?.call(true);
-        _playerStream.writeChunk(audio);
-        onAudioChunk?.call(audio);
+    _allEventsHandler = (event) async {
+      // Keep logs readable and avoid dumping huge base64 payloads (audio deltas).
+      switch (event) {
+        case RealtimeEventResponseAudioDelta e:
+          final approxBytes = (e.delta.length * 3) ~/ 4;
+          _log('${e.type.name}: item=${e.itemId} ~${approxBytes}B');
+          return;
+        case RealtimeEventResponseTextDelta e:
+          _log('${e.type.name}: "${e.delta}"');
+          return;
+        default:
+          _log(event.type.name);
+          return;
       }
     };
-    _conversationCompletedHandler = (event) async {
-      onAiSpeakingStatusChanged?.call(false);
+    _realtimeClient.on(RealtimeEventType.all, _allEventsHandler!);
+
+    _errorHandler = (event) async {
+      _log('Realtime error: ${jsonEncode(event.toJson())}');
+      isConnected.value = false;
+    };
+    _realtimeClient.on(RealtimeEventType.error, _errorHandler!);
+
+	    _conversationUpdatedHandler = (event) async {
+	      final ev = event as RealtimeEventConversationUpdated;
+	      final delta = ev.result.delta;
+	      final audio = delta?.audio;
+	      final itemId = ev.result.item?.item.id;
+	      if (audio != null && audio.isNotEmpty) {
+	        onAiSpeakingStatusChanged?.call(true);
+	        if (itemId != null) {
+	          if (_currentAssistantItemId != itemId) {
+	            _currentAssistantItemId = itemId;
+	            _playedSamples = 0;
+	            unawaited(_resetPlayback());
+	          }
+	        }
+	        _appendPcm(audio);
+	        _playedSamples += audio.lengthInBytes ~/ 2;
+	        onAudioChunk?.call(audio);
+	      }
+	    };
+	    _conversationCompletedHandler = (event) async {
+	      _pendingSpeakOff = true;
+	      _flushPcmBuffer();
+	      await _maybePlayNext();
+	    };
+    _conversationInterruptedHandler = (event) async {
+      // User started speaking (server VAD). Stop current response immediately.
+      _log('Conversation interrupted -> cancelResponse');
+      await interrupt();
+    };
+
+    _speechStoppedHandler = (event) async {
+      // In server VAD mode, when speech stops we ask the model to respond.
+      if (_mode != VoiceInteractionMode.live) return;
+      _log('Speech stopped -> createResponse');
+      await _realtimeClient.createResponse();
     };
 
     _realtimeClient.on(
@@ -516,7 +957,117 @@ class VoiceSessionController {
       RealtimeEventType.conversationItemCompleted,
       _conversationCompletedHandler!,
     );
+    _realtimeClient.on(
+      RealtimeEventType.conversationInterrupted,
+      _conversationInterruptedHandler!,
+    );
+    _realtimeClient.on(
+      RealtimeEventType.inputAudioBufferSpeechStopped,
+      _speechStoppedHandler!,
+    );
   }
+
+  Future<void> startLive() async {
+    if (_micStreamSub != null) return;
+    final status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) {
+      throw Exception('Microphone permission denied');
+    }
+    _log('Starting live mic stream (pcm16 24k)');
+    final stream = await _audioRecorder.startStream(
+      const RecordConfig(
+        encoder: AudioEncoder.pcm16bits,
+        sampleRate: 24000,
+        numChannels: 1,
+      ),
+    );
+    _micStreamSub = stream.listen(
+      (chunk) async {
+        if (!_realtimeClient.isConnected()) return;
+        // Avoid awaiting here to keep up with mic pace.
+        unawaited(_realtimeClient.appendInputAudio(chunk));
+      },
+      onError: (e) => _log('Mic stream error: $e'),
+      onDone: () => _log('Mic stream done'),
+      cancelOnError: false,
+    );
+  }
+
+  Future<void> stopLive() async {
+    await _micStreamSub?.cancel();
+    _micStreamSub = null;
+    if (await _audioRecorder.isRecording()) {
+      await _audioRecorder.stop();
+    }
+  }
+
+	  Future<void> interrupt() async {
+	    if (!_realtimeClient.isConnected()) return;
+	    try {
+	      await _resetPlayback();
+	      await _realtimeClient.cancelResponse(_currentAssistantItemId, _playedSamples);
+	    } catch (e) {
+	      // Fallback: cancel without truncation.
+	      _log('cancelResponse failed: $e');
+	      await _realtimeClient.cancelResponse(null);
+    } finally {
+      onAiSpeakingStatusChanged?.call(false);
+	    }
+	  }
+
+	  void _appendPcm(Uint8List pcm) {
+	    _pcmBuffer.add(pcm);
+	    final bytesPerMs = (_sampleRateHz * _channels * 2) ~/ 1000;
+	    final minBytes = bytesPerMs * _minChunkMs;
+	    if (_pcmBuffer.length >= minBytes) {
+	      final chunkPcm = _pcmBuffer.takeBytes();
+	      _wavQueue.add(
+	        _pcm16ToWav(chunkPcm, sampleRate: _sampleRateHz, channels: _channels),
+	      );
+	      unawaited(_maybePlayNext());
+	    }
+	  }
+
+	  void _flushPcmBuffer() {
+	    if (_pcmBuffer.length == 0) return;
+	    final chunkPcm = _pcmBuffer.takeBytes();
+	    _wavQueue.add(
+	      _pcm16ToWav(chunkPcm, sampleRate: _sampleRateHz, channels: _channels),
+	    );
+	  }
+
+	  Future<void> _maybePlayNext() async {
+	    if (_isPlaying) return;
+	    if (_wavQueue.isEmpty) {
+	      if (_pendingSpeakOff) {
+	        _pendingSpeakOff = false;
+	        onAiSpeakingStatusChanged?.call(false);
+	      }
+	      return;
+	    }
+
+	    _isPlaying = true;
+	    final wav = _wavQueue.removeFirst();
+	    try {
+	      await _audioPlayer.play(BytesSource(wav));
+	    } catch (e) {
+	      _log('Audio play error: $e');
+	      _isPlaying = false;
+	      await _maybePlayNext();
+	    }
+	  }
+
+	  Future<void> _resetPlayback() async {
+	    _pendingSpeakOff = false;
+	    _wavQueue.clear();
+	    _pcmBuffer = BytesBuilder(copy: false);
+	    _isPlaying = false;
+	    try {
+	      await _audioPlayer.stop();
+	    } catch (_) {
+	      // ignore
+	    }
+	  }
 
   Future<void> stopRecordingAndFetchResponse({required String voice}) async {
     try {
@@ -546,13 +1097,14 @@ class VoiceSessionController {
     _currentRecordingPath = null;
   }
 
-  void dispose() {
-    _audioRecorder.dispose();
-    _playerStream.dispose();
-    _playerSubscription?.cancel();
-    if (_conversationUpdatedHandler != null) {
-      _realtimeClient.off(
-        RealtimeEventType.conversationUpdated,
+	  void dispose() {
+	    _audioRecorder.dispose();
+	    _playerCompleteSub?.cancel();
+	    _audioPlayer.dispose();
+	    _micStreamSub?.cancel();
+	    if (_conversationUpdatedHandler != null) {
+	      _realtimeClient.off(
+	        RealtimeEventType.conversationUpdated,
         _conversationUpdatedHandler!,
       );
     }
@@ -562,8 +1114,62 @@ class VoiceSessionController {
         _conversationCompletedHandler!,
       );
     }
-    unawaited(_realtimeClient.disconnect());
-  }
+    if (_conversationInterruptedHandler != null) {
+      _realtimeClient.off(
+        RealtimeEventType.conversationInterrupted,
+        _conversationInterruptedHandler!,
+      );
+    }
+    if (_speechStoppedHandler != null) {
+      _realtimeClient.off(
+        RealtimeEventType.inputAudioBufferSpeechStopped,
+        _speechStoppedHandler!,
+      );
+    }
+    if (_errorHandler != null) {
+      _realtimeClient.off(RealtimeEventType.error, _errorHandler!);
+    }
+    if (_allEventsHandler != null) {
+      _realtimeClient.off(RealtimeEventType.all, _allEventsHandler!);
+	    }
+	    unawaited(disconnect());
+	  }
+	}
+
+Uint8List _pcm16ToWav(
+  Uint8List pcm, {
+  int sampleRate = 24000,
+  int channels = 1,
+}) {
+  final dataLen = pcm.length;
+  final byteRate = sampleRate * channels * 2; // 16-bit (2 bytes)
+  final blockAlign = channels * 2;
+  final riffChunkSize = 36 + dataLen;
+
+  final header = BytesBuilder(copy: false);
+  void writeStr(String s) => header.add(ascii.encode(s));
+  void write32(int v) => header.add(
+        (ByteData(4)..setUint32(0, v, Endian.little)).buffer.asUint8List(),
+      );
+  void write16(int v) => header.add(
+        (ByteData(2)..setUint16(0, v, Endian.little)).buffer.asUint8List(),
+      );
+
+  writeStr('RIFF');
+  write32(riffChunkSize);
+  writeStr('WAVE');
+  writeStr('fmt ');
+  write32(16); // PCM header length
+  write16(1); // PCM format
+  write16(channels);
+  write32(sampleRate);
+  write32(byteRate);
+  write16(blockAlign);
+  write16(16); // bits per sample
+  writeStr('data');
+  write32(dataLen);
+
+  return Uint8List.fromList(<int>[...header.toBytes(), ...pcm]);
 }
 
 

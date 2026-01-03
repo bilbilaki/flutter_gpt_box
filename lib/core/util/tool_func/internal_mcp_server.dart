@@ -49,24 +49,6 @@ class InternalMcpServer {
       case 'webbuilder':
         onToolLog('[$serverName]  Useing Web Builder Tools please wait...');
         return await TfWebBuilder.instance.run(mockCall, arguments, onToolLog);
-      case 'pythonProjectBuilder':
-        onToolLog(
-          '[$serverName]  Useing pythonProjectBuilder Tools please wait...',
-        );
-        return await TfPythonProjectBuilder.instance.run(
-          mockCall,
-          arguments,
-          onToolLog,
-        );
-      case 'goProjectBuilder':
-        onToolLog(
-          '[$serverName]  Useing goProjectBuilder Tools please wait...',
-        );
-        return await TfGoProjectBuilder.instance.run(
-          mockCall,
-          arguments,
-          onToolLog,
-        );
       default:
         onToolLog('[$serverName] Unknown tool: $toolName');
         return null;

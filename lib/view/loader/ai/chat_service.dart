@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'models.dart';
@@ -21,9 +20,13 @@ class ChatService extends ChangeNotifier {
     messages.add(Message(
       role: "system", 
       content: "You are an advanced coding assistant.\n"
-               "Use 'list_files' to see the repo structure.\n"
-               "Use 'read_file' to see code with line numbers.\n"
-               "Use 'patch_file' to edit. Syntax: 'N++ code', 'N--', '0++' (prepend), '00++' (append).\n"
+               "Tools:\n"
+               "- Use 'list_files' to explore the workspace tree first.\n"
+               "- Use 'read_file' to inspect code with line numbers before editing.\n"
+               "- Use 'patch_file' for precise line edits. Syntax: 'N++ code', 'N--', '0++' (prepend), '00++' (append).\n"
+               "- Use 'find_and_replace' for bulk or regex edits (supports case sensitivity, suffix-only matches, include/exclude globs, dry runs). Prefer a dry run when unsure.\n"
+               "- Use 'file_action' to create/delete/move/copy/duplicate files or directories (paths must stay inside the workspace; provide target for move/copy; trailing slash creates a directory).\n"
+               "Error handling: if a tool call fails (e.g., invalid path/regex), inspect the error, adjust arguments, and retry automatically instead of stopping. Continue looping until tasks are complete.\n"
                "Be concise."
     ));
   }

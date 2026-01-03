@@ -23,10 +23,10 @@ class Config {
       final content = await file.readAsString();
       final map = jsonDecode(content);
       return Config()
-        ..apiKey = map['api_key'] ?? ""
-        ..baseUrl = map['base_url'] ?? ""
+        ..apiKey = map['api_key'] ?? Cfg.current.key
+        ..baseUrl = map['base_url'] ?? Cfg.current.url
         ..proxyUrl = map['proxy_url'] ?? ""
-        ..currentModel = map['current_model'] ?? ""
+        ..currentModel = map['current_model'] ?? Cfg.current.model
         ..autoAccept = map['auto_accept'] ?? false
         ..firstSetup = map['first_setup'] ?? false;
     } catch (_) {

@@ -305,13 +305,17 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       isVertex: fields[44] as bool?,
       vertexProjectId: fields[45] as String?,
       vertexLocation: fields[46] as String?,
+      proxyHost: fields[48] == null ? '' : fields[48] as String,
+      proxyPort: fields[49] == null ? 0 : (fields[49] as num).toInt(),
+      proxyType: fields[50] == null ? 'http' : fields[50] as String,
+      proxyEnabled: fields[51] == null ? false : fields[51] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(23)
+      ..writeByte(27)
       ..writeByte(25)
       ..write(obj.prompt)
       ..writeByte(26)
@@ -357,7 +361,15 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       ..writeByte(46)
       ..write(obj.vertexLocation)
       ..writeByte(47)
-      ..write(obj.lastResponseId);
+      ..write(obj.lastResponseId)
+      ..writeByte(48)
+      ..write(obj.proxyHost)
+      ..writeByte(49)
+      ..write(obj.proxyPort)
+      ..writeByte(50)
+      ..write(obj.proxyType)
+      ..writeByte(51)
+      ..write(obj.proxyEnabled);
   }
 
   @override

@@ -39,6 +39,10 @@ abstract class ChatConfig with _$ChatConfig {
     bool? isVertex,
     String? vertexProjectId,
     String? vertexLocation,
+    @Default('') String proxyHost,
+    @Default(0) int proxyPort,
+    @Default(ChatConfigX.defaultProxyType) String proxyType,
+    @Default(false) bool proxyEnabled,
   }) = _ChatConfig;
 
   factory ChatConfig.fromJson(Map<String, dynamic> json) =>
@@ -63,6 +67,10 @@ extension ChatConfigX on ChatConfig {
   static const isVertex = false;
   static const vertexProjectId = '';
   static const vertexLocation = '';
+  static const defaultProxyHost = '';
+  static const defaultProxyPort = 0;
+  static const defaultProxyType = 'http';
+  static const defaultProxyEnabled = false;
   static const lastResponseId = null;
 
   static const defaultOne = ChatConfig(
@@ -78,6 +86,10 @@ extension ChatConfigX on ChatConfig {
     isVertex: isVertex,
     vertexProjectId: vertexProjectId,
     vertexLocation: vertexLocation,
+    proxyHost: defaultProxyHost,
+    proxyPort: defaultProxyPort,
+    proxyType: defaultProxyType,
+    proxyEnabled: defaultProxyEnabled,
     lastResponseId: lastResponseId,
     // audioModel: defaultaudioModel,
     // trnscrbModel: defaulttrnscrbModel,
@@ -142,6 +154,10 @@ extension ChatConfigX on ChatConfig {
       isVertex: params_['isVertex'],
       vertexProjectId: params_['vertexProjectId'],
       vertexLocation: params_['vertexLocation'],
+      proxyHost: params_['proxyHost'] ?? defaultProxyHost,
+      proxyPort: params_['proxyPort'] ?? defaultProxyPort,
+      proxyType: params_['proxyType'] ?? defaultProxyType,
+      proxyEnabled: params_['proxyEnabled'] ?? defaultProxyEnabled,
     );
   }
 }

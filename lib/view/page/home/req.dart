@@ -1,4 +1,5 @@
 part of 'home.dart';
+
 bool _useResponsesApi(ChatConfig cfg) {
   final u = cfg.url.trim().toLowerCase();
   return u.startsWith('https://api.openai.com');
@@ -28,7 +29,9 @@ Future<List<ResponseTool>> _responsesToolsForChat(ChatHistory chat) async {
 
     // Ensure schema validity
     params['type'] = 'object';
-    if (params['properties'] is! Map) params['properties'] = <String, dynamic>{};
+    if (params['properties'] is! Map) {
+      params['properties'] = <String, dynamic>{};
+    }
 
     return FunctionTool(
       name: fn.name,
@@ -43,7 +46,11 @@ class _RespFuncCall {
   final String name;
   final Map<String, dynamic> arguments;
 
-  _RespFuncCall({required this.callId, required this.name, required this.arguments});
+  _RespFuncCall({
+    required this.callId,
+    required this.name,
+    required this.arguments,
+  });
 }
 
 _RespFuncCall? _tryParseRespFunctionCall(Map<String, dynamic> raw) {
@@ -84,11 +91,7 @@ Map<String, dynamic> _toolOutputInput({
   required String callId,
   required String outputText,
 }) {
-  return {
-    'type': 'tool_output',
-    'tool_call_id': callId,
-    'output': outputText,
-  };
+  return {'type': 'tool_output', 'tool_call_id': callId, 'output': outputText};
 }
 
 List<Map<String, dynamic>> _chatContentToResponsesInput(
@@ -109,6 +112,7 @@ List<Map<String, dynamic>> _chatContentToResponsesInput(
     }
   }).toList();
 }
+
 bool _validChatCfg(BuildContext context) {
   final config = Cfg.current;
   final urlEmpty = config.url == 'https://api.openai.com/v1';
@@ -201,6 +205,7 @@ void _onCreateRequest(BuildContext context, String chatId) async {
 
   return await func(context, chatId, input, _filesPicked.value);
 }
+
 Future<void> _onCreateTextResponses(
   BuildContext context,
   String chatId,
@@ -224,13 +229,18 @@ Future<void> _onCreateTextResponses(
       questionContents.add(content);
     } else {
       questionContents.add(
-        ChatContent.text('For Using Tools with file operation use this File Path: $file'),
+        ChatContent.text(
+          'For Using Tools with file operation use this File Path: $file',
+        ),
       );
       modelUseFilePath = false;
     }
   }
 
-  final question = ChatHistoryItem.gen(role: ChatRole.user, content: questionContents);
+  final question = ChatHistoryItem.gen(
+    role: ChatRole.user,
+    content: questionContents,
+  );
 
   // update UI history (same pattern as current)
   workingChat0.items.add(question);
@@ -285,7 +295,8 @@ Future<void> _onCreateTextResponses(
     List<dynamic>? nextInputArray;
 
     while (true) {
-      final requestInputs = nextInputArray ??
+      final requestInputs =
+          nextInputArray ??
           [
             {
               'role': 'user',
@@ -299,7 +310,8 @@ Future<void> _onCreateTextResponses(
         tools: tools,
         toolChoice: tools.isEmpty ? 'none' : 'auto',
         extra: {
-          if (previousId == null && instructions.isNotEmpty) 'instructions': instructions,
+          if (previousId == null && instructions.isNotEmpty)
+            'instructions': instructions,
         },
         input: null,
         inputs: requestInputs, // serialized to "input" by toJson()
@@ -360,7 +372,8 @@ Future<void> _onCreateTextResponses(
         onToolLog('Calling tool: ${c.name}');
         // Ask confirm only for internal tools where mapping exists (your existing logic does this earlier).
         // Here we reuse your MCP handler through McpTools mapping; it will call internal server when applicable.
-        final safeFuncId = c.name; // OpenAI will call with the function name we provided (safe id)
+        final safeFuncId = c
+            .name; // OpenAI will call with the function name we provided (safe id)
         final fakeToolCall = ChatCompletionMessageToolCall(
           id: c.callId,
           type: ChatCompletionMessageToolCallType.function,
@@ -383,11 +396,23 @@ Future<void> _onCreateTextResponses(
             ? ''
             : out.map((e) => e.raw).join('\n');
 
-        toolOutputs.add(_toolOutputInput(callId: c.callId, outputText: outputText));
+        toolOutputs.add(
+          _toolOutputInput(callId: c.callId, outputText: outputText),
+        );
       }
 
       nextInputArray = toolOutputs;
       // continue loop -> send tool outputs to model
+    }
+
+    // Persist the response id on the assistant item so replay can jump back via previousResponseId.
+    if (previousId != null && assistReply.lastResponseId != previousId) {
+      final idx = workingChat0.items.indexWhere((e) => e.id == assistReply.id);
+      if (idx != -1) {
+        workingChat0.items[idx] = assistReply.copyWith(
+          lastResponseId: previousId,
+        );
+      }
     }
 
     // Remove mcp log item if it was only placeholder
@@ -411,6 +436,7 @@ Future<void> _onCreateTextResponses(
     _chatItemRNMap.remove(mcpLogItem.id)?.dispose();
   }
 }
+
 Future<void> _onCreateText(
   BuildContext context,
   String chatId,
@@ -814,7 +840,41 @@ void _onReplay({
     context.showSnackBar('${libL10n.fail}: $msg');
     return;
   }
+
+  final chatType = Cfg.chatType.value;
+  final usingResponsesApi =
+      _useResponsesApi(Cfg.current) &&
+      (chatType == ChatType.text || chatType == ChatType.voicejustin);
+  String? prevResponseId;
+  if (usingResponsesApi) {
+    for (var i = replayMsgIdx - 1; i >= 0; i--) {
+      final rid = chatHistory.items[i].lastResponseId;
+      if (rid != null && rid.isNotEmpty) {
+        prevResponseId = rid;
+        break;
+      }
+    }
+
+    // If this chat was created before we started persisting per-message response ids,
+    // replay with Responses API can't reliably reconstruct earlier state.
+    if (replayMsgIdx > 0 && prevResponseId == null) {
+      context.showSnackBar(
+        'Replay not available (missing response id history).',
+      );
+      return;
+    }
+  }
+
   chatHistory.items.removeRange(replayMsgIdx, chatHistory.items.length);
+
+  if (usingResponsesApi) {
+    final cur = allHistories[chatId];
+    if (cur != null && cur.lastResponseId != prevResponseId) {
+      final ne = cur.copyWith(items: cur.items, l: prevResponseId);
+      allHistories[chatId] = ne;
+      if (_curChatId.value == chatId) _curChat = ne;
+    }
+  }
 
   final text = item.content.firstWhereOrNull((e) => e.type.isText)?.raw;
   if (text != null) {
@@ -1051,6 +1111,15 @@ Future<ChatContent> contentFromPath(String path) async {
         final ffile = await File(newf).writeAsString(newf);
         final dataUrl = await _pathToDataUrl(ffile.path);
         return ChatContent.file(dataUrl);
+      } else if (getAppFileType(path) == AppFileType.reversefiletotext) {
+        final content = await File(path).readAsString();
+        final filename = p.basename(path);
+        final metadata = File(path).statSync();
+        return ChatContent.text('''User Attached File :   
+        FileName: $filename
+        MetaData: $metadata
+        FilePath: $path
+        FileContent: $content''');
       }
     }
     return ChatContent.file(
@@ -1119,19 +1188,17 @@ Future<void> _onAudioModel(
   _filesPicked.value = [];
   final audioDataBuffer = StringBuffer();
   final transcriptBuffer = StringBuffer();
-
+var voice = await getCurrentVoice();
   try {
     final stream = Cfg.client.createChatCompletionStream(
       request: CreateChatCompletionRequest(
         model: ChatCompletionModel.modelId(
-          Cfg.current.audioModel ?? 'gpt-4o-mini-audio-preview',
+          Cfg.current.model,
         ),
         messages: msgs,
-        modalities: Cfg.current.audioModel == 'gpt-4o-mini-audio-preview'
-            ? [ChatCompletionModality.audio, ChatCompletionModality.text]
-            : [ChatCompletionModality.audio],
+        modalities: [ ChatCompletionModality.text,ChatCompletionModality.audio],
         audio: ChatCompletionAudioOptions(
-          voice: await getCurrentVoice(),
+          voice: voice,
           format: ChatCompletionAudioFormat.pcm16,
         ),
         temperature: aiSettings.temperature,
@@ -1206,7 +1273,7 @@ Future<void> _onAudioModel(
     _onErr(e, s, chatId, 'Catch audio stream');
   }
 }
-
+////TODO refactoring and optimizing streaming audio above
 Future<void> _onTtsModel(
   BuildContext context,
   String chatId,
@@ -1390,7 +1457,11 @@ Future<void> _onTtsModel(
               role: ChatRole.user,
             );
             final con = (await _historyCarried(
-              ChatHistory(lastResponseId: null,items: [ttsMsg], id: Uuid().v4()),
+              ChatHistory(
+                lastResponseId: null,
+                items: [ttsMsg],
+                id: Uuid().v4(),
+              ),
             )).toList();
 
             final ttsStream = Cfg.client.createChatCompletionStream(

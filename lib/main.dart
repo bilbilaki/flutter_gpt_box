@@ -11,9 +11,7 @@ import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/hive/hive_registrar.g.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
-import 'package:telegram/telegram.dart';
 
-final Telegram telegram = Telegram();
 final persistentCache = PersistentTranslationCache(
   ttl: Duration(days: 365),
   maxEntries: 5000,

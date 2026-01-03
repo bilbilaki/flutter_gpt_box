@@ -31,6 +31,10 @@ _ChatConfig _$ChatConfigFromJson(Map<String, dynamic> json) => _ChatConfig(
   isVertex: json['isVertex'] as bool?,
   vertexProjectId: json['vertexProjectId'] as String?,
   vertexLocation: json['vertexLocation'] as String?,
+  proxyHost: json['proxyHost'] as String? ?? '',
+  proxyPort: (json['proxyPort'] as num?)?.toInt() ?? 0,
+  proxyType: json['proxyType'] as String? ?? ChatConfigX.defaultProxyType,
+  proxyEnabled: json['proxyEnabled'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
@@ -58,4 +62,8 @@ Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
       'isVertex': instance.isVertex,
       'vertexProjectId': instance.vertexProjectId,
       'vertexLocation': instance.vertexLocation,
+      'proxyHost': instance.proxyHost,
+      'proxyPort': instance.proxyPort,
+      'proxyType': instance.proxyType,
+      'proxyEnabled': instance.proxyEnabled,
     };
