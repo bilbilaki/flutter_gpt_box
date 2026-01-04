@@ -10,13 +10,17 @@ import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/res/url.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/main.dart';
+import 'package:gpt_box/view/page/home/home.dart';
+
 import 'package:openai_dart/openai_dart.dart';
 import 'package:dio/dio.dart';
 
-
-
 abstract final class Cfg {
-  static var client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url,client: httpCli);
+  static var client = OpenAIClient(
+    apiKey: vn.value.key,
+    baseUrl: vn.value.url,
+    client: httpCli,
+  );
   static final models = nvn<List<String>>();
 
   // ignore: deprecated_member_use_from_same_package
@@ -122,9 +126,12 @@ abstract final class Cfg {
 
   /// Apply the current profile to the openai client.
   static void applyClient() {
-    
-      client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url,client:httpCli );
-    
+    httpCli = ProxyHttpClient.create();
+    client = OpenAIClient(
+      apiKey: vn.value.key,
+      baseUrl: vn.value.url,
+      client: httpCli,
+    );
   }
 
   /// Show the dialog to pick the model.

@@ -280,8 +280,8 @@ Future<void> _onCreateTextResponses(
   _loadingChatIds.value.add(chatId);
   _loadingChatIds.notify();
   _autoHideCtrl.autoHideEnabled = false;
-
-  final responses =ResponsesService(client:httpCli);
+  httpCli = ProxyHttpClient.create();
+  final responses = ResponsesService(client: httpCli);
   final tools = await _responsesToolsForChat(workingChat0);
   final instructions = _buildPinnedInstructions(cfg);
 
@@ -1188,15 +1188,13 @@ Future<void> _onAudioModel(
   _filesPicked.value = [];
   final audioDataBuffer = StringBuffer();
   final transcriptBuffer = StringBuffer();
-var voice = await getCurrentVoice();
+  var voice = await getCurrentVoice();
   try {
     final stream = Cfg.client.createChatCompletionStream(
       request: CreateChatCompletionRequest(
-        model: ChatCompletionModel.modelId(
-          Cfg.current.model,
-        ),
+        model: ChatCompletionModel.modelId(Cfg.current.model),
         messages: msgs,
-        modalities: [ ChatCompletionModality.text,ChatCompletionModality.audio],
+        modalities: [ChatCompletionModality.text, ChatCompletionModality.audio],
         audio: ChatCompletionAudioOptions(
           voice: voice,
           format: ChatCompletionAudioFormat.pcm16,
@@ -1273,6 +1271,7 @@ var voice = await getCurrentVoice();
     _onErr(e, s, chatId, 'Catch audio stream');
   }
 }
+
 ////TODO refactoring and optimizing streaming audio above
 Future<void> _onTtsModel(
   BuildContext context,
