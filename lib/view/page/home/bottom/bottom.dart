@@ -19,7 +19,8 @@ final class _HomeBottomState extends State<_HomeBottom> {
   ];
 
   bool _isRecording = false;
- late Directory _recordingPath;
+  bool _isExtrasMenuExpanded = false;
+  late File _recordingPath;
 
   @override
   void initState() {
@@ -38,13 +39,14 @@ final class _HomeBottomState extends State<_HomeBottom> {
       return;
     }
     final appdir = await getApplicationCacheDirectory();
-    _recordingPath= await Directory(
+ final   _recordingPath1= await Directory(
           p.join(
             appdir.path,
             'rec_hold',
-            'record_${DateTime.now().millisecondsSinceEpoch}.wav',
-          ),
-    ).create();
+            
+          ),).create();
+        _recordingPath= await  File(p.join(_recordingPath1.path, 'record_${DateTime.now().millisecondsSinceEpoch}.wav')).create();
+    
     try {
       await _audioRecorder.start(
         const RecordConfig(
@@ -78,7 +80,6 @@ final class _HomeBottomState extends State<_HomeBottom> {
     }
 
     final chatId = _curChatId.value;
-    final text = inputCtrl.text;
       final files = [File(path)];
   if (files.isEmpty) return;
   _filesPicked.value.addAll(files.map((e) => e.path).whereType<String>());
@@ -159,21 +160,17 @@ final class _HomeBottomState extends State<_HomeBottom> {
             _buildVoiceChatBtn(),
           ],
         ),
-        const SizedBox(height: 1),
-        Row(
-          children: [
-            IconButton(
-              tooltip: 'X.Search',
-              icon: const Icon(Icons.one_x_mobiledata, size: 19),
-              onPressed: () => _navigateToPage(context, XAiSearchFantasy()),
-            ),
-
+       const SizedBox(height: 0.5),
+       Row(children: [
+            _buildExtrasMenu(),
             const Spacer(),
             UIs.width7,
             _buildSwitchChatType(),
             UIs.width7,
-          ],
-        ),
+
+
+       ]),
+        
       ],
     );
   }
@@ -200,6 +197,85 @@ final class _HomeBottomState extends State<_HomeBottom> {
         await _navigateToPage(context, VoiceAssistantScreen());
       },
       icon: Icon(Icons.voice_chat, size: 17),
+    );
+  }
+
+  Widget _buildExtrasMenu() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedSize(
+          duration: Durations.short1,
+          curve: Curves.fastOutSlowIn,
+          child: ClipRect(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              heightFactor: _isExtrasMenuExpanded ? 1 : 0,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildExtrasMenuItem(
+                    context,
+                    label: 'X.Search',
+                    icon: Icons.one_x_mobiledata,
+                    onPressed: () => _openExtrasPage(XAiSearchFantasy()),
+                  ),
+                  _buildExtrasMenuItem(
+                    context,
+                    label: 'Media Lab',
+                    icon: Icons.photo_library,
+                    onPressed: () => _openExtrasPage(const MediaLabPage()),
+                  ),
+                  _buildExtrasMenuItem(
+                    context,
+                    label: 'Speech',
+                    icon: Icons.record_voice_over,
+                    onPressed: () => _openExtrasPage(const OpenAITTSPage()),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        IconButton(
+          tooltip: _isExtrasMenuExpanded ? 'Close extras menu' : 'Extras menu',
+          icon: Icon(
+            _isExtrasMenuExpanded ? Icons.expand_more : Icons.menu_open,
+            size: 19,
+          ),
+          onPressed: () => setState(() => _isExtrasMenuExpanded = !_isExtrasMenuExpanded),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openExtrasPage(Widget page) async {
+    setState(() => _isExtrasMenuExpanded = false);
+    await _navigateToPage(context, page);
+  }
+
+  Widget _buildExtrasMenuItem(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: TextButton.icon(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          minimumSize: const Size(0, 0),
+          backgroundColor: colorScheme.surface.withOpacity(0.12),
+          foregroundColor: colorScheme.onSurface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        onPressed: onPressed,
+        icon: Icon(icon, size: 17),
+        label: Text(label, style: UIs.text13),
+      ),
     );
   }
 

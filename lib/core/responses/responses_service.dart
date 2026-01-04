@@ -1,13 +1,14 @@
  part of 'package:gpt_box/view/page/home/home.dart';
 
 class ResponsesService {
-  final http.Client _client;
+  late http.Client _client;
   final Duration defaultTimeout;
 
   ResponsesService({
     http.Client? client,
     this.defaultTimeout = const Duration(minutes: 30),
-  }) : _client = client ?? http.Client();
+  }) : _client = client ?? httpCli;
+
 
   Uri _root() {
     final base = Cfg.current.url.trim().replaceAll(RegExp(r'/+$'), '');

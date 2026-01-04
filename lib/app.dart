@@ -11,6 +11,7 @@ import 'package:gpt_box/view/page/home/home.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
+
 part 'intro.dart';
 
 class MyApp extends StatelessWidget {
@@ -137,7 +138,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
     );
-    
+
     UIs.colorSeed = Color(Stores.setting.themeColorSeed.get());
     final themeMode = switch (Stores.setting.themeMode.get()) {
       1 => ThemeMode.light,

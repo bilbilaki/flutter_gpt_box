@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
@@ -10,15 +9,14 @@ import 'package:gpt_box/data/model/chat/type.dart';
 import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/res/url.dart';
 import 'package:gpt_box/data/store/all.dart';
-import 'package:http/io_client.dart';
+import 'package:gpt_box/main.dart';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:dio/dio.dart';
-import 'package:socks5_proxy/socks.dart';
 
-final baseHttpClient = HttpClient();
+
 
 abstract final class Cfg {
-  static var client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url);
+  static var client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url,client: httpCli);
   static final models = nvn<List<String>>();
 
   // ignore: deprecated_member_use_from_same_package
@@ -124,18 +122,9 @@ abstract final class Cfg {
 
   /// Apply the current profile to the openai client.
   static void applyClient() {
-    if (Cfg.current.proxyEnabled) {
-     SocksTCPClient.assignToHttpClient(baseHttpClient, [
-        ProxySettings(InternetAddress(Cfg.current.proxyHost), Cfg.current.proxyPort),
-      ]);
-      final httpClient = IOClient(baseHttpClient);
-
-      client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url,client: httpClient);
-    }
- else {
-  client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url);
-  
- }
+    
+      client = OpenAIClient(apiKey: vn.value.key, baseUrl: vn.value.url,client:httpCli );
+    
   }
 
   /// Show the dialog to pick the model.

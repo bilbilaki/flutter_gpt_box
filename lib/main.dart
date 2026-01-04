@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:http/http.dart' as http;
 
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,7 @@ import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/hive/hive_registrar.g.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
-
+late http.Client httpCli;
 final persistentCache = PersistentTranslationCache(
   ttl: Duration(days: 365),
   maxEntries: 5000,

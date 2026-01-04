@@ -27,10 +27,12 @@ import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/data/store/dummy.dart';
 import 'package:gpt_box/data/store/setting.dart';
-import 'package:gpt_box/main.dart' show persistentCache;
+import 'package:gpt_box/main.dart' show httpCli, persistentCache;
 import 'package:gpt_box/view/loader/main.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
+import 'package:gpt_box/view/page/extras/medias.dart';
+import 'package:gpt_box/view/page/extras/speech.dart';
 import 'package:gpt_box/view/widget/x_ai_search_fantasy.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:typed_data';
@@ -42,6 +44,7 @@ import 'package:siri_wave/siri_wave.dart';
 import 'package:openai_dart/openai_dart.dart' hide Image;
 import 'package:path/path.dart' as p;
 import 'package:record/record.dart';
+import 'package:socks5_proxy/socks_client.dart';
 import 'package:uuid/uuid.dart';
 import 'package:pool/pool.dart';
 
@@ -250,6 +253,7 @@ class _HomePageState extends State<HomePage>
   void _migrate() async {
     final lastVer = PrefProps.lastVer.get();
     const now = BuildData.build;
+     httpCli =  ProxyHttpClient.create();
 
     await MigrationFns.appendV1ToUrl(lastVer, now, context: context);
 
@@ -328,3 +332,77 @@ final class _Body extends StatelessWidget {
   }
 }
 
+class ProxyHttpClient {
+  static http.Client create() {
+    if (!Cfg.current.proxyEnabled) {
+      return http.Client();
+    }
+
+    final httpClient = HttpClient();
+    httpClient.connectionTimeout = const Duration(seconds: 10);
+    httpClient.idleTimeout = const Duration(seconds: 10);
+
+    if (Cfg.current.proxyType == "http") {
+      httpClient.findProxy = (uri) =>
+          "PROXY ${Cfg.current.proxyHost}:${Cfg.current.proxyPort}";
+    } else if (Cfg.current.proxyType == "socks5") {
+      SocksTCPClient.assignToHttpClient(httpClient, [
+        ProxySettings(
+          InternetAddress(Cfg.current.proxyHost),
+          Cfg.current.proxyPort,
+        ),
+      ]);
+    }
+
+    return _IOClient(httpClient);
+  }
+}
+
+class _IOClient extends http.BaseClient {
+  final HttpClient _inner;
+
+  _IOClient(this._inner);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final stream = request.finalize();
+    final req = await _inner.openUrl(request.method, request.url);
+
+    request.headers.forEach((key, value) {
+      req.headers.set(key, value);
+    });
+
+    await stream.pipe(req);
+    final response = await req.close();
+
+    final responseStream = response.transform<List<int>>(
+      StreamTransformer.fromHandlers(handleData: _handleData),
+    );
+
+    return http.StreamedResponse(
+      responseStream,
+      response.statusCode,
+      contentLength: response.contentLength,
+      request: request,
+      headers: _foldHeaders(response.headers),
+      reasonPhrase: response.reasonPhrase,
+    );
+  }
+
+  @override
+  void close() {
+    _inner.close();
+  }
+
+  static void _handleData(List<int> data, EventSink<List<int>> sink) {
+    sink.add(data);
+  }
+
+  Map<String, String> _foldHeaders(HttpHeaders headers) {
+    final map = <String, String>{};
+    headers.forEach((key, value) {
+      map[key] = value.join(',');
+    });
+    return map;
+  }
+}

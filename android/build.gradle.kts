@@ -1,7 +1,12 @@
 allprojects {
     repositories {
+
+        maven {
+            url = uri(rootProject.projectDir.resolve("local_repo"))
+        }
         google()
         mavenCentral()
+        
     }
 }
 

@@ -21,6 +21,8 @@ import 'package:icons_plus/icons_plus.dart';
 import 'package:shortid/shortid.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
+import '../../../main.dart';
+
 part 'mcp.dart';
 part 'profile.dart';
 part 'res.dart';

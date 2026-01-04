@@ -252,11 +252,7 @@ class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
        leading: IconButton(
              icon: const Icon(Icons.arrow_back),
              onPressed: () {
-                                   Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => MyApp(),
-          ),
+                                   Navigator.pop(context
         );// This pops the screen and goes back
              },
            ),

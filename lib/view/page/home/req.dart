@@ -281,7 +281,7 @@ Future<void> _onCreateTextResponses(
   _loadingChatIds.notify();
   _autoHideCtrl.autoHideEnabled = false;
 
-  final responses = ResponsesService();
+  final responses =ResponsesService(client:httpCli);
   final tools = await _responsesToolsForChat(workingChat0);
   final instructions = _buildPinnedInstructions(cfg);
 

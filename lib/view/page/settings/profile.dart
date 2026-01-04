@@ -626,6 +626,8 @@ final class _ProfilePageState extends State<ProfilePage>
             value: cfg.proxyEnabled,
             onChanged: (value) {
               Cfg.setTo(cfg: cfg.copyWith(proxyEnabled: value));
+                   httpCli =  ProxyHttpClient.create();
+
             },
           ),
         ),

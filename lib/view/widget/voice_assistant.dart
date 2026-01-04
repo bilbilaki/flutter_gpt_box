@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -726,28 +726,40 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
 
 
 
+// Add this import at the top of your file
+// Remove 'package:record/record.dart' if you no longer use it elsewhere.
+
 class VoiceSessionController {
-  static const defaultRealtimeModel = 'gpt-4o-realtime-preview';
+  static const defaultRealtimeModel = 'gpt-realtime-mini';
   static const availableRealtimeModels = <String>[
+    'gpt-realtime',
+    'gpt-realtime-mini',
     'gpt-4o-realtime-preview',
     'gpt-4o-mini-realtime-preview',
   ];
 
-  final AudioRecorder _audioRecorder = AudioRecorder();
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  final Queue<Uint8List> _wavQueue = Queue<Uint8List>();
-  StreamSubscription<void>? _playerCompleteSub;
-  BytesBuilder _pcmBuffer = BytesBuilder(copy: false);
-  bool _isPlaying = false;
+  // --- CHANGED: Use FlutterSoundRecorder instead of AudioRecorder ---
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  final FlutterSoundPlayer _soundPlayer = FlutterSoundPlayer();
+
   bool _pendingSpeakOff = false;
   static const int _sampleRateHz = 24000;
   static const int _channels = 1;
-  static const int _minChunkMs = 250;
-  StreamSubscription<Uint8List>? _micStreamSub;
+
+  // --- CHANGED: StreamController to handle live audio data ---
+  StreamController<Uint8List>? _recordingDataController;
+  StreamSubscription? _recordingDataSubscription;
+
+  StreamSink<Uint8List>? _playerSink;
+  bool _playerOpened = false;
+  bool _recorderOpened = false;
+  Timer? _speakOffTimer;
 
   late final RealtimeClient _realtimeClient;
   Voice _currentVoice = Voice.alloy;
   String _currentModel = defaultRealtimeModel;
+  
+  // Handlers
   EventHandlerCallback? _conversationUpdatedHandler;
   EventHandlerCallback? _conversationCompletedHandler;
   EventHandlerCallback? _conversationInterruptedHandler;
@@ -756,7 +768,7 @@ class VoiceSessionController {
   EventHandlerCallback? _allEventsHandler;
 
   String? _currentAssistantItemId;
-  int _playedSamples = 0; // pcm16 samples played for the current assistant item
+  int _playedSamples = 0;
   VoiceInteractionMode _mode = VoiceInteractionMode.pushToTalk;
 
   final ValueNotifier<List<String>> logs = ValueNotifier<List<String>>([]);
@@ -770,11 +782,48 @@ class VoiceSessionController {
   VoiceSessionController({this.onAiSpeakingStatusChanged, this.onAudioChunk});
 
   Future<void> initialize() async {
-    await _audioPlayer.setReleaseMode(ReleaseMode.stop);
-    _playerCompleteSub = _audioPlayer.onPlayerComplete.listen((_) {
-      _isPlaying = false;
-      unawaited(_maybePlayNext());
-    });
+    // 1. Setup Audio Session (Crucial for duplex audio - hearing while speaking)
+    final session = await AudioSession.instance;
+    await session.configure( AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions:
+          AVAudioSessionCategoryOptions.allowBluetooth |
+          AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionMode: AVAudioSessionMode.voiceChat,
+      avAudioSessionRouteSharingPolicy:
+          AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        flags: AndroidAudioFlags.none,
+        usage: AndroidAudioUsage.voiceCommunication,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      androidWillPauseWhenDucked: true,
+    ));
+
+    // 2. Initialize Player
+    if (!_playerOpened) {
+      await _soundPlayer.openPlayer();
+      _playerOpened = true;
+    }
+
+    // 3. Initialize Recorder
+    if (!_recorderOpened) {
+      await _recorder.openRecorder();
+      _recorderOpened = true;
+    }
+
+    // Start player stream immediately (waiting for data)
+    await _soundPlayer.startPlayerFromStream(
+      codec: Codec.pcm16,
+      interleaved: true,
+      numChannels: _channels,
+      sampleRate: _sampleRateHz,
+      bufferSize: 8192,
+    );
+    _playerSink = _soundPlayer.uint8ListSink;
+
     _realtimeClient = RealtimeClient(apiKey: Cfg.current.key);
     _setupRealtimeHandlers();
   }
@@ -782,7 +831,6 @@ class VoiceSessionController {
   void _log(String msg) {
     final ts = DateTime.now().toIso8601String();
     final next = [...logs.value, '[$ts] $msg'];
-    // keep last 400 lines
     logs.value = next.length > 400 ? next.sublist(next.length - 400) : next;
   }
 
@@ -812,14 +860,14 @@ class VoiceSessionController {
       }
       await _realtimeClient.updateSession(
         voice: _currentVoice,
-        // Live mode relies on server VAD so we can loop automatically.
         turnDetection: _mode == VoiceInteractionMode.live
             ? const TurnDetection(type: TurnDetectionType.serverVad)
             : null,
       );
       await _realtimeClient.waitForSessionCreated();
       isConnected.value = true;
-      _log('Realtime connected (session created)');
+      _log('Realtime connected');
+      
       if (_mode == VoiceInteractionMode.live) {
         await startLive();
       } else {
@@ -846,6 +894,7 @@ class VoiceSessionController {
     }
   }
 
+  // --- Push-to-Talk Logic ---
   Future<void> startRecording() async {
     final status = await Permission.microphone.request();
     if (status != PermissionStatus.granted) {
@@ -858,16 +907,91 @@ class VoiceSessionController {
       'user_audio_${DateTime.now().millisecondsSinceEpoch}.pcm',
     );
 
-    
-    await _audioRecorder.start(
-      const RecordConfig(
-        encoder: AudioEncoder.pcm16bits,
-        sampleRate: 24000, 
-        numChannels: 1,
-      ),
-      path: _currentRecordingPath!,
+    // CHANGED: Use FlutterSoundRecorder to file
+    await _recorder.startRecorder(
+      toFile: _currentRecordingPath,
+      codec: Codec.pcm16,
+      sampleRate: 24000,
+      numChannels: 1,
     );
   }
+
+  Future<void> stopRecordingAndFetchResponse({required String voice}) async {
+    try {
+      // CHANGED: Stop FlutterSoundRecorder
+      await _recorder.stopRecorder();
+      
+      if (_currentRecordingPath == null) throw Exception("No recording path found");
+
+      final file = File(_currentRecordingPath!);
+      if (!await file.exists()) throw Exception("Audio file not found");
+      
+      final audioBytes = await file.readAsBytes();
+      final audioBase64 = base64Encode(audioBytes);
+
+      await _connectRealtime(voice: voice);
+
+      onAiSpeakingStatusChanged?.call(true);
+      await _realtimeClient.sendUserMessageContent(
+        [ContentPart.inputAudio(audio: audioBase64)],
+      );
+    } finally {
+      _currentRecordingPath = null;
+    }
+  }
+
+  Future<void> cancelRecording() async {
+    if (_recorder.isRecording) {
+      await _recorder.stopRecorder();
+    }
+    _currentRecordingPath = null;
+  }
+
+  // --- Live Mode Logic ---
+  Future<void> startLive() async {
+    if (_recorder.isRecording) return; // Already recording
+
+    final status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) {
+      throw Exception('Microphone permission denied');
+    }
+    
+    _log('Starting live mic stream (pcm16 24k)');
+
+    // 1. Create a StreamController to receive data from recorder
+    _recordingDataController = StreamController<Uint8List>();
+    
+    // 2. Listen to the controller and send data to OpenAI
+    _recordingDataSubscription = _recordingDataController!.stream.listen(
+      (chunk) {
+        if (_realtimeClient.isConnected()) {
+          // Send to OpenAI (fire and forget)
+          _realtimeClient.appendInputAudio(chunk);
+        }
+      },
+      onError: (e) => _log('Mic stream error: $e'),
+    );
+
+    // 3. Start Recorder writing to the controller's sink
+    await _recorder.startRecorder(
+      toStream: _recordingDataController!.sink,
+      codec: Codec.pcm16,
+      sampleRate: 24000,
+      numChannels: 1,
+    );
+  }
+
+  Future<void> stopLive() async {
+    if (_recorder.isRecording) {
+      await _recorder.stopRecorder();
+    }
+    await _recordingDataSubscription?.cancel();
+    await _recordingDataController?.close();
+    _recordingDataSubscription = null;
+    _recordingDataController = null;
+  }
+
+  // --- Helpers & Clean up ---
 
   Voice _voiceFromName(String voice) {
     return Voice.values.firstWhere(
@@ -883,14 +1007,12 @@ class VoiceSessionController {
     if (!_realtimeClient.isConnected()) {
       await _realtimeClient.connect(model: _currentModel);
     }
-
     await _realtimeClient.updateSession(voice: _currentVoice);
     await _realtimeClient.waitForSessionCreated();
   }
 
   void _setupRealtimeHandlers() {
     _allEventsHandler = (event) async {
-      // Keep logs readable and avoid dumping huge base64 payloads (audio deltas).
       switch (event) {
         case RealtimeEventResponseAudioDelta e:
           final approxBytes = (e.delta.length * 3) ~/ 4;
@@ -912,266 +1034,130 @@ class VoiceSessionController {
     };
     _realtimeClient.on(RealtimeEventType.error, _errorHandler!);
 
-	    _conversationUpdatedHandler = (event) async {
-	      final ev = event as RealtimeEventConversationUpdated;
-	      final delta = ev.result.delta;
-	      final audio = delta?.audio;
-	      final itemId = ev.result.item?.item.id;
-	      if (audio != null && audio.isNotEmpty) {
-	        onAiSpeakingStatusChanged?.call(true);
-	        if (itemId != null) {
-	          if (_currentAssistantItemId != itemId) {
-	            _currentAssistantItemId = itemId;
-	            _playedSamples = 0;
-	            unawaited(_resetPlayback());
-	          }
-	        }
-	        _appendPcm(audio);
-	        _playedSamples += audio.lengthInBytes ~/ 2;
-	        onAudioChunk?.call(audio);
-	      }
-	    };
-	    _conversationCompletedHandler = (event) async {
-	      _pendingSpeakOff = true;
-	      _flushPcmBuffer();
-	      await _maybePlayNext();
-	    };
+    _conversationUpdatedHandler = (event) async {
+      final ev = event as RealtimeEventConversationUpdated;
+      final delta = ev.result.delta;
+      final audio = delta?.audio;
+      final itemId = ev.result.item?.item.id;
+      if (audio != null && audio.isNotEmpty) {
+        onAiSpeakingStatusChanged?.call(true);
+        if (itemId != null) {
+          if (_currentAssistantItemId != itemId) {
+            _currentAssistantItemId = itemId;
+            _playedSamples = 0;
+            await _resetPlayback();
+          }
+        }
+        _appendPcm(audio);
+        _playedSamples += audio.lengthInBytes ~/ 2;
+        onAudioChunk?.call(audio);
+      }
+    };
+
+    _conversationCompletedHandler = (event) async {
+      _pendingSpeakOff = true;
+      _speakOffTimer?.cancel();
+      _speakOffTimer = Timer(const Duration(milliseconds: 250), () {
+        if (!_pendingSpeakOff) return;
+        _pendingSpeakOff = false;
+        onAiSpeakingStatusChanged?.call(false);
+      });
+    };
+
     _conversationInterruptedHandler = (event) async {
-      // User started speaking (server VAD). Stop current response immediately.
       _log('Conversation interrupted -> cancelResponse');
       await interrupt();
     };
 
     _speechStoppedHandler = (event) async {
-      // In server VAD mode, when speech stops we ask the model to respond.
       if (_mode != VoiceInteractionMode.live) return;
       _log('Speech stopped -> createResponse');
       await _realtimeClient.createResponse();
     };
 
-    _realtimeClient.on(
-      RealtimeEventType.conversationUpdated,
-      _conversationUpdatedHandler!,
-    );
-    _realtimeClient.on(
-      RealtimeEventType.conversationItemCompleted,
-      _conversationCompletedHandler!,
-    );
-    _realtimeClient.on(
-      RealtimeEventType.conversationInterrupted,
-      _conversationInterruptedHandler!,
-    );
-    _realtimeClient.on(
-      RealtimeEventType.inputAudioBufferSpeechStopped,
-      _speechStoppedHandler!,
-    );
+    _realtimeClient.on(RealtimeEventType.conversationUpdated, _conversationUpdatedHandler!);
+    _realtimeClient.on(RealtimeEventType.conversationItemCompleted, _conversationCompletedHandler!);
+    _realtimeClient.on(RealtimeEventType.conversationInterrupted, _conversationInterruptedHandler!);
+    _realtimeClient.on(RealtimeEventType.inputAudioBufferSpeechStopped, _speechStoppedHandler!);
   }
 
-  Future<void> startLive() async {
-    if (_micStreamSub != null) return;
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      throw Exception('Microphone permission denied');
-    }
-    _log('Starting live mic stream (pcm16 24k)');
-    final stream = await _audioRecorder.startStream(
-      const RecordConfig(
-        encoder: AudioEncoder.pcm16bits,
-        sampleRate: 24000,
-        numChannels: 1,
-      ),
-    );
-    _micStreamSub = stream.listen(
-      (chunk) async {
-        if (!_realtimeClient.isConnected()) return;
-        // Avoid awaiting here to keep up with mic pace.
-        unawaited(_realtimeClient.appendInputAudio(chunk));
-      },
-      onError: (e) => _log('Mic stream error: $e'),
-      onDone: () => _log('Mic stream done'),
-      cancelOnError: false,
-    );
-  }
-
-  Future<void> stopLive() async {
-    await _micStreamSub?.cancel();
-    _micStreamSub = null;
-    if (await _audioRecorder.isRecording()) {
-      await _audioRecorder.stop();
-    }
-  }
-
-	  Future<void> interrupt() async {
-	    if (!_realtimeClient.isConnected()) return;
-	    try {
-	      await _resetPlayback();
-	      await _realtimeClient.cancelResponse(_currentAssistantItemId, _playedSamples);
-	    } catch (e) {
-	      // Fallback: cancel without truncation.
-	      _log('cancelResponse failed: $e');
-	      await _realtimeClient.cancelResponse(null);
+  Future<void> interrupt() async {
+    if (!_realtimeClient.isConnected()) return;
+    try {
+      await _resetPlayback();
+      // Sending samples played helps the AI know where it was interrupted
+      await _realtimeClient.cancelResponse(_currentAssistantItemId, _playedSamples);
+    } catch (e) {
+      _log('cancelResponse failed: $e');
+      await _realtimeClient.cancelResponse(null);
     } finally {
       onAiSpeakingStatusChanged?.call(false);
-	    }
-	  }
+    }
+  }
 
-	  void _appendPcm(Uint8List pcm) {
-	    _pcmBuffer.add(pcm);
-	    final bytesPerMs = (_sampleRateHz * _channels * 2) ~/ 1000;
-	    final minBytes = bytesPerMs * _minChunkMs;
-	    if (_pcmBuffer.length >= minBytes) {
-	      final chunkPcm = _pcmBuffer.takeBytes();
-	      _wavQueue.add(
-	        _pcm16ToWav(chunkPcm, sampleRate: _sampleRateHz, channels: _channels),
-	      );
-	      unawaited(_maybePlayNext());
-	    }
-	  }
+  void _appendPcm(Uint8List pcm) {
+    _pendingSpeakOff = false;
+    _speakOffTimer?.cancel();
+    final sink = _playerSink;
+    if (sink == null) return;
+    sink.add(pcm);
+  }
 
-	  void _flushPcmBuffer() {
-	    if (_pcmBuffer.length == 0) return;
-	    final chunkPcm = _pcmBuffer.takeBytes();
-	    _wavQueue.add(
-	      _pcm16ToWav(chunkPcm, sampleRate: _sampleRateHz, channels: _channels),
-	    );
-	  }
-
-	  Future<void> _maybePlayNext() async {
-	    if (_isPlaying) return;
-	    if (_wavQueue.isEmpty) {
-	      if (_pendingSpeakOff) {
-	        _pendingSpeakOff = false;
-	        onAiSpeakingStatusChanged?.call(false);
-	      }
-	      return;
-	    }
-
-	    _isPlaying = true;
-	    final wav = _wavQueue.removeFirst();
-	    try {
-	      await _audioPlayer.play(BytesSource(wav));
-	    } catch (e) {
-	      _log('Audio play error: $e');
-	      _isPlaying = false;
-	      await _maybePlayNext();
-	    }
-	  }
-
-	  Future<void> _resetPlayback() async {
-	    _pendingSpeakOff = false;
-	    _wavQueue.clear();
-	    _pcmBuffer = BytesBuilder(copy: false);
-	    _isPlaying = false;
-	    try {
-	      await _audioPlayer.stop();
-	    } catch (_) {
-	      // ignore
-	    }
-	  }
-
-  Future<void> stopRecordingAndFetchResponse({required String voice}) async {
+  Future<void> _resetPlayback() async {
+    _pendingSpeakOff = false;
+    _speakOffTimer?.cancel();
+    _speakOffTimer = null;
+    _playerSink = null;
     try {
-      final path = await _audioRecorder.stop();
-      if (path == null) throw Exception("Recording failed");
+      await _soundPlayer.stopPlayer();
+    } catch (_) {}
 
-      final file = File(path);
-      if (!await file.exists()) throw Exception("Audio file not found");
-      final audioBytes = await file.readAsBytes();
-      final audioBase64 = base64Encode(audioBytes);
-
-      await _connectRealtime(voice: voice);
-
-      onAiSpeakingStatusChanged?.call(true);
-      await _realtimeClient.sendUserMessageContent(
-        [ContentPart.inputAudio(audio: audioBase64)],
+    try {
+      await _soundPlayer.startPlayerFromStream(
+        codec: Codec.pcm16,
+        interleaved: true,
+        numChannels: _channels,
+        sampleRate: _sampleRateHz,
+        bufferSize: 8192,
       );
-    } finally {
-      _currentRecordingPath = null;
+      _playerSink = _soundPlayer.uint8ListSink;
+    } catch (e) {
+      _log('Sound player restart error: $e');
     }
   }
 
-  Future<void> cancelRecording() async {
-    if (await _audioRecorder.isRecording()) {
-      await _audioRecorder.stop();
-    }
-    _currentRecordingPath = null;
-  }
+  void dispose() {
+    _recorder.closeRecorder(); // Dispose recorder
+    _soundPlayer.closePlayer(); // Dispose player
+    
+    _recordingDataSubscription?.cancel();
+    _recordingDataController?.close();
 
-	  void dispose() {
-	    _audioRecorder.dispose();
-	    _playerCompleteSub?.cancel();
-	    _audioPlayer.dispose();
-	    _micStreamSub?.cancel();
-	    if (_conversationUpdatedHandler != null) {
-	      _realtimeClient.off(
-	        RealtimeEventType.conversationUpdated,
-        _conversationUpdatedHandler!,
-      );
+    _speakOffTimer?.cancel();
+    
+    // Remove handlers
+    if (_conversationUpdatedHandler != null) {
+      _realtimeClient.off(RealtimeEventType.conversationUpdated, _conversationUpdatedHandler!);
     }
     if (_conversationCompletedHandler != null) {
-      _realtimeClient.off(
-        RealtimeEventType.conversationItemCompleted,
-        _conversationCompletedHandler!,
-      );
+      _realtimeClient.off(RealtimeEventType.conversationItemCompleted, _conversationCompletedHandler!);
     }
     if (_conversationInterruptedHandler != null) {
-      _realtimeClient.off(
-        RealtimeEventType.conversationInterrupted,
-        _conversationInterruptedHandler!,
-      );
+      _realtimeClient.off(RealtimeEventType.conversationInterrupted, _conversationInterruptedHandler!);
     }
     if (_speechStoppedHandler != null) {
-      _realtimeClient.off(
-        RealtimeEventType.inputAudioBufferSpeechStopped,
-        _speechStoppedHandler!,
-      );
+      _realtimeClient.off(RealtimeEventType.inputAudioBufferSpeechStopped, _speechStoppedHandler!);
     }
     if (_errorHandler != null) {
       _realtimeClient.off(RealtimeEventType.error, _errorHandler!);
     }
     if (_allEventsHandler != null) {
       _realtimeClient.off(RealtimeEventType.all, _allEventsHandler!);
-	    }
-	    unawaited(disconnect());
-	  }
-	}
-
-Uint8List _pcm16ToWav(
-  Uint8List pcm, {
-  int sampleRate = 24000,
-  int channels = 1,
-}) {
-  final dataLen = pcm.length;
-  final byteRate = sampleRate * channels * 2; // 16-bit (2 bytes)
-  final blockAlign = channels * 2;
-  final riffChunkSize = 36 + dataLen;
-
-  final header = BytesBuilder(copy: false);
-  void writeStr(String s) => header.add(ascii.encode(s));
-  void write32(int v) => header.add(
-        (ByteData(4)..setUint32(0, v, Endian.little)).buffer.asUint8List(),
-      );
-  void write16(int v) => header.add(
-        (ByteData(2)..setUint16(0, v, Endian.little)).buffer.asUint8List(),
-      );
-
-  writeStr('RIFF');
-  write32(riffChunkSize);
-  writeStr('WAVE');
-  writeStr('fmt ');
-  write32(16); // PCM header length
-  write16(1); // PCM format
-  write16(channels);
-  write32(sampleRate);
-  write32(byteRate);
-  write16(blockAlign);
-  write16(16); // bits per sample
-  writeStr('data');
-  write32(dataLen);
-
-  return Uint8List.fromList(<int>[...header.toBytes(), ...pcm]);
+    }
+    
+    unawaited(disconnect());
+  }
 }
-
 
 
 

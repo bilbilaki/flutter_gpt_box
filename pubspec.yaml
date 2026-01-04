@@ -98,7 +98,9 @@ dependencies:
   openai_realtime_dart: ^0.1.0+1
   re_highlight: ^0.0.3
   socks5_proxy: ^2.1.1
-
+  flutter_sound: ^9.30.0
+  flutter_ffmpeg_kit_full: ^1.1.5
+  audio_session: ^0.2.2
 dependency_overrides:
   # fl_lib:
   #   path: ../fl_lib
