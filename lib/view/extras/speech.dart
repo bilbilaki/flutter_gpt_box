@@ -10,8 +10,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../data/res/openai.dart';
-import '../home/home.dart';
+import '../../data/res/openai.dart';
+import '../page/home/home.dart';
 
 class OpenAITTSPage extends StatefulWidget {
   const OpenAITTSPage({super.key});

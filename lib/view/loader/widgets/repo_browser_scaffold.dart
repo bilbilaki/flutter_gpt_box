@@ -17,21 +17,34 @@ class RepoBrowserScaffold extends StatefulWidget {
   State<RepoBrowserScaffold> createState() => _RepoBrowserScaffoldState();
 }
 
-class _RepoBrowserScaffoldState extends State<RepoBrowserScaffold> {
+class _RepoBrowserScaffoldState extends State<RepoBrowserScaffold> {       
   ChatService? _chatService;
+  late final VoidCallback _configReloadListener;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
+    _configReloadListener = () => _initAI();
+    Config.reloadNotifier.addListener(_configReloadListener);
     _initAI();
   }
 
-  void _initAI() async {
+  Future<void> _initAI() async {
     final cfg = await Config.load();
+    if (!mounted) return;
+    final newService = ChatService(cfg, widget.path);
     setState(() {
-      _chatService = ChatService(cfg, widget.path);
+      _chatService?.dispose();
+      _chatService = newService;
     });
+  }
+
+  @override
+  void dispose() {
+    Config.reloadNotifier.removeListener(_configReloadListener);
+    _chatService?.dispose();
+    super.dispose();
   }
 
   @override
@@ -39,7 +52,7 @@ class _RepoBrowserScaffoldState extends State<RepoBrowserScaffold> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(widget.title),
+      //   title: Text(widget.title),
         actions: [
           // Button to toggle AI Sidebar
           IconButton(

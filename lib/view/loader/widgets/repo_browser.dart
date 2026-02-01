@@ -1,7 +1,7 @@
 import 'dart:io';
-
+import 'drawershell.dart';
 import 'package:flutter/material.dart';
-import 'package:gpt_box/view/loader/main.dart';
+import '../main.dart';
 import 'package:path/path.dart' as p;
 
 import 'code_forge.dart';
@@ -11,7 +11,7 @@ import 'repo_browser_scaffold.dart';
 class RepoBrowser extends StatefulWidget {
   final String path;
   final Widget aisidebar;
-  const RepoBrowser({super.key,required this.aisidebar, required this.path});
+  const RepoBrowser({super.key, required this.aisidebar, required this.path});
 
   @override
   State<RepoBrowser> createState() => _RepoBrowserState();
@@ -62,7 +62,14 @@ class _RepoBrowserState extends State<RepoBrowser> {
     } else if (entity is File) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => AdvancedCodeEditor(file: entity,aisidebar: widget.aisidebar,)),
+        MaterialPageRoute(
+          builder: (_) => EditorWithExplorerShell(
+            projectRoot: Directory(widget.path),
+            editorBuilder: (entity, sidebar) =>
+                AdvancedCodeEditor(file: entity, aisidebar: sidebar),
+            aisidebar: widget.aisidebar,
+          ),
+        ),
       );
     }
   }
@@ -108,7 +115,7 @@ class _RepoBrowserState extends State<RepoBrowser> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.accent.withOpacity(0.5)
+                      ? AppColors.accent.withValues(alpha: 0.5)
                       : AppColors.border,
                 ),
               ),

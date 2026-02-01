@@ -77,7 +77,7 @@ class FileResultList extends StatelessWidget {
                         ),
                         onTap: () => onFileTap(file),
                         tileColor: file.isSelected
-                            ? Colors.blue.withOpacity(0.2)
+                            ? Colors.blue.withValues(alpha: 0.2)
                             : null,
                       ),
                     );

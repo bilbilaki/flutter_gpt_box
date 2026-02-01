@@ -339,7 +339,7 @@ class _ChatPageState extends State<_ChatPage>
       height: 66,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.08),
+        color: Colors.red.withAlpha(8),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(

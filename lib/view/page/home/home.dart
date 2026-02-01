@@ -10,9 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gpt_box/core/util/file_type.dart';
-import 'package:gpt_box/core/util/url.dart';
 //import 'package:flutter_tiktoken/flutter_tiktoken.dart';
-import 'package:gpt_box/data/model/chat/history/share.dart';
 import 'package:gpt_box/core/util/chat_title.dart';
 import 'package:gpt_box/core/util/tool_func/tool.dart';
 import 'package:gpt_box/data/model/chat/config.dart';
@@ -27,16 +25,17 @@ import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/data/store/dummy.dart';
 import 'package:gpt_box/data/store/setting.dart';
-import 'package:gpt_box/main.dart' show httpCli, persistentCache;
+import 'package:gpt_box/main.dart' show  persistentCache;
 import 'package:gpt_box/view/loader/main.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
-import 'package:gpt_box/view/page/extras/medias.dart';
-import 'package:gpt_box/view/page/extras/speech.dart';
+import 'package:gpt_box/view/extras/medias.dart';
+import 'package:gpt_box/view/extras/speech.dart';
 import 'package:gpt_box/view/widget/x_ai_search_fantasy.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:llm_llamacpp/llm_llamacpp.dart';
 import 'package:openai_dart/openai_dart.dart' as openai;
 import 'package:path_provider/path_provider.dart';
 import 'package:siri_wave/siri_wave.dart';
@@ -50,6 +49,7 @@ import 'package:pool/pool.dart';
 
 import 'package:http/http.dart' as http;
 
+import '../../../app.dart';
 import '../../widget/voice_assistant.dart';
 part '../../widget/audio.dart';
 part 'chat.dart';
@@ -180,14 +180,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with AfterLayoutMixin<HomePage>, TickerProviderStateMixin {
   Timer? _refreshTimeTimer;
-
   @override
   void dispose() {
     // Do NOT dispose these, it's global and will be reused
     // inputCtrl.dispose();
     // _chatScrollCtrl.dispose();
     // _historyScrollCtrl.dispose();
-    inputCtrl.removeListener(aiSettings.onTextChangedForTokens);
 
     _refreshTimeTimer?.cancel();
     // The context used inside the keyboard listener will be invalid after
@@ -253,7 +251,6 @@ class _HomePageState extends State<HomePage>
   void _migrate() async {
     final lastVer = PrefProps.lastVer.get();
     const now = BuildData.build;
-     httpCli =  ProxyHttpClient.create();
 
     await MigrationFns.appendV1ToUrl(lastVer, now, context: context);
 

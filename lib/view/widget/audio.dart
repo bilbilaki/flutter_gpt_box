@@ -18,10 +18,10 @@ class AudioPlayerTile extends StatefulWidget {
 }
 
 class _AudioPlayerTileState extends State<AudioPlayerTile> {
-  AudioPlayer _player = AudioPlayer();
-  IOS9SiriWaveformController _siriController = IOS9SiriWaveformController(
+  final AudioPlayer _player = AudioPlayer();
+  final IOS9SiriWaveformController _siriController = IOS9SiriWaveformController(
     amplitude: 0.0,
-    speed: 0.1,
+    speed: 0.3,
   );
 
   PlayerState _playerState = PlayerState.stopped;

@@ -98,7 +98,9 @@ class ChatService extends ChangeNotifier {
               }
             }
           } catch (e) {
-            print("Parse error: $e");
+            if (kDebugMode) {
+              print("Parse error: $e");
+            }
           }
         }
 

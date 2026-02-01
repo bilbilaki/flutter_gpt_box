@@ -333,6 +333,25 @@ final class _ProfilePageState extends State<ProfilePage>
       },
     );
   }
+ Widget _buildLocalModels() {
+    final cfg = Cfg.current;
+    final val = cfg.selectedLocalModelName;
+    return ListTile(
+      leading: const Icon(Icons.chat),
+      title: Text("Local Model"),
+      trailing: Text(val??"", style: UIs.text13Grey),
+      onTap: () {
+        Cfg.showPickModelDialog(
+          context,
+          initial: val,
+          onSelected: (model) {
+            final newCfg = cfg.copyWith(model: model);
+            Cfg.setTo(cfg: newCfg);
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildOpenAITaskerModel() {
     final cfg = Cfg.current;
@@ -626,7 +645,6 @@ final class _ProfilePageState extends State<ProfilePage>
             value: cfg.proxyEnabled,
             onChanged: (value) {
               Cfg.setTo(cfg: cfg.copyWith(proxyEnabled: value));
-                   httpCli =  ProxyHttpClient.create();
 
             },
           ),

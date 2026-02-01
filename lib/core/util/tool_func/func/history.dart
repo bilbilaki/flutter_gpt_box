@@ -68,12 +68,14 @@ Focus on user-driven history access—respect conversation flow.''';
   bool get defaultEnabled => false;
 
   @override
+  // ignore: library_private_types_in_public_api
   String help(_CallResp call, _Map args) {
     final keywords = args['keywords'] as List? ?? [];
     return l10n.historyToolHelp(keywords);
   }
 
   @override
+  // ignore: library_private_types_in_public_api
   Future<_Ret?> run(_CallResp call, _Map args, OnToolLog log) async {
     final keywords_ = args['keywords'] as List?;
     if (keywords_ == null) return null;

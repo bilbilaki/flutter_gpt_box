@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -13,7 +14,17 @@ class Config {
   String currentModel = Cfg.current.model;
   bool autoAccept = true;
   bool firstSetup = true;
+  static final ValueNotifier<int> _reloadNotifier = ValueNotifier(0);
 
+  /// Fires whenever something explicitly requests reloading the config.
+  static Listenable get reloadNotifier => _reloadNotifier;
+
+  /// Forces a config reload so listeners can react immediately.
+  static Future<void> forceReload() async {
+    _reloadNotifier.value++;
+  }
+
+  
   static Future<Config> load() async {
     final path = _getConfigPath();
     final file = File(await path);
@@ -84,11 +95,11 @@ class Config {
   }
 }
 
-// UI Editor Widget
 class ConfigEditor extends StatefulWidget {
-  const ConfigEditor({Key? key}) : super(key: key);
+  const ConfigEditor({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _ConfigEditorState createState() => _ConfigEditorState();
 }
 
@@ -103,6 +114,12 @@ class _ConfigEditorState extends State<ConfigEditor> {
   late TextEditingController _currentModelController;
   bool _autoAccept = true;
   bool _firstSetup = true;
+  List<String> _availableModels = [];
+  String? _selectedModel;
+  bool _isFetchingModels = false;
+  bool _allowCustomModel = false;
+  bool _userInteractedWithModelSelection = false;
+  String? _modelFetchError;
 
   @override
   void initState() {
@@ -111,31 +128,134 @@ class _ConfigEditorState extends State<ConfigEditor> {
   }
 
   Future<void> _loadConfig() async {
+    String? loadError;
     try {
       config = await Config.load();
-      _apiKeyController = TextEditingController(text: config.apiKey);
-      _baseUrlController = TextEditingController(text: config.baseUrl);
-      _proxyUrlController = TextEditingController(text: config.proxyUrl);
-      _currentModelController = TextEditingController(
-        text: config.currentModel,
-      );
-      _autoAccept = config.autoAccept;
-      _firstSetup = config.firstSetup;
-      setState(() => _isLoading = false);
     } catch (e) {
+      loadError = e.toString();
+      config = Config();
+    }
+
+    _apiKeyController = TextEditingController(text: config.apiKey);
+    _baseUrlController = TextEditingController(text: config.baseUrl);
+    _proxyUrlController = TextEditingController(text: config.proxyUrl);
+    _currentModelController = TextEditingController(text: config.currentModel);
+    _autoAccept = config.autoAccept;
+    _firstSetup = config.firstSetup;
+    _selectedModel = config.currentModel.isNotEmpty
+        ? config.currentModel
+        : null;
+    _allowCustomModel = false;
+    _userInteractedWithModelSelection = false;
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+
+    if (loadError != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load config: $loadError')),
+      );
+    }
+
+    await _fetchModelList();
+  }
+
+  Future<void> _fetchModelList() async {
+    if (!mounted) return;
+    final baseUrl = _baseUrlController.text.trim();
+    final apiKey = _apiKeyController.text.trim();
+    if (baseUrl.isEmpty || apiKey.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _availableModels = [];
+          _selectedModel = null;
+          _allowCustomModel = true;
+          _modelFetchError = null;
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isFetchingModels = true;
+        _modelFetchError = null;
+      });
+    }
+
+    try {
+      final uri = Uri.parse(baseUrl).resolve('v1/models');
+      final response = await http.get(
+        uri,
+        headers: {'Authorization': 'Bearer $apiKey'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Server responded with ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      final decodedMap = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{};
+      final rawModels = (decodedMap['data'] as List<dynamic>?) ?? [];
+      final models = rawModels
+          .map((entry) => entry is Map<String, dynamic> ? entry['id'] : entry)
+          .whereType<String>()
+          .where((value) => value.isNotEmpty)
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _availableModels = models;
+        _modelFetchError = null;
+
+        if (models.isEmpty) {
+          _selectedModel = null;
+          if (!_userInteractedWithModelSelection) {
+            _allowCustomModel = true;
+          }
+          return;
+        }
+
+        if (_selectedModel == null || !models.contains(_selectedModel)) {
+          _selectedModel = models.first;
+        }
+
+        final savedModel = config.currentModel;
+        final savedInList =
+            savedModel.isNotEmpty && models.contains(savedModel);
+        if (!_userInteractedWithModelSelection) {
+          if (savedInList) {
+            _selectedModel = savedModel;
+            _allowCustomModel = false;
+          } else if (savedModel.isNotEmpty &&
+              _currentModelController.text.trim() == savedModel) {
+            _allowCustomModel = true;
+            _currentModelController.text = savedModel;
+          } else {
+            _allowCustomModel = false;
+          }
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _availableModels = [];
+        _selectedModel = null;
+        _allowCustomModel = true;
+        _modelFetchError = e.toString();
+      });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load config: $e')));
-      config = Config();
-      _apiKeyController = TextEditingController(text: config.apiKey);
-      _baseUrlController = TextEditingController(text: config.baseUrl);
-      _proxyUrlController = TextEditingController(text: config.proxyUrl);
-      _currentModelController = TextEditingController(
-        text: config.currentModel,
-      );
-      _autoAccept = config.autoAccept;
-      _firstSetup = config.firstSetup;
-      setState(() => _isLoading = false);
+      ).showSnackBar(SnackBar(content: Text('Failed to fetch models: $e')));
+    } finally {
+      // ignore: control_flow_in_finally
+      if (!mounted) return;
+      setState(() {
+        _isFetchingModels = false;
+      });
     }
   }
 
@@ -145,12 +265,16 @@ class _ConfigEditorState extends State<ConfigEditor> {
     config.apiKey = _apiKeyController.text;
     config.baseUrl = _baseUrlController.text;
     config.proxyUrl = _proxyUrlController.text;
-    config.currentModel = _currentModelController.text;
+    final useCustomModel = _allowCustomModel || _availableModels.isEmpty;
+    config.currentModel = useCustomModel
+        ? _currentModelController.text.trim()
+        : (_selectedModel ?? _currentModelController.text).trim();
     config.autoAccept = _autoAccept;
     config.firstSetup = _firstSetup;
 
     try {
       await config.save();
+      await Config.forceReload();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Config saved successfully')),
       );
@@ -217,16 +341,83 @@ class _ConfigEditorState extends State<ConfigEditor> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _currentModelController,
-                decoration: const InputDecoration(labelText: 'Current Model'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a model name';
-                  }
-                  return null;
-                },
-              ),
+              if (_availableModels.isNotEmpty && !_allowCustomModel)
+                DropdownButtonFormField<String>(
+                  value: _selectedModel ?? _availableModels.first,
+                  decoration: const InputDecoration(labelText: 'Current Model'),
+                  isExpanded: true,
+                  items: _availableModels
+                      .map(
+                        (model) => DropdownMenuItem(
+                          value: model,
+                          child: Text(model, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _selectedModel = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a model';
+                    }
+                    return null;
+                  },
+                ),
+              if (_allowCustomModel || _availableModels.isEmpty)
+                TextFormField(
+                  controller: _currentModelController,
+                  decoration: const InputDecoration(labelText: 'Current Model'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a model name';
+                    }
+                    return null;
+                  },
+                ),
+              if (_availableModels.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('Use custom model name'),
+                  value: _allowCustomModel,
+                  onChanged: (value) {
+                    setState(() {
+                      _allowCustomModel = value;
+                      _userInteractedWithModelSelection = value;
+                      if (value && _selectedModel != null) {
+                        _currentModelController.text = _selectedModel!;
+                      }
+                    });
+                  },
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _isFetchingModels ? null : _fetchModelList,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refresh models'),
+                  ),
+                ),
+                if (_isFetchingModels)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4),
+                    child: LinearProgressIndicator(),
+                  ),
+                if (_modelFetchError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      _modelFetchError!,
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+              ],
               const SizedBox(height: 16),
               SwitchListTile(
                 title: const Text('Auto Accept'),

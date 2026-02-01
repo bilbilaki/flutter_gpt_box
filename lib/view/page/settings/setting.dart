@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,8 +21,6 @@ import 'package:gpt_box/view/page/home/home.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:shortid/shortid.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-
-import '../../../main.dart';
 
 part 'mcp.dart';
 part 'profile.dart';
@@ -110,16 +109,19 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   }
 
   Widget _buildApp() {
-    final children = [
+    return Cfg.vn.listenVal((cfg) {
+      final children = [
       _buildLocale(),
       // _buildColorSeed(),
+      _buildUseLocalModelTitle(cfg),
       _buildThemeMode(),
-      _buildResponseTitle(),
+      _buildResponseTitle(cfg),
 
       // _buildCheckUpdate(),
       _buildAppMore(),
     ];
     return Column(children: children.map((e) => e.cardx).toList());
+ });
   }
 
   Widget _buildAppChat() {
@@ -253,14 +255,45 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     );
   }
 
-  Widget _buildResponseTitle() {
-    return ListTile(
-      leading: const Icon(Icons.auto_awesome, size: 21),
-      title: Text("Using Response API?"),
-      trailing: StoreSwitch(prop: _setStore.response),
+  Widget _buildResponseTitle(ChatConfig cfg) {
+    return Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.router),
+          title: Text('Using Response API?'),
+          trailing: Switch(
+            value: cfg.usingResponseAPI,
+            onChanged: (value) {
+              Cfg.setTo(cfg: cfg.copyWith(usingResponseAPI: value));
+            },
+          ),
+        ),
+      ],
     );
   }
-
+ Widget _buildUseLocalModelTitle(ChatConfig cfg) {
+    return Column(
+      children: [
+        ListTile(
+          leading: const Icon(Icons.local_activity),
+          title: Text('Using Local Models?'),
+          trailing: Switch(
+            value: cfg.useLocalModel,
+            onChanged: (value) {
+              Cfg.setTo(cfg: cfg.copyWith(useLocalModel: value));
+              if (value){
+                if(cfg.listAvaliableLocalModel==[]){
+                  showModalBottomSheet(context: context, builder: (ctx){
+                    return Card(child: Padding(padding: EdgeInsetsGeometry.all(16),child: Column(crossAxisAlignment: CrossAxisAlignment.center,mainAxisAlignment: MainAxisAlignment.center,children: [Text('You not have any Models local, Do you want to set Models Directory?'), SizedBox(height: 15,),Row(children: [TextButton(onPressed: ()=> Navigator.pop(context), child: Text('No')),Spacer(), TextButton(onPressed: () async{final dir = await getDirectoryPath(initialDirectory: "", confirmButtonText: "");  Cfg.setTo(cfg:cfg.copyWith(localModelsPath: dir));}, child: Text('Sure'))],)],),));
+                  });
+                }
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
   Widget _buildAutoScrollBottom() {
     return ExpandTile(
       leading: const Icon(Icons.keyboard_arrow_down),

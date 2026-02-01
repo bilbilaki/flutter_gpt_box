@@ -289,6 +289,13 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       historyLen: fields[29] == null ? 7 : (fields[29] as num).toInt(),
       id: fields[30] == null ? 'defaultId' : fields[30] as String,
       name: fields[31] == null ? '' : fields[31] as String,
+      useLocalModel: fields[53] == null ? false : fields[53] as bool,
+      listAvaliableLocalModel: fields[54] == null
+          ? []
+          : (fields[54] as List).cast<String>(),
+      selectedLocalModelName: fields[55] as String?,
+      selectedLocalModelPath: fields[56] as String?,
+      localModelsPath: fields[57] as String?,
       lastResponseId: fields[47] as String?,
       genTitlePrompt: fields[32] as String?,
       genTitleModel: fields[33] as String?,
@@ -305,6 +312,7 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       isVertex: fields[44] as bool?,
       vertexProjectId: fields[45] as String?,
       vertexLocation: fields[46] as String?,
+      usingResponseAPI: fields[52] == null ? false : fields[52] as bool,
       proxyHost: fields[48] == null ? '' : fields[48] as String,
       proxyPort: fields[49] == null ? 0 : (fields[49] as num).toInt(),
       proxyType: fields[50] == null ? 'http' : fields[50] as String,
@@ -315,7 +323,7 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(27)
+      ..writeByte(33)
       ..writeByte(25)
       ..write(obj.prompt)
       ..writeByte(26)
@@ -369,7 +377,19 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       ..writeByte(50)
       ..write(obj.proxyType)
       ..writeByte(51)
-      ..write(obj.proxyEnabled);
+      ..write(obj.proxyEnabled)
+      ..writeByte(52)
+      ..write(obj.usingResponseAPI)
+      ..writeByte(53)
+      ..write(obj.useLocalModel)
+      ..writeByte(54)
+      ..write(obj.listAvaliableLocalModel)
+      ..writeByte(55)
+      ..write(obj.selectedLocalModelName)
+      ..writeByte(56)
+      ..write(obj.selectedLocalModelPath)
+      ..writeByte(57)
+      ..write(obj.localModelsPath);
   }
 
   @override

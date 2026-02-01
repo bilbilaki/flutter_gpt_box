@@ -16,7 +16,6 @@ class FileSearchEntry extends StatelessWidget {
           primary: Colors.blueAccent,
           secondary: Colors.purpleAccent,
           surface: Colors.grey[900]!,
-          background: Colors.grey[850]!,
         ),
         useMaterial3: true,
         appBarTheme: AppBarTheme(

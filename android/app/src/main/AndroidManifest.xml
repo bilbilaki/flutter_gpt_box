@@ -106,10 +106,24 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <intent-filter>
+    <action android:name="android.intent.action.ASSIST" />
+    <category android:name="android.intent.category.DEFAULT" />
+</intent-filter>
              <intent-filter>
         <action android:name="com.android_package_installer.content.SESSION_API_PACKAGE_INSTALLED"/>
       </intent-filter>
         </activity>
+        <service android:name=".AssistantService"
+    android:label="GPT BOX"
+    android:permission="android.permission.BIND_VOICE_INTERACTION"
+    android:exported="true">
+    <meta-data android:name="android.voice_interaction"
+        android:resource="@xml/assistant_config" />
+    <intent-filter>
+        <action android:name="android.service.voice.VoiceInteractionService" />
+    </intent-filter>
+</service>
         <service
   android:name="androidx.work.impl.foreground.SystemForegroundService"
   android:foregroundServiceType="dataSync" />

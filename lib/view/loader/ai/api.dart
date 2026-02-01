@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 class Message {
   String role;
   String? content;
@@ -57,7 +59,9 @@ class ApiClient {
     _httpClient = HttpClient();
     if (proxyUrl != null && proxyUrl!.isNotEmpty) {
       _httpClient.findProxy = (uri) => "PROXY $proxyUrl";
-      print("\x1B[33m[System] Using Proxy: $proxyUrl\x1B[0m");
+      if (kDebugMode) {
+        print("\x1B[33m[System] Using Proxy: $proxyUrl\x1B[0m");
+      }
     }
   }
 

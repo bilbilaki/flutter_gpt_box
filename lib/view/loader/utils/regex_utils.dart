@@ -17,10 +17,10 @@ List<RegExp> parsePatternsToRegex(String patternsInput) {
 
         // Handle path separators if required (e.g., path starting with /)
         if (pattern.startsWith('/')) {
-          regexString = '^' + regexString;
+          regexString = '^$regexString';
         }
         if (pattern.endsWith('/')) {
-          regexString = regexString + '\$';
+          regexString = '$regexString\$';
         }
 
         // Case-insensitive matching is generally safer for file paths/names

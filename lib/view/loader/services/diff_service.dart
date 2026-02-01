@@ -1,5 +1,7 @@
 // lib/services/diff_service.dart
 
+import 'package:flutter/foundation.dart';
+
 import '../models/diff_hunk.dart';
 
 class DiffService {
@@ -121,9 +123,11 @@ class DiffService {
         }
       } else {
         // Log the failure to apply the hunk
-        print(
+        if (kDebugMode) {
+          print(
           'Error: Could not apply hunk for lines starting around ${hunk.oldStartLine}',
         );
+        }
       }
     }
     return resultLines;

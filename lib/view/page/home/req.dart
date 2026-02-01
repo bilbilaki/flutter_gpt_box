@@ -124,7 +124,66 @@ bool _validChatCfg(BuildContext context) {
   }
   return true;
 }
+Future<void> _rollingSummarize(
+  BuildContext context, 
+  String chatId, 
+) async {
+  final workingChat = allHistories[chatId];
+  if (workingChat == null) {
+    final msg = 'Chat($chatId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
+  final chat = allHistories[chatId];
+  if (chat == null || chat.items.length < 15) return; // Only summarize if long
 
+  // 1. Define the "Chunk" to summarize (skip the Anchor at index 0, keep recent 5)
+  final rangeStart = 1; 
+  final rangeEnd = chat.items.length - 5; 
+  
+  if (rangeEnd <= rangeStart) return;
+
+  final chunkToSummarize = chat.items.getRange(rangeStart, rangeEnd).toList();
+
+  // 2. Send to API for summarization
+  // Use a lightweight request here, separate from the main chat flow
+  final summaryPrompt = "Summarize the following conversation thread into a concise paragraph, preserving key facts and user preferences:\n\n${chunkToSummarize.map((e) => "${e.role.name}: ${e.toMarkdown}").join("\n")}";
+    final questionContents = <ChatContent>[ChatContent.text(summaryPrompt)];
+
+final question = ChatHistoryItem.gen(
+    content: questionContents,
+    role: ChatRole.user,
+  );
+  final msgs = (await _historyCarried(workingChat)).toList();
+  msgs.add(await question.toOpenAI());
+
+ // final summary = await Cfg.client.createChatCompletion(request:CreateChatCompletionRequest(model: ChatCompletionModel.modelId(  Cfg.current.altrModel??Cfg.current.model), messages: [] ); // Use summarizerModelId here
+ CreateChatCompletionResponse? resp;
+    try {
+      resp = await Cfg.client.createChatCompletion(
+        request: CreateChatCompletionRequest(
+          messages: msgs,
+          model: ChatCompletionModel.modelId(Cfg.current.altrModel??Cfg.current.model),
+        ),
+      );
+    } catch (e, s) {
+      _onErr(e, s, chatId, 'MCP');
+      return;
+    }
+  // 3. "Collapse" the history
+  // Remove the old messages
+  chat.items.removeRange(rangeStart, rangeEnd);
+  
+  // Insert the summary
+  final summaryItem = ChatHistoryItem.single(
+    role: ChatRole.system, // System role works best for context injection
+    raw: "PREVIOUS CONTEXT SUMMARY: ${resp.choices.first.message.content}",
+  );
+  
+  chat.items.insert(rangeStart, summaryItem);
+  _chatRN.notify(); // Update UI
+}
 Future<Iterable<ChatCompletionMessage>> _historyCarried(
   ChatHistory workingChat,
 ) async {
@@ -141,38 +200,58 @@ Future<Iterable<ChatCompletionMessage>> _historyCarried(
     if (memories.isNotEmpty) memories.join('\n'),
   ];
   final promptStr = promptParts.join('\n\n');
-  final prompt = promptStr.isNotEmpty
-      ? await ChatHistoryItem.single(
-          role: ChatRole.system,
-          raw: promptStr,
-        ).toOpenAI()
-      : null;
+  // Inside _historyCarried function in req.dart
 
-  if (workingChat.settings?.headTailMode == true) {
-    final first = await workingChat.items.firstOrNull?.toOpenAI();
-    return [if (prompt != null) prompt, if (first != null) first];
-  }
+// 1. Keep your existing System Prompt logic
+final prompt = promptStr.isNotEmpty 
+    ? await ChatHistoryItem.single(role: ChatRole.system, raw: promptStr).toOpenAI() 
+    : null;
 
-  var count = 0;
-  final msgs = <ChatCompletionMessage>[];
+// 2. Identify the "Anchor" (The very first User message)
+final firstUserItem = workingChat.items.firstWhereOrNull((e) => e.role.isUser);
+ChatCompletionMessage? anchorMsg;
+if (firstUserItem != null) {
+  anchorMsg = await firstUserItem.toOpenAI();
+}
 
-  for (final item in workingChat.items.reversed) {
-    if (count > config.historyLen) break;
-    if (item.role.isSystem) continue;
+// 3. Build the "Sliding Window" (Recent Messages)
+var count = 0;
+final recentMsgs = <ChatCompletionMessage>[];
+// We use a Set to avoid duplicating the Anchor if it's also in the recent list
+final includedIds = <String>{}; 
 
-    final isTool = item.role.isTool;
-    final rawLen = item.toMarkdown.length;
-    if (isTool && rawLen > 4000 && count > 2) {
-      continue;
-    }
+for (final item in workingChat.items.reversed) {
+  if (count > config.historyLen) break;
+  if (item.role.isSystem) continue;
 
-    final msg = await item.toOpenAI();
-    msgs.add(msg);
-    count++;
-  }
+  // Your existing logic for skipping large tool outputs
+  final isTool = item.role.isTool;
+  final rawLen = item.toMarkdown.length;
+  if (isTool && rawLen > 4000 && count > 2) continue;
 
-  if (prompt != null) msgs.add(prompt);
-  return msgs.reversed;
+  final msg = await item.toOpenAI();
+  recentMsgs.add(msg);
+  includedIds.add(item.id); // Assuming ChatHistoryItem has a unique 'id'
+  count++;
+}
+
+// 4. Assemble the Final Context Stack
+final finalMsgs = <ChatCompletionMessage>[];
+
+// A. System Prompt (Always First)
+if (prompt != null) finalMsgs.add(prompt);
+
+// B. The Anchor (First User Message) - Only add if NOT already in recentMsgs
+if (anchorMsg != null && firstUserItem != null && !includedIds.contains(firstUserItem.id)) {
+   // OPTIONAL: You can inject a visual separator to help the AI understand this is old context
+  //  anchorMsg = anchorMsg.copyWith(content: "Original Request: " + anchorMsg.content); 
+   finalMsgs.add(anchorMsg);
+}
+
+// C. The Sliding Window (Recent Context)
+finalMsgs.addAll(recentMsgs.reversed);
+
+return finalMsgs;
 }
 
 void _onCreateRequest(BuildContext context, String chatId) async {
@@ -280,8 +359,8 @@ Future<void> _onCreateTextResponses(
   _loadingChatIds.value.add(chatId);
   _loadingChatIds.notify();
   _autoHideCtrl.autoHideEnabled = false;
-  httpCli = ProxyHttpClient.create();
-  final responses = ResponsesService(client: httpCli);
+  
+  final responses = ResponsesService();
   final tools = await _responsesToolsForChat(workingChat0);
   final instructions = _buildPinnedInstructions(cfg);
 
@@ -436,14 +515,266 @@ Future<void> _onCreateTextResponses(
     _chatItemRNMap.remove(mcpLogItem.id)?.dispose();
   }
 }
+Future<void> _onCreateTextModelLocal(
+  BuildContext context,
+  String chatId,
+  String input,
+  List<String> files,
+) async {
+  final workingChat = allHistories[chatId];
+  if (workingChat == null) {
+    final msg = 'Chat($chatId) not found';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
 
+  final config = Cfg.current;
+  final modelPath = config.selectedLocalModelPath;
+  
+  if (modelPath == null || modelPath.isEmpty) {
+    final msg = 'No local model selected';
+    Loggers.app.warning(msg);
+    context.showSnackBar(msg);
+    return;
+  }
+
+  // Process files (same as other methods)
+  final questionContents = <ChatContent>[ChatContent.text(input)];
+  for (final file in files) {
+    if (!modelUseFilePath) {
+      final content = await contentFromPath(file);
+      questionContents.add(content);
+    } else {
+      questionContents.add(
+        ChatContent.text(
+          'For Using Tools with file operation use this File Path: $file',
+        ),
+      );
+      modelUseFilePath = false;
+    }
+  }
+
+  final question = ChatHistoryItem.gen(
+    content: questionContents,
+    role: ChatRole.user,
+  );
+
+  // Update UI
+  workingChat.items.add(question);
+  inputCtrl.clear();
+  _chatRN.notify();
+  _autoScroll(chatId);
+  _filesPicked.value = [];
+  
+  final titleCompleter = await genChatTitle(context, chatId, config);
+
+  // Create assistant reply placeholder
+  final assistReply = ChatHistoryItem.single(role: ChatRole.assist);
+  workingChat.items.add(assistReply);
+  _chatRN.notify();
+
+  // Set loading state
+  _loadingChatIds.value.add(chatId);
+  _loadingChatIds.notify();
+  _autoHideCtrl.autoHideEnabled = false;
+
+  final assistRawBuffer = StringBuffer();
+
+  try {
+    // Initialize llama.cpp repository
+    final repo = LlamaCppChatRepository(
+      contextSize: 4096, // Adjust based on your needs
+      nGpuLayers: 0, // Set > 0 for GPU acceleration if available
+    );
+
+    try {
+      // Load the model
+      await repo.loadModel(modelPath);
+
+      // Prepare conversation history
+      final messages = await _prepareLocalModelMessages(workingChat, question);
+
+      // Start streaming
+      final stream = repo.streamChat('local-model', messages: messages);
+
+      // Listen to stream
+      await for (final chunk in stream) {
+        if (!_loadingChatIds.value.contains(chatId)) {
+          // User cancelled
+          break;
+        }
+
+        final content = chunk.message?.content;
+        if (content != null && content.isNotEmpty) {
+          assistRawBuffer.write(content);
+          
+          // Update UI with the accumulated content
+          final parts = splitDataUrisToChatContents(assistRawBuffer.toString());
+          assistReply.content
+            ..clear()
+            ..addAll(parts);
+          _chatItemRNMap[assistReply.id]?.notify();
+          _autoScroll(chatId);
+        }
+
+        // Handle errors from stream
+        if (chunk.status!=null ) {
+          print('Local model status: ${chunk.status}');
+        }
+      }
+
+      // Store chat after successful completion
+      _storeChat(chatId);
+      await titleCompleter?.future;
+      await Future.delayed(const Duration(milliseconds: 300));
+
+    } finally {
+      // Always dispose the repository
+      repo.dispose();
+    }
+
+  } catch (e, s) {
+    _onErr(e, s, chatId, 'Local model inference');
+    
+    // Add error message to chat
+    assistReply.content.clear();
+    assistReply.content.add(ChatContent.text('Error: $e'));
+    _chatItemRNMap[assistReply.id]?.notify();
+    
+  } finally {
+    // Cleanup
+    _loadingChatIds.value.remove(chatId);
+    _loadingChatIds.notify();
+    _autoHideCtrl.autoHideEnabled = true;
+  }
+}
+
+Future<List<LLMMessage>> _prepareLocalModelMessages(
+  ChatHistory workingChat,
+  ChatHistoryItem question,
+) async {
+  final config = Cfg.current;
+  final messages = <LLMMessage>[];
+
+  // 1. System Prompt
+  final memories = Stores.mcp.memories.get();
+  final promptParts = <String>[
+    if (config.prompt.isNotEmpty) config.prompt.trim(),
+    if (memories.isNotEmpty) memories.join('\n'),
+  ];
+  final promptStr = promptParts.join('\n\n');
+  
+  if (promptStr.isNotEmpty) {
+    messages.add(LLMMessage(
+      role: LLMRole.system,
+      content: promptStr,
+    ));
+  }
+
+  final ignoreCtxCons = workingChat.settings?.ignoreContextConstraint == true;
+  if (ignoreCtxCons) {
+    // Convert all items
+    for (final item in workingChat.items) {
+      if (item.role.isSystem) continue;
+      
+      final content = await _itemToContent(item);
+      messages.add(LLMMessage(
+        role: _convertChatRoleToLLMRole(item.role),
+        content: content,
+      ));
+    }
+    
+    // Add current question
+    final questionContent = await _itemToContent(question);
+    messages.add(LLMMessage(
+      role: LLMRole.user,
+      content: questionContent,
+    ));
+    
+    return messages;
+  }
+
+  // 2. Anchor message
+  final firstUserItem = workingChat.items.firstWhereOrNull((e) => e.role.isUser);
+  LLMMessage? anchorMsg;
+  if (firstUserItem != null) {
+    final content = await _itemToContent(firstUserItem);
+    anchorMsg = LLMMessage(
+      role: LLMRole.user,
+      content: content,
+    );
+  }
+
+  // 3. Sliding window
+  var count = 0;
+  final recentMsgs = <LLMMessage>[];
+  final includedIds = <String>{};
+
+  for (final item in workingChat.items.reversed) {
+    if (count > config.historyLen) break;
+    if (item.role.isSystem) continue;
+
+    final isTool = item.role.isTool;
+    final rawLen = item.toMarkdown.length;
+    if (isTool && rawLen > 4000 && count > 2) continue;
+
+    final content = await _itemToContent(item);
+    recentMsgs.add(LLMMessage(
+      role: _convertChatRoleToLLMRole(item.role),
+      content: content,
+    ));
+    includedIds.add(item.id);
+    count++;
+  }
+
+  // 4. Assemble final messages
+  if (anchorMsg != null && firstUserItem != null && !includedIds.contains(firstUserItem.id)) {
+    messages.add(anchorMsg);
+  }
+
+  messages.addAll(recentMsgs.reversed);
+
+  // Add current question
+  final questionContent = await _itemToContent(question);
+  messages.add(LLMMessage(
+    role: LLMRole.user,
+    content: questionContent,
+  ));
+
+  return messages;
+}
+LLMRole _convertChatRoleToLLMRole(ChatRole chatRole) {
+  switch (chatRole) {
+    case ChatRole.user:
+      return LLMRole.user;
+    case ChatRole.assist:
+      return LLMRole.assistant;
+    case ChatRole.tool:
+      return LLMRole.tool;
+    case ChatRole.system:
+      return LLMRole.system;
+    default:
+      return LLMRole.user;
+  }
+}
+
+Future<String> _itemToContent(ChatHistoryItem item) async {
+  // If your ChatHistoryItem has async content processing like toOpenAI(),
+  // you might need to adapt this. Otherwise:
+  return item.content.map((c) => c.raw).join('\n');
+}
 Future<void> _onCreateText(
   BuildContext context,
   String chatId,
   String input,
   List<String> files,
 ) async {
-  if (_useResponsesApi(Cfg.current)) {
+ if (Cfg.current.useLocalModel) {
+    await _onCreateTextModelLocal(context, chatId, input, files);
+    return;
+  }
+  if (Cfg.current.usingResponseAPI) {
     _onCreateTextResponses(context, chatId, input, files);
     return;
   }
@@ -699,7 +1030,7 @@ Future<void> _onCreateImg(
     for (final item in dataList) {
       final b64Json = item['b64_json'];
       if (b64Json != null && b64Json.toString().isNotEmpty) {
-        final dataUri = 'data:image/jpeg;base64,${b64Json}';
+        final dataUri = 'data:image/jpeg;base64,$b64Json';
         responseBuffer.write(dataUri);
         Loggers.app.info('Image generated (base64)');
       }
@@ -1557,7 +1888,7 @@ Future<void> _onCreateTextTranslated(
   const int maxAttempts = 10;
   const Duration delayBetween = Duration(milliseconds: 300);
   final String translatePrompt =
-      'just without any changes to text content translate that to English and return translated text without anything more . Text Content : ${input}';
+      'just without any changes to text content translate that to English and return translated text without anything more . Text Content : $input';
   String translated = '';
   CreateChatCompletionResponse? translatetxt;
   for (int attempt = 0; attempt < maxAttempts; attempt++) {

@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:fl_lib/fl_lib.dart';
 
+import '../res/openai.dart';
+
 class SettingStore extends HiveStore {
   SettingStore._() : super('setting');
 
@@ -33,7 +35,7 @@ class SettingStore extends HiveStore {
   // late final calcTokenLen = property('calcTokenLen', true);
 
   late final replay = propertyDefault('replay', false);
-  late final response = propertyDefault('response', false);
+  late final response = propertyDefault('response', Cfg.current.usingResponseAPI);
   late final hideTitleBar = propertyDefault('hideTitleBar', false);
 
   /// If it is false, delete without asking.

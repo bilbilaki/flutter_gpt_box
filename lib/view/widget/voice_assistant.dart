@@ -10,7 +10,6 @@ import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:record/record.dart';
 import 'package:openai_realtime_dart/openai_realtime_dart.dart';
 
 import '../../data/res/openai.dart';
@@ -47,7 +46,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
   late AnimationController _thinkingDotsAnimationController;
   late AnimationController _voiceBarsAnimationController;
 
-  List<double> _barHeights = List.generate(7, (index) => 0.0);
+  final List<double> _barHeights = List.generate(7, (index) => 0.0);
   bool _isAiSpeaking = false;
 
   @override
@@ -978,6 +977,7 @@ class VoiceSessionController {
       codec: Codec.pcm16,
       sampleRate: 24000,
       numChannels: 1,
+	  audioSource: AudioSource.voice_communication,
     );
   }
 

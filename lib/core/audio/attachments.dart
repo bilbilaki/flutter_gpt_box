@@ -46,7 +46,7 @@ class AttachmentPreparer {
         // Fallback: send as text link or base64 chunk (providers vary)
         parts.add(
           ChatCompletionMessageContentPart.text(
-            text: '[file:${f.path}(${mime})]',
+            text: '[file:${f.path}($mime)]',
           ),
         );
       }

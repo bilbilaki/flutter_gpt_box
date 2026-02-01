@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io' show File;
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -9,13 +10,12 @@ import 'package:flutter_ffmpeg_kit_full/ffprobe_kit.dart';
 import 'package:flutter_ffmpeg_kit_full/return_code.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // FFmpeg Imports
 
-import '../../../core/util/utils.dart';
-import '../../../data/res/openai.dart';
+import '../../core/util/utils.dart';
+import '../../data/res/openai.dart';
 
 class MediaLabPage extends StatefulWidget {
   const MediaLabPage({super.key});
@@ -43,6 +43,7 @@ class _MediaLabPageState extends State<MediaLabPage> {
   final TextEditingController _segmentDurationController =
       TextEditingController(text: "10");
   String _segmentDuration = "10";
+  String _audioSplitDuration = "60";
   List<String> _concatFiles = [];
   String _selectedResolution = "1080p";
   Map<String, int> _cropParams = {
@@ -55,12 +56,7 @@ class _MediaLabPageState extends State<MediaLabPage> {
   String _trimDuration = "10";
   String _rotateValue = "90";
   double _speedMultiplier = 1.0;
-  Map<String, int> _watermarkParams = {
-    'x': 0,
-    'y': 0,
-    'w': 100,
-    'h': 60,
-  };
+  Map<String, int> _watermarkParams = {'x': 0, 'y': 0, 'w': 100, 'h': 60};
   String? _overlayPath;
   double _volumeLevel = 1.0;
   String _audioTrimStart = "00:00:00";
@@ -118,8 +114,10 @@ class _MediaLabPageState extends State<MediaLabPage> {
         allowMultiple: _concatMultiSelect,
       );
       if (result != null) {
-        final paths =
-            result.paths.where((path) => path != null).cast<String>().toList();
+        final paths = result.paths
+            .where((path) => path != null)
+            .cast<String>()
+            .toList();
         setState(() => _concatFiles = paths);
         _log(
           "Selected ${paths.length} file${paths.length == 1 ? "" : "s"} for concatenation.",
@@ -158,10 +156,14 @@ class _MediaLabPageState extends State<MediaLabPage> {
         allowMultiple: _concatMultiSelect,
       );
       if (result != null) {
-        final paths =
-            result.paths.where((path) => path != null).cast<String>().toList();
+        final paths = result.paths
+            .where((path) => path != null)
+            .cast<String>()
+            .toList();
         setState(() => _mergeAudioPaths = paths);
-        _log("Selected ${paths.length} audio file${paths.length == 1 ? "" : "s"} to merge.");
+        _log(
+          "Selected ${paths.length} audio file${paths.length == 1 ? "" : "s"} to merge.",
+        );
         for (final pth in paths) {
           _addRecentFile(pth);
           _loadFileInfo(pth);
@@ -204,8 +206,7 @@ class _MediaLabPageState extends State<MediaLabPage> {
       final durationStr = mediaInfo?.getDuration();
       if (durationStr != null) {
         final seconds = double.tryParse(durationStr) ?? 0;
-        infoText =
-            "${(seconds).toStringAsFixed(1)}s • $infoText";
+        infoText = "${(seconds).toStringAsFixed(1)}s • $infoText";
       }
 
       if (mounted) {
@@ -321,7 +322,10 @@ class _MediaLabPageState extends State<MediaLabPage> {
           final outPathf = await getTargetDirectory(
             folderUnderApp: 'extracted_audio',
           );
-          final outPath = p.join(outPathf.path, "extracted_audio_track_$index.mp3");
+          final outPath = p.join(
+            outPathf.path,
+            "extracted_audio_track_$index.mp3",
+          );
           _log("Extracting Audio Track #$index...");
 
           // -map 0:a:N selects the Nth audio track
@@ -360,7 +364,9 @@ class _MediaLabPageState extends State<MediaLabPage> {
           final outPathf = await getTargetDirectory(
             folderUnderApp: 'extracted_sub',
           );
-          final outPath = p.join(outPathf.path,  "extracted_sub_track_$index.srt",
+          final outPath = p.join(
+            outPathf.path,
+            "extracted_sub_track_$index.srt",
           );
 
           _log("Extracting Subtitle Track #$index...");
@@ -392,10 +398,10 @@ class _MediaLabPageState extends State<MediaLabPage> {
     }
     _startProcess();
 
-   final outPathf = await getTargetDirectory(
-            folderUnderApp: 'merged_video',
-          );
-          final outPath = p.join(outPathf.path,  "video_new_audio_${DateTime.now().millisecondsSinceEpoch}.mp4",
+    final outPathf = await getTargetDirectory(folderUnderApp: 'merged_video');
+    final outPath = p.join(
+      outPathf.path,
+      "video_new_audio_${DateTime.now().millisecondsSinceEpoch}.mp4",
     );
 
     // -map 0:v (Take video from file 0)
@@ -424,10 +430,10 @@ class _MediaLabPageState extends State<MediaLabPage> {
       return _log("Need Video and Subtitle selected.");
     _startProcess();
 
-     final outPathf = await getTargetDirectory(
-            folderUnderApp: 'merged_video',
-          );
-          final outPath = p.join(outPathf.path,   "video_with_subs_${DateTime.now().millisecondsSinceEpoch}.mp4",
+    final outPathf = await getTargetDirectory(folderUnderApp: 'merged_video');
+    final outPath = p.join(
+      outPathf.path,
+      "video_with_subs_${DateTime.now().millisecondsSinceEpoch}.mp4",
     );
 
     // -c:s mov_text (Standard MP4 subtitle format)
@@ -459,10 +465,10 @@ class _MediaLabPageState extends State<MediaLabPage> {
     const duration = "10"; // seconds
 
     _startProcess();
-      final outPathf = await getTargetDirectory(
-            folderUnderApp: 'split_audio',
-          );
-          final outPath = p.join(outPathf.path,   "split_audio_${DateTime.now().millisecondsSinceEpoch}.mp3",
+    final outPathf = await getTargetDirectory(folderUnderApp: 'split_audio');
+    final outPath = p.join(
+      outPathf.path,
+      "split_audio_${DateTime.now().millisecondsSinceEpoch}.mp3",
     );
 
     // -ss (start) -t (duration)
@@ -478,6 +484,38 @@ class _MediaLabPageState extends State<MediaLabPage> {
       }
       _endProcess();
     });
+  }
+
+  /// 5b. Split Audio into duration-based parts
+  Future<void> _splitAudioIntoParts(int segmentSeconds) async {
+    if (_audioPath == null) return _log("No Audio selected.");
+    if (segmentSeconds <= 0) {
+      return _log("Segment duration must be greater than 0 seconds.");
+    }
+
+    _startProcess();
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'split_audio_parts',
+    );
+    final baseName = p.basenameWithoutExtension(_audioPath!);
+    final ext = p.extension(_audioPath!);
+    final outputPattern = p.join(outPathf.path, "${baseName}_part_%03d$ext");
+
+    final cmd =
+        '-y -i "$_audioPath" -f segment -segment_time $segmentSeconds -c copy "$outputPattern"';
+
+    _log("Splitting audio into $segmentSeconds second parts...");
+    try {
+      await FFmpegKit.execute(cmd).then((session) async {
+        if (ReturnCode.isSuccess(await session.getReturnCode())) {
+          _log("Success! Segments saved to: ${outPathf.path}");
+        } else {
+          _log("Error: ${await session.getOutput()}");
+        }
+      });
+    } finally {
+      _endProcess();
+    }
   }
 
   // --- OpenAI Functions ---
@@ -569,625 +607,913 @@ class _MediaLabPageState extends State<MediaLabPage> {
       _endProcess();
     }
   }
-////TODO keep working on UI part to can be include all this blow new functions list
-  //From this Part All function is new and should I create UI for them 
-/// 1. Convert between any media formats (MP4, AVI, MKV, MOV, WebM, etc.)
-Future<void> _convertMediaFormat() async {
-  if (_videoPath == null) return _log("No input file selected.");
-  _startProcess();
 
-  final outPathf = await getTargetDirectory(folderUnderApp: 'converted_media');
-  final outPath = p.join(outPathf.path, "converted_output.mp4");  // Adjust extension as needed
-  _log("Converting format...");
+  ////TODO keep working on UI part to can be include all this blow new functions list
+  //From this Part All function is new and should I create UI for them
+  /// 1. Convert between any media formats (MP4, AVI, MKV, MOV, WebM, etc.)
+  Future<void> _convertMediaFormat() async {
+    if (_videoPath == null) return _log("No input file selected.");
+    _startProcess();
 
-  await FFmpegKit.execute('-y -i "$_videoPath" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Converted: $outPath");
-    } else {
-      _log("Conversion failed.");
-    }
-  });
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'converted_media',
+    );
+    final outPath = p.join(
+      outPathf.path,
+      "converted_output.mp4",
+    ); // Adjust extension as needed
+    _log("Converting format...");
 
-  _endProcess();
-}
+    await FFmpegKit.execute('-y -i "$_videoPath" "$outPath"').then((
+      session,
+    ) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Converted: $outPath");
+      } else {
+        _log("Conversion failed.");
+      }
+    });
 
-/// 2. Extract audio from video files
-Future<void> _extractAudioFromVideo() async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'extracted_audio');
-  final outPath = p.join(outPathf.path, "extracted_audio.mp3");
-  _log("Extracting audio...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -vn "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Audio extracted: $outPath");
-    } else {
-      _log("Extraction failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 3. Extract video from files
-Future<void> _extractVideoFromFile() async {
-  if (_videoPath == null) return _log("No file selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'extracted_video');
-  final outPath = p.join(outPathf.path, "video_only.mp4");
-  _log("Extracting video...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -an "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Video extracted: $outPath");
-    } else {
-      _log("Extraction failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 4. Combine audio and video streams
-Future<void> _combineAudioVideoStreams(String audioPath) async {
-  if (_videoPath == null || audioPath.isEmpty) return _log("Video or audio not selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'combined_media');
-  final outPath = p.join(outPathf.path, "combined_output.mp4");
-  _log("Combining streams...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -i "$audioPath" -c:v copy -c:a aac "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Combined: $outPath");
-    } else {
-      _log("Combination failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 5. Split files into segments
-Future<void> _splitFileIntoSegments(int segmentTimeSeconds) async {
-  if (_videoPath == null) return _log("No file selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'segments');
-  final baseName = p.basenameWithoutExtension(_videoPath!);
-  _log("Splitting into segments...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -f segment -segment_time $segmentTimeSeconds -c copy "${outPathf.path}/$baseName\/_%03d.mp4"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Segments saved in: ${outPathf.path}");
-    } else {
-      _log("Splitting failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 6. Concatenate multiple files
-Future<void> _concatenateFiles(List<String> filePaths) async {
-  if (filePaths.isEmpty) return _log("No files to concatenate.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'concatenated');
-  final outPath = p.join(outPathf.path, "concatenated_output.mp4");
-  final fileList = p.join(outPathf.path, "files.txt");
-  
-  // Create concat file list
-  final file = File(fileList);
-  await file.writeAsString(filePaths.map((path) => "file '$path'").join('\n'));
-
-  _log("Concatenating files...");
-
-  await FFmpegKit.execute('-y -f concat -safe 0 -i "$fileList" -c copy "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Concatenated: $outPath");
-    } else {
-      _log("Concatenation failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 7. Change container format without re-encoding
-Future<void> _changeContainerFormat() async {
-  if (_videoPath == null) return _log("No file selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'changed_container');
-  final outPath = p.join(outPathf.path, "container_changed.mkv");  // Example to MKV
-  _log("Changing container...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -c copy "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Container changed: $outPath");
-    } else {
-      _log("Failed to change container.");
-    }
-  });
-
-  _endProcess();
-}
-/// 8. Probe Media Info
-Future<void> _probeMediaInfo() async {
-  if (_videoPath == null) return _log("No file selected.");
-  _startProcess();
-  _log("Probing media information...");
-
-  await FFprobeKit.getMediaInformation(_videoPath!).then((session) async {
-    final info = session.getMediaInformation();
-    if (info == null) {
-      _log("Failed to retrieve media info.");
-      _endProcess();
-      return;
-    }
-    final streams = info.getStreams() ?? [];
-    _log("Found ${streams.length} stream(s).");
-    for (var stream in streams) {
-      final type = stream.getType() ?? "unknown";
-      final codec = stream.getCodec() ?? "unknown codec";
-      final index = stream.getIndex();
-      final detail = [
-        if (stream.getWidth() != null) "${stream.getWidth()}x${stream.getHeight()}",
-        if (stream.getSampleRate() != null) "sr:${stream.getSampleRate()}",
-        if (stream.getChannelLayout() != null) "ch:${stream.getChannelLayout()}",
-      ].join(" ");
-      _log("Stream #$index [$type]: $codec ${detail.isNotEmpty ? detail : ""}".trim());
-    }
     _endProcess();
-  });
-}
-/// 1. Resize/Scale: Change resolution (1080p, 720p, 480p, etc.)
-Future<void> _resizeVideo(int width, int height) async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
+  }
 
-  final outPathf = await getTargetDirectory(folderUnderApp: 'resized_video');
-  final outPath = p.join(outPathf.path, "resized_output.mp4");
-  _log("Resizing video...");
+  /// 2. Extract audio from video files
+  Future<void> _extractAudioFromVideo() async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
 
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf scale=$width:$height "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Resized: $outPath");
-    } else {
-      _log("Resize failed.");
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'extracted_audio',
+    );
+    final outPath = p.join(outPathf.path, "extracted_audio.mp3");
+    _log("Extracting audio...");
+
+    await FFmpegKit.execute('-y -i "$_videoPath" -vn "$outPath"').then((
+      session,
+    ) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Audio extracted: $outPath");
+      } else {
+        _log("Extraction failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 3. Extract video from files
+  Future<void> _extractVideoFromFile() async {
+    if (_videoPath == null) return _log("No file selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'extracted_video',
+    );
+    final outPath = p.join(outPathf.path, "video_only.mp4");
+    _log("Extracting video...");
+
+    await FFmpegKit.execute('-y -i "$_videoPath" -an "$outPath"').then((
+      session,
+    ) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Video extracted: $outPath");
+      } else {
+        _log("Extraction failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 4. Combine audio and video streams
+  Future<void> _combineAudioVideoStreams(String audioPath) async {
+    if (_videoPath == null || audioPath.isEmpty)
+      return _log("Video or audio not selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'combined_media');
+    final outPath = p.join(outPathf.path, "combined_output.mp4");
+    _log("Combining streams...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -i "$audioPath" -c:v copy -c:a aac "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Combined: $outPath");
+      } else {
+        _log("Combination failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 5. Split files into segments
+  Future<void> _splitFileIntoSegments(int segmentTimeSeconds) async {
+    if (_videoPath == null) return _log("No file selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'segments');
+    final baseName = p.basenameWithoutExtension(_videoPath!);
+    _log("Splitting into segments...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -f segment -segment_time $segmentTimeSeconds -c copy "${outPathf.path}/$baseName\/_%03d.mp4"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Segments saved in: ${outPathf.path}");
+      } else {
+        _log("Splitting failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 6. Concatenate multiple files
+  Future<void> _concatenateFiles(List<String> filePaths) async {
+    if (filePaths.isEmpty) return _log("No files to concatenate.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'concatenated');
+    final outPath = p.join(outPathf.path, "concatenated_output.mp4");
+    final fileList = p.join(outPathf.path, "files.txt");
+
+    // Create concat file list
+    final file = File(fileList);
+    await file.writeAsString(
+      filePaths.map((path) => "file '$path'").join('\n'),
+    );
+
+    _log("Concatenating files...");
+
+    await FFmpegKit.execute(
+      '-y -f concat -safe 0 -i "$fileList" -c copy "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Concatenated: $outPath");
+      } else {
+        _log("Concatenation failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 7. Change container format without re-encoding
+  Future<void> _changeContainerFormat() async {
+    if (_videoPath == null) return _log("No file selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'changed_container',
+    );
+    final outPath = p.join(
+      outPathf.path,
+      "container_changed.mkv",
+    ); // Example to MKV
+    _log("Changing container...");
+
+    await FFmpegKit.execute('-y -i "$_videoPath" -c copy "$outPath"').then((
+      session,
+    ) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Container changed: $outPath");
+      } else {
+        _log("Failed to change container.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 8. Probe Media Info
+  Future<void> _probeMediaInfo() async {
+    if (_videoPath == null) return _log("No file selected.");
+    _startProcess();
+    _log("Probing media information...");
+
+    await FFprobeKit.getMediaInformation(_videoPath!).then((session) async {
+      final info = session.getMediaInformation();
+      if (info == null) {
+        _log("Failed to retrieve media info.");
+        _endProcess();
+        return;
+      }
+      final streams = info.getStreams();
+      _log("Found ${streams.length} stream(s).");
+      for (var stream in streams) {
+        final type = stream.getType() ?? "unknown";
+        final codec = stream.getCodec() ?? "unknown codec";
+        final index = stream.getIndex();
+        final detail = [
+          if (stream.getWidth() != null)
+            "${stream.getWidth()}x${stream.getHeight()}",
+          if (stream.getSampleRate() != null) "sr:${stream.getSampleRate()}",
+          if (stream.getChannelLayout() != null)
+            "ch:${stream.getChannelLayout()}",
+        ].join(" ");
+        _log(
+          "Stream #$index [$type]: $codec ${detail.isNotEmpty ? detail : ""}"
+              .trim(),
+        );
+      }
+      _endProcess();
+    });
+  }
+
+  /// 1. Resize/Scale: Change resolution (1080p, 720p, 480p, etc.)
+  Future<void> _resizeVideo(int width, int height) async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'resized_video');
+    final outPath = p.join(outPathf.path, "resized_output.mp4");
+    _log("Resizing video...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -vf scale=$width:$height "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Resized: $outPath");
+      } else {
+        _log("Resize failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 2. Crop: Remove unwanted edges
+  Future<void> _cropVideo(int width, int height, int x, int y) async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'cropped_video');
+    final outPath = p.join(outPathf.path, "cropped_output.mp4");
+    _log("Cropping video...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -vf crop=$width:$height:$x:$y "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Cropped: $outPath");
+      } else {
+        _log("Crop failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 3. Trim: Cut specific segments
+  Future<void> _trimVideo(String startTime, String duration) async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'trimmed_video');
+    final outPath = p.join(outPathf.path, "trimmed_output.mp4");
+    _log("Trimming video...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -ss $startTime -t $duration "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Trimmed: $outPath");
+      } else {
+        _log("Trim failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 4. Rotate/Flip: Change orientation
+  Future<void> _rotateFlipVideo(String mode) async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'rotated_video');
+    final outPath = p.join(outPathf.path, "rotated_output.mp4");
+    final filter = () {
+      switch (mode) {
+        case "180":
+          return "transpose=1,transpose=1";
+        case "270":
+          return "transpose=2";
+        case "Mirror":
+          return "hflip";
+        case "90":
+        default:
+          return "transpose=1";
+      }
+    }();
+
+    _log("Rotating/flipping ($mode)...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -vf "$filter" "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Rotated: $outPath");
+      } else {
+        _log("Rotation failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 5. Speed up/Slow down: Adjust playback speed
+  Future<void> _adjustVideoSpeed(double speedMultiplier) async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'speed_adjusted_video',
+    );
+    final outPath = p.join(outPathf.path, "speed_output.mp4");
+    final ptsValue = (1 / speedMultiplier).toStringAsFixed(2);
+    _log("Adjusting speed...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -filter:v "setpts=$ptsValue*PTS" "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Speed adjusted: $outPath");
+      } else {
+        _log("Speed adjustment failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 6. Reverse: Play video backwards
+  Future<void> _reverseVideo() async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'reversed_video');
+    final outPath = p.join(outPathf.path, "reversed_output.mp4");
+    _log("Reversing video...");
+
+    await FFmpegKit.execute('-y -i "$_videoPath" -vf reverse "$outPath"').then((
+      session,
+    ) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Reversed: $outPath");
+      } else {
+        _log("Reversal failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 7. Add/Remove watermarks
+  Future<void> _removeWatermark(int x, int y, int w, int h) async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'watermark_removed',
+    );
+    final outPath = p.join(outPathf.path, "no_watermark.mp4");
+    _log("Removing watermark...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -vf delogo=x=$x:y=$y:w=$w:h=$h "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Watermark removed: $outPath");
+      } else {
+        _log("Failed to remove watermark.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 8. Overlay: Picture-in-picture, text, images
+  Future<void> _overlayVideo(String overlayPath, int x, int y) async {
+    if (_videoPath == null || overlayPath.isEmpty)
+      return _log("Video or overlay not selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'overlaid_video');
+    final outPath = p.join(outPathf.path, "overlaid_output.mp4");
+    _log("Overlaying...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -i "$overlayPath" -filter_complex "[0:v][1:v]overlay=$x:$y" "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Overlaid: $outPath");
+      } else {
+        _log("Overlay failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 9. Deinterlace: Remove interlacing artifacts
+  Future<void> _deinterlaceVideo() async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'deinterlaced_video',
+    );
+    final outPath = p.join(outPathf.path, "deinterlaced_output.mp4");
+    _log("Deinterlacing...");
+
+    await FFmpegKit.execute('-y -i "$_videoPath" -vf yadif "$outPath"').then((
+      session,
+    ) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Deinterlaced: $outPath");
+      } else {
+        _log("Deinterlace failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 10. Stabilize: Reduce camera shake
+  Future<void> _stabilizeVideo() async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'stabilized_video',
+    );
+    final outPath = p.join(outPathf.path, "stabilized_output.mp4");
+    _log("Stabilizing (multi-pass)...");
+
+    // First pass
+    await FFmpegKit.execute('-y -i "$_videoPath" -vf vidstabdetect -f null -');
+    // Second pass (simplified)
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -vf vidstabtransform "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Stabilized: $outPath");
+      } else {
+        _log("Stabilization failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 11. Color correction: Adjust brightness, contrast, saturation
+  Future<void> _correctVideoColor(
+    double brightness,
+    double contrast,
+    double saturation,
+  ) async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'color_corrected',
+    );
+    final outPath = p.join(outPathf.path, "color_corrected.mp4");
+    _log("Correcting color...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -vf eq=brightness=$brightness:contrast=$contrast:saturation=$saturation "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Color corrected: $outPath");
+      } else {
+        _log("Color correction failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 12. Filters: Apply blur, sharpen, noise reduction, etc.
+  Future<void> _applyVideoFilters(String filter) async {
+    if (_videoPath == null) return _log("No video selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'filtered_video');
+    final outPath = p.join(outPathf.path, "filtered_output.mp4");
+    _log("Applying filters...");
+
+    await FFmpegKit.execute(
+      '-y -i "$_videoPath" -vf "$filter" "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Filtered: $outPath");
+      } else {
+        _log("Filter application failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 1. Convert formats (MP3, AAC, FLAC, WAV, OGG, etc.)
+  Future<void> _convertAudioFormat(String inputAudioPath) async {
+    if (inputAudioPath.isEmpty) return _log("No audio selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'converted_audio',
+    );
+    final outPath = p.join(outPathf.path, "converted_output.mp3");
+    _log("Converting audio format...");
+
+    await FFmpegKit.execute('-y -i "$inputAudioPath" "$outPath"').then((
+      session,
+    ) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Converted: $outPath");
+      } else {
+        _log("Conversion failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 2. Extract audio from video files
+  // (Same as Basic Operations #2)
+
+  /// 3. Adjust volume (increase/decrease/normalize)
+  Future<void> _adjustAudioVolume(String inputAudioPath, double volume) async {
+    if (inputAudioPath.isEmpty) return _log("No audio selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'volume_adjusted',
+    );
+    final outPath = p.join(outPathf.path, "volume_output.mp3");
+    _log("Adjusting volume...");
+
+    await FFmpegKit.execute(
+      '-y -i "$inputAudioPath" -filter:a "volume=$volume" "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Volume adjusted: $outPath");
+      } else {
+        _log("Adjustment failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 4. Trim audio segments
+  Future<void> _trimAudio(
+    String inputAudioPath,
+    String startTime,
+    String duration,
+  ) async {
+    if (inputAudioPath.isEmpty) return _log("No audio selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'trimmed_audio');
+    final outPath = p.join(outPathf.path, "trimmed_output.mp3");
+    _log("Trimming audio...");
+
+    await FFmpegKit.execute(
+      '-y -i "$inputAudioPath" -ss $startTime -t $duration "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Trimmed: $outPath");
+      } else {
+        _log("Trim failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 5. Merge multiple audio files
+  Future<void> _mergeAudioFiles(List<String> audioPaths) async {
+    if (audioPaths.isEmpty) return _log("No audio files to merge.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'merged_audio');
+    final outPath = p.join(outPathf.path, "merged_output.mp3");
+    final concatCmd =
+        '${audioPaths.map((path) => '-i "$path"').join(' ')} -filter_complex concat=n=${audioPaths.length}:v=0:a=1 "$outPath"';
+    _log("Merging audio...");
+
+    await FFmpegKit.execute('-y $concatCmd').then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Merged: $outPath");
+      } else {
+        _log("Merge failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 6. Add/Remove audio tracks
+  // (Handled via combine in Basic Operations #4)
+
+  /// 7. Change sample rate/bitrate
+  Future<void> _changeAudioSampleRate(
+    String inputAudioPath,
+    int sampleRate,
+    String bitrate,
+  ) async {
+    if (inputAudioPath.isEmpty) return _log("No audio selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'audio_modified');
+    final outPath = p.join(outPathf.path, "modified_output.mp3");
+    _log("Changing sample rate/bitrate...");
+
+    await FFmpegKit.execute(
+      '-y -i "$inputAudioPath" -ar $sampleRate -ab $bitrate "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Modified: $outPath");
+      } else {
+        _log("Modification failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 8. Apply audio filters (equalizer, compressor, reverb, echo)
+  Future<void> _applyAudioFilters(String inputAudioPath, String filter) async {
+    if (inputAudioPath.isEmpty) return _log("No audio selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'audio_filtered');
+    final outPath = p.join(outPathf.path, "filtered_output.mp3");
+    _log("Applying audio filters...");
+
+    await FFmpegKit.execute(
+      '-y -i "$inputAudioPath" -af "$filter" "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Filtered: $outPath");
+      } else {
+        _log("Filter failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 9. Remove/reduce noise
+  Future<void> _reduceAudioNoise(String inputAudioPath) async {
+    if (inputAudioPath.isEmpty) return _log("No audio selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'noise_reduced');
+    final outPath = p.join(outPathf.path, "noise_reduced.mp3");
+    _log("Reducing noise...");
+
+    await FFmpegKit.execute(
+      '-y -i "$inputAudioPath" -af "highpass=f=80,lowpass=f=3400" "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Noise reduced: $outPath");
+      } else {
+        _log("Noise reduction failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 10. Extract specific channels (stereo to mono)
+  Future<void> _extractAudioChannels(String inputAudioPath) async {
+    if (inputAudioPath.isEmpty) return _log("No audio selected.");
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'mono_audio');
+    final outPath = p.join(outPathf.path, "mono_output.mp3");
+    _log("Extracting mono channel...");
+
+    await FFmpegKit.execute('-y -i "$inputAudioPath" -ac 1 "$outPath"').then((
+      session,
+    ) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Mono extracted: $outPath");
+      } else {
+        _log("Extraction failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  /// 11. Generate silence
+  Future<void> _generateSilence(double duration) async {
+    _startProcess();
+
+    final outPathf = await getTargetDirectory(folderUnderApp: 'silence');
+    final outPath = p.join(outPathf.path, "silence.wav");
+    _log("Generating silence...");
+
+    await FFmpegKit.execute(
+      '-y -f lavfi -i anullsrc=r=44100:cl=mono -t $duration "$outPath"',
+    ).then((session) async {
+      if (ReturnCode.isSuccess(await session.getReturnCode())) {
+        _log("Silence generated: $outPath");
+      } else {
+        _log("Generation failed.");
+      }
+    });
+
+    _endProcess();
+  }
+
+  Future<void> transcribeToSrt(
+    File audioFile, {
+    String? languageIso6391,
+  }) async {
+    final uri = Uri.parse('https://api.openai.com/v1/audio/transcriptions');
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'subtitels_original',
+    );
+    final outPath = p.join(
+      outPathf.path,
+      '${p.basename(audioFile.path)}${Random().nextInt(10000)}.srt',
+    );
+
+    _log("Generating Subtitle from provided file...");
+
+    final req = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer ${Cfg.current.key}'
+      ..files.add(await http.MultipartFile.fromPath('file', audioFile.path))
+      ..fields['model'] = 'whisper-1'
+      ..fields['response_format'] = 'srt';
+
+    if (languageIso6391 != null && languageIso6391.isNotEmpty) {
+      req.fields['language'] = languageIso6391; // e.g. "ja", "en"
     }
-  });
 
-  _endProcess();
-}
-
-/// 2. Crop: Remove unwanted edges
-Future<void> _cropVideo(int width, int height, int x, int y) async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'cropped_video');
-  final outPath = p.join(outPathf.path, "cropped_output.mp4");
-  _log("Cropping video...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf crop=$width:$height:$x:$y "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Cropped: $outPath");
-    } else {
-      _log("Crop failed.");
+    final res = await req.send();
+    final body = await res.stream.bytesToString();
+    File(outPath).createSync();
+    File(outPath).writeAsStringSync(body);
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      _log('OpenAI STT failed ${res.statusCode}: $body');
     }
-  });
 
-  _endProcess();
-}
+    // body is plain SRT text when response_format=srt
+    return _log(
+      'subtitle generated into $outPath  but check that , I now so lazy and not implanted checking if content is correct or not , maybe later doing that',
+    );
+  }
 
-/// 3. Trim: Cut specific segments
-Future<void> _trimVideo(String startTime, String duration) async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
+  Future<void> transcribeVerboseToSrt(
+    File audioFile, {
+    String? languageIso6391,
+    bool includeWordTimestamps = false,
+  }) async {
+    final uri = Uri.parse('https://api.openai.com/v1/audio/transcriptions');
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'subtitels_original',
+    );
+    final outPath = p.join(
+      outPathf.path,
+      '${p.basenameWithoutExtension(audioFile.path)}_verbose_${DateTime.now().millisecondsSinceEpoch}.srt',
+    );
 
-  final outPathf = await getTargetDirectory(folderUnderApp: 'trimmed_video');
-  final outPath = p.join(outPathf.path, "trimmed_output.mp4");
-  _log("Trimming video...");
+    _log("Generating Subtitle with verbose JSON (fallback method)...");
 
-  await FFmpegKit.execute('-y -i "$_videoPath" -ss $startTime -t $duration "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Trimmed: $outPath");
-    } else {
-      _log("Trim failed.");
+    final req = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer ${Cfg.current.key}'
+      ..files.add(await http.MultipartFile.fromPath('file', audioFile.path))
+      ..fields['model'] = 'whisper-1'
+      ..fields['response_format'] = 'verbose_json'
+      ..fields['timestamp_granularities[]'] = includeWordTimestamps
+          ? 'word'
+          : 'segment';
+
+    if (languageIso6391 != null && languageIso6391.isNotEmpty) {
+      req.fields['language'] = languageIso6391;
     }
-  });
 
-  _endProcess();
-}
+    final res = await req.send();
+    final body = await res.stream.bytesToString();
 
-/// 4. Rotate/Flip: Change orientation
-Future<void> _rotateFlipVideo(String mode) async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'rotated_video');
-  final outPath = p.join(outPathf.path, "rotated_output.mp4");
-  final filter = () {
-    switch (mode) {
-      case "180":
-        return "transpose=1,transpose=1";
-      case "270":
-        return "transpose=2";
-      case "Mirror":
-        return "hflip";
-      case "90":
-      default:
-        return "transpose=1";
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      _log('OpenAI verbose STT failed ${res.statusCode}: $body');
+      _log(
+        'OpenAI verbose STT failed ${res.statusCode}: ${body.length > 200 ? body.substring(0, 200) + "..." : body}',
+      );
     }
-  }();
 
-  _log("Rotating/flipping ($mode)...");
+    try {
+      final jsonResponse = jsonDecode(body) as Map<String, dynamic>;
+      final segments = jsonResponse['segments'] as List?;
 
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf "$filter" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Rotated: $outPath");
-    } else {
-      _log("Rotation failed.");
+      if (segments == null || segments.isEmpty) {
+        _log('No segments found in transcription');
+        return;
+      }
+
+      // Convert segments to SRT
+      final srtContent = _segmentsToSrt(segments);
+
+      await File(outPath).writeAsString(srtContent);
+      _log(
+        'Verbose subtitle generated into $outPath (${segments.length} segments)',
+      );
+
+      return;
+    } catch (e) {
+      _log('Error parsing verbose JSON: $e');
+      throw Exception('Failed to parse transcription response: $e');
     }
-  });
+  }
 
-  _endProcess();
-}
+  String _segmentsToSrt(List<dynamic> segments) {
+    final buffer = StringBuffer();
 
-/// 5. Speed up/Slow down: Adjust playback speed
-Future<void> _adjustVideoSpeed(double speedMultiplier) async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
+    for (var i = 0; i < segments.length; i++) {
+      final seg = segments[i] as Map<String, dynamic>;
+      final start = (seg['start'] as num).toDouble();
+      final end = (seg['end'] as num).toDouble();
+      final text = (seg['text'] as String).trim();
 
-  final outPathf = await getTargetDirectory(folderUnderApp: 'speed_adjusted_video');
-  final outPath = p.join(outPathf.path, "speed_output.mp4");
-  final ptsValue = (1 / speedMultiplier).toStringAsFixed(2);
-  _log("Adjusting speed...");
+      if (text.isEmpty) continue;
 
-  await FFmpegKit.execute('-y -i "$_videoPath" -filter:v "setpts=$ptsValue*PTS" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Speed adjusted: $outPath");
-    } else {
-      _log("Speed adjustment failed.");
+      buffer.writeln('${i + 1}');
+      buffer.writeln('${_formatSrtTime(start)} --> ${_formatSrtTime(end)}');
+      buffer.writeln(text);
+      buffer.writeln();
     }
-  });
 
-  _endProcess();
-}
+    return buffer.toString();
+  }
 
-/// 6. Reverse: Play video backwards
-Future<void> _reverseVideo() async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
+  String _formatSrtTime(double seconds) {
+    final totalMs = (seconds * 1000).round();
+    final ms = totalMs % 1000;
+    final totalSeconds = totalMs ~/ 1000;
+    final s = totalSeconds % 60;
+    final totalMinutes = totalSeconds ~/ 60;
+    final m = totalMinutes % 60;
+    final h = totalMinutes ~/ 60;
 
-  final outPathf = await getTargetDirectory(folderUnderApp: 'reversed_video');
-  final outPath = p.join(outPathf.path, "reversed_output.mp4");
-  _log("Reversing video...");
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')},${ms.toString().padLeft(3, '0')}';
+  }
 
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf reverse "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Reversed: $outPath");
-    } else {
-      _log("Reversal failed.");
+  Future<void> translateAudioToEnglishSrt(
+    File audioFile, {
+    String? prompt,
+  }) async {
+    final uri = Uri.parse('https://api.openai.com/v1/audio/translations');
+    final outPathf = await getTargetDirectory(
+      folderUnderApp: 'subtitels_translated',
+    );
+    final outPath = p.join(
+      outPathf.path,
+      '${p.basenameWithoutExtension(audioFile.path)}_en_${DateTime.now().millisecondsSinceEpoch}.srt',
+    );
+
+    _log("Translating audio to English SRT...");
+
+    final req = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer ${Cfg.current.key}'
+      ..files.add(await http.MultipartFile.fromPath('file', audioFile.path))
+      ..fields['model'] = 'whisper-1'
+      ..fields['response_format'] = 'srt';
+
+    if (prompt != null && prompt.isNotEmpty) {
+      req.fields['prompt'] = prompt;
     }
-  });
 
-  _endProcess();
-}
+    final res = await req.send();
+    final body = await res.stream.bytesToString();
 
-/// 7. Add/Remove watermarks
-Future<void> _removeWatermark(int x, int y, int w, int h) async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'watermark_removed');
-  final outPath = p.join(outPathf.path, "no_watermark.mp4");
-  _log("Removing watermark...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf delogo=x=$x:y=$y:w=$w:h=$h "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Watermark removed: $outPath");
-    } else {
-      _log("Failed to remove watermark.");
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      _log('OpenAI audio translation failed ${res.statusCode}: $body');
+      _log(
+        'OpenAI audio translation failed ${res.statusCode}: ${body.length > 200 ? body.substring(0, 200) + "..." : body}',
+      );
     }
-  });
 
-  _endProcess();
-}
-
-/// 8. Overlay: Picture-in-picture, text, images
-Future<void> _overlayVideo(String overlayPath, int x, int y) async {
-  if (_videoPath == null || overlayPath.isEmpty) return _log("Video or overlay not selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'overlaid_video');
-  final outPath = p.join(outPathf.path, "overlaid_output.mp4");
-  _log("Overlaying...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -i "$overlayPath" -filter_complex "[0:v][1:v]overlay=$x:$y" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Overlaid: $outPath");
-    } else {
-      _log("Overlay failed.");
+    // Validate SRT format (basic check)
+    if (!body.contains('-->') && !body.contains('\n\n')) {
+      _log('Warning: Translation response may not be valid SRT format');
     }
-  });
 
-  _endProcess();
-}
+    await File(outPath).writeAsString(body);
+    _log('English translation SRT generated into $outPath');
 
-/// 9. Deinterlace: Remove interlacing artifacts
-Future<void> _deinterlaceVideo() async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
+    return;
+  }
 
-  final outPathf = await getTargetDirectory(folderUnderApp: 'deinterlaced_video');
-  final outPath = p.join(outPathf.path, "deinterlaced_output.mp4");
-  _log("Deinterlacing...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf yadif "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Deinterlaced: $outPath");
-    } else {
-      _log("Deinterlace failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 10. Stabilize: Reduce camera shake
-Future<void> _stabilizeVideo() async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'stabilized_video');
-  final outPath = p.join(outPathf.path, "stabilized_output.mp4");
-  _log("Stabilizing (multi-pass)...");
-
-  // First pass
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf vidstabdetect -f null -');
-  // Second pass (simplified)
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf vidstabtransform "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Stabilized: $outPath");
-    } else {
-      _log("Stabilization failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 11. Color correction: Adjust brightness, contrast, saturation
-Future<void> _correctVideoColor(double brightness, double contrast, double saturation) async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'color_corrected');
-  final outPath = p.join(outPathf.path, "color_corrected.mp4");
-  _log("Correcting color...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf eq=brightness=$brightness:contrast=$contrast:saturation=$saturation "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Color corrected: $outPath");
-    } else {
-      _log("Color correction failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 12. Filters: Apply blur, sharpen, noise reduction, etc.
-Future<void> _applyVideoFilters(String filter) async {
-  if (_videoPath == null) return _log("No video selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'filtered_video');
-  final outPath = p.join(outPathf.path, "filtered_output.mp4");
-  _log("Applying filters...");
-
-  await FFmpegKit.execute('-y -i "$_videoPath" -vf "$filter" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Filtered: $outPath");
-    } else {
-      _log("Filter application failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 1. Convert formats (MP3, AAC, FLAC, WAV, OGG, etc.)
-Future<void> _convertAudioFormat(String inputAudioPath) async {
-  if (inputAudioPath.isEmpty) return _log("No audio selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'converted_audio');
-  final outPath = p.join(outPathf.path, "converted_output.mp3");
-  _log("Converting audio format...");
-
-  await FFmpegKit.execute('-y -i "$inputAudioPath" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Converted: $outPath");
-    } else {
-      _log("Conversion failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 2. Extract audio from video files
-// (Same as Basic Operations #2)
-
-/// 3. Adjust volume (increase/decrease/normalize)
-Future<void> _adjustAudioVolume(String inputAudioPath, double volume) async {
-  if (inputAudioPath.isEmpty) return _log("No audio selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'volume_adjusted');
-  final outPath = p.join(outPathf.path, "volume_output.mp3");
-  _log("Adjusting volume...");
-
-  await FFmpegKit.execute('-y -i "$inputAudioPath" -filter:a "volume=$volume" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Volume adjusted: $outPath");
-    } else {
-      _log("Adjustment failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 4. Trim audio segments
-Future<void> _trimAudio(String inputAudioPath, String startTime, String duration) async {
-  if (inputAudioPath.isEmpty) return _log("No audio selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'trimmed_audio');
-  final outPath = p.join(outPathf.path, "trimmed_output.mp3");
-  _log("Trimming audio...");
-
-  await FFmpegKit.execute('-y -i "$inputAudioPath" -ss $startTime -t $duration "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Trimmed: $outPath");
-    } else {
-      _log("Trim failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 5. Merge multiple audio files
-Future<void> _mergeAudioFiles(List<String> audioPaths) async {
-  if (audioPaths.isEmpty) return _log("No audio files to merge.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'merged_audio');
-  final outPath = p.join(outPathf.path, "merged_output.mp3");
-  final concatCmd = '${audioPaths.map((path) => '-i "$path"').join(' ')} -filter_complex concat=n=${audioPaths.length}:v=0:a=1 "$outPath"';
-  _log("Merging audio...");
-
-  await FFmpegKit.execute('-y $concatCmd').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Merged: $outPath");
-    } else {
-      _log("Merge failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 6. Add/Remove audio tracks
-// (Handled via combine in Basic Operations #4)
-
-/// 7. Change sample rate/bitrate
-Future<void> _changeAudioSampleRate(String inputAudioPath, int sampleRate, String bitrate) async {
-  if (inputAudioPath.isEmpty) return _log("No audio selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'audio_modified');
-  final outPath = p.join(outPathf.path, "modified_output.mp3");
-  _log("Changing sample rate/bitrate...");
-
-  await FFmpegKit.execute('-y -i "$inputAudioPath" -ar $sampleRate -ab $bitrate "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Modified: $outPath");
-    } else {
-      _log("Modification failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 8. Apply audio filters (equalizer, compressor, reverb, echo)
-Future<void> _applyAudioFilters(String inputAudioPath, String filter) async {
-  if (inputAudioPath.isEmpty) return _log("No audio selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'audio_filtered');
-  final outPath = p.join(outPathf.path, "filtered_output.mp3");
-  _log("Applying audio filters...");
-
-  await FFmpegKit.execute('-y -i "$inputAudioPath" -af "$filter" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Filtered: $outPath");
-    } else {
-      _log("Filter failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 9. Remove/reduce noise
-Future<void> _reduceAudioNoise(String inputAudioPath) async {
-  if (inputAudioPath.isEmpty) return _log("No audio selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'noise_reduced');
-  final outPath = p.join(outPathf.path, "noise_reduced.mp3");
-  _log("Reducing noise...");
-
-  await FFmpegKit.execute('-y -i "$inputAudioPath" -af "highpass=f=80,lowpass=f=3400" "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Noise reduced: $outPath");
-    } else {
-      _log("Noise reduction failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 10. Extract specific channels (stereo to mono)
-Future<void> _extractAudioChannels(String inputAudioPath) async {
-  if (inputAudioPath.isEmpty) return _log("No audio selected.");
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'mono_audio');
-  final outPath = p.join(outPathf.path, "mono_output.mp3");
-  _log("Extracting mono channel...");
-
-  await FFmpegKit.execute('-y -i "$inputAudioPath" -ac 1 "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Mono extracted: $outPath");
-    } else {
-      _log("Extraction failed.");
-    }
-  });
-
-  _endProcess();
-}
-
-/// 11. Generate silence
-Future<void> _generateSilence(double duration) async {
-  _startProcess();
-
-  final outPathf = await getTargetDirectory(folderUnderApp: 'silence');
-  final outPath = p.join(outPathf.path, "silence.wav");
-  _log("Generating silence...");
-
-  await FFmpegKit.execute('-y -f lavfi -i anullsrc=r=44100:cl=mono -t $duration "$outPath"').then((session) async {
-    if (ReturnCode.isSuccess(await session.getReturnCode())) {
-      _log("Silence generated: $outPath");
-    } else {
-      _log("Generation failed.");
-    }
-  });
-
-  _endProcess();
-}
 
   Future<void> _showResizeDialog() async {
     final resolutionMap = {
@@ -1228,10 +1554,7 @@ Future<void> _generateSilence(double duration) async {
                   },
                   items: resolutionMap.keys
                       .map(
-                        (key) => DropdownMenuItem(
-                          value: key,
-                          child: Text(key),
-                        ),
+                        (key) => DropdownMenuItem(value: key, child: Text(key)),
                       )
                       .toList(),
                 ),
@@ -1267,12 +1590,18 @@ Future<void> _generateSilence(double duration) async {
   }
 
   Future<void> _showCropDialog() async {
-    final widthController =
-        TextEditingController(text: _cropParams['width'].toString());
-    final heightController =
-        TextEditingController(text: _cropParams['height'].toString());
-    final xController = TextEditingController(text: _cropParams['x'].toString());
-    final yController = TextEditingController(text: _cropParams['y'].toString());
+    final widthController = TextEditingController(
+      text: _cropParams['width'].toString(),
+    );
+    final heightController = TextEditingController(
+      text: _cropParams['height'].toString(),
+    );
+    final xController = TextEditingController(
+      text: _cropParams['x'].toString(),
+    );
+    final yController = TextEditingController(
+      text: _cropParams['y'].toString(),
+    );
 
     try {
       await showDialog(
@@ -1302,13 +1631,20 @@ Future<void> _generateSilence(double duration) async {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.white60),
+                ),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  final width = int.tryParse(widthController.text) ?? _cropParams['width']!;
-                  final height = int.tryParse(heightController.text) ?? _cropParams['height']!;
+                  final width =
+                      int.tryParse(widthController.text) ??
+                      _cropParams['width']!;
+                  final height =
+                      int.tryParse(heightController.text) ??
+                      _cropParams['height']!;
                   final x = int.tryParse(xController.text) ?? _cropParams['x']!;
                   final y = int.tryParse(yController.text) ?? _cropParams['y']!;
                   setState(() {
@@ -1361,7 +1697,10 @@ Future<void> _generateSilence(double duration) async {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.white60),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -1382,6 +1721,59 @@ Future<void> _generateSilence(double duration) async {
       );
     } finally {
       startController.dispose();
+      durationController.dispose();
+    }
+  }
+
+  Future<void> _showAudioSplitPartsDialog() async {
+    final durationController = TextEditingController(text: _audioSplitDuration);
+
+    try {
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFF4CAF50)),
+            ),
+            title: const Text("Split Audio into Parts"),
+            content: _buildDialogTextField(
+              "Part Duration (s)",
+              durationController,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.white60),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  final durationSeconds =
+                      int.tryParse(durationController.text) ?? 0;
+                  setState(() => _audioSplitDuration = durationController.text);
+                  if (_audioPath == null) {
+                    _log("Select an audio file first.");
+                    return;
+                  }
+                  if (durationSeconds <= 0) {
+                    _log("Enter a valid duration in seconds.");
+                    return;
+                  }
+                  _splitAudioIntoParts(durationSeconds);
+                },
+                child: const Text("Split"),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
       durationController.dispose();
     }
   }
@@ -1420,10 +1812,8 @@ Future<void> _generateSilence(double duration) async {
                 },
                 items: options
                     .map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text(value),
-                      ),
+                      (value) =>
+                          DropdownMenuItem(value: value, child: Text(value)),
                     )
                     .toList(),
               );
@@ -1432,7 +1822,10 @@ Future<void> _generateSilence(double duration) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white60),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -1472,7 +1865,9 @@ Future<void> _generateSilence(double duration) async {
                     activeColor: accent,
                     inactiveColor: accent.withOpacity(0.3),
                     value: tempSpeed,
-                    onChanged: (v) => setDialogState(() => tempSpeed = double.parse(v.toStringAsFixed(2))),
+                    onChanged: (v) => setDialogState(
+                      () => tempSpeed = double.parse(v.toStringAsFixed(2)),
+                    ),
                   ),
                   Text(
                     "${tempSpeed.toStringAsFixed(2)}x",
@@ -1485,7 +1880,10 @@ Future<void> _generateSilence(double duration) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white60),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -1502,10 +1900,18 @@ Future<void> _generateSilence(double duration) async {
   }
 
   Future<void> _showWatermarkDialog() async {
-    final xController = TextEditingController(text: _watermarkParams['x'].toString());
-    final yController = TextEditingController(text: _watermarkParams['y'].toString());
-    final wController = TextEditingController(text: _watermarkParams['w'].toString());
-    final hController = TextEditingController(text: _watermarkParams['h'].toString());
+    final xController = TextEditingController(
+      text: _watermarkParams['x'].toString(),
+    );
+    final yController = TextEditingController(
+      text: _watermarkParams['y'].toString(),
+    );
+    final wController = TextEditingController(
+      text: _watermarkParams['w'].toString(),
+    );
+    final hController = TextEditingController(
+      text: _watermarkParams['h'].toString(),
+    );
 
     try {
       await showDialog(
@@ -1535,15 +1941,22 @@ Future<void> _generateSilence(double duration) async {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.white60),
+                ),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  final x = int.tryParse(xController.text) ?? _watermarkParams['x']!;
-                  final y = int.tryParse(yController.text) ?? _watermarkParams['y']!;
-                  final w = int.tryParse(wController.text) ?? _watermarkParams['w']!;
-                  final h = int.tryParse(hController.text) ?? _watermarkParams['h']!;
+                  final x =
+                      int.tryParse(xController.text) ?? _watermarkParams['x']!;
+                  final y =
+                      int.tryParse(yController.text) ?? _watermarkParams['y']!;
+                  final w =
+                      int.tryParse(wController.text) ?? _watermarkParams['w']!;
+                  final h =
+                      int.tryParse(hController.text) ?? _watermarkParams['h']!;
                   setState(() {
                     _watermarkParams = {'x': x, 'y': y, 'w': w, 'h': h};
                   });
@@ -1598,11 +2011,16 @@ Future<void> _generateSilence(double duration) async {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    tempPath != null ? "Selected: ${p.basename(tempPath!)}" : "No overlay selected.",
+                    tempPath != null
+                        ? "Selected: ${p.basename(tempPath!)}"
+                        : "No overlay selected.",
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   const SizedBox(height: 12),
-                  const Text("Position X", style: TextStyle(color: Colors.white70)),
+                  const Text(
+                    "Position X",
+                    style: TextStyle(color: Colors.white70),
+                  ),
                   Slider(
                     min: 0,
                     max: 500,
@@ -1612,7 +2030,10 @@ Future<void> _generateSilence(double duration) async {
                     value: posX,
                     onChanged: (v) => setDialogState(() => posX = v),
                   ),
-                  const Text("Position Y", style: TextStyle(color: Colors.white70)),
+                  const Text(
+                    "Position Y",
+                    style: TextStyle(color: Colors.white70),
+                  ),
                   Slider(
                     min: 0,
                     max: 500,
@@ -1634,7 +2055,10 @@ Future<void> _generateSilence(double duration) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white60),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -1702,7 +2126,10 @@ Future<void> _generateSilence(double duration) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white60),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -1758,10 +2185,8 @@ Future<void> _generateSilence(double duration) async {
                 },
                 items: filters.keys
                     .map(
-                      (name) => DropdownMenuItem(
-                        value: name,
-                        child: Text(name),
-                      ),
+                      (name) =>
+                          DropdownMenuItem(value: name, child: Text(name)),
                     )
                     .toList(),
               );
@@ -1770,7 +2195,10 @@ Future<void> _generateSilence(double duration) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white60),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -1824,7 +2252,9 @@ Future<void> _generateSilence(double duration) async {
                     activeColor: const Color(0xFF4CAF50),
                     inactiveColor: const Color(0xFF4CAF50).withOpacity(0.3),
                     value: tempVolume,
-                    onChanged: (v) => setDialogState(() => tempVolume = double.parse(v.toStringAsFixed(2))),
+                    onChanged: (v) => setDialogState(
+                      () => tempVolume = double.parse(v.toStringAsFixed(2)),
+                    ),
                   ),
                   Text(
                     "Multiplier: ${tempVolume.toStringAsFixed(2)}x",
@@ -1837,7 +2267,10 @@ Future<void> _generateSilence(double duration) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white60),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -1883,7 +2316,10 @@ Future<void> _generateSilence(double duration) async {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.white60),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -1936,7 +2372,9 @@ Future<void> _generateSilence(double duration) async {
                     activeColor: const Color(0xFF4CAF50),
                     inactiveColor: const Color(0xFF4CAF50).withOpacity(0.3),
                     value: tempDuration,
-                    onChanged: (v) => setDialogState(() => tempDuration = double.parse(v.toStringAsFixed(1))),
+                    onChanged: (v) => setDialogState(
+                      () => tempDuration = double.parse(v.toStringAsFixed(1)),
+                    ),
                   ),
                   Text(
                     "${tempDuration.toStringAsFixed(1)} seconds",
@@ -1949,7 +2387,10 @@ Future<void> _generateSilence(double duration) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white60),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -2004,7 +2445,9 @@ Future<void> _generateSilence(double duration) async {
                         .map(
                           (rate) => DropdownMenuItem(
                             value: rate,
-                            child: Text("${(rate / 1000).toStringAsFixed(1)} kHz"),
+                            child: Text(
+                              "${(rate / 1000).toStringAsFixed(1)} kHz",
+                            ),
                           ),
                         )
                         .toList(),
@@ -2025,12 +2468,7 @@ Future<void> _generateSilence(double duration) async {
                       if (v != null) setDialogState(() => tempBitrate = v);
                     },
                     items: bitrates
-                        .map(
-                          (b) => DropdownMenuItem(
-                            value: b,
-                            child: Text(b),
-                          ),
-                        )
+                        .map((b) => DropdownMenuItem(value: b, child: Text(b)))
                         .toList(),
                   ),
                 ],
@@ -2040,7 +2478,10 @@ Future<void> _generateSilence(double duration) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
+              child: const Text(
+                "Cancel",
+                style: TextStyle(color: Colors.white60),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -2062,6 +2503,7 @@ Future<void> _generateSilence(double duration) async {
       },
     );
   }
+
   void _startProcess() {
     setState(() => _isProcessing = true);
   }
@@ -2147,7 +2589,10 @@ Future<void> _generateSilence(double duration) async {
                         children: [
                           const Text(
                             "Multi-file concat",
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                           Switch(
                             value: _concatMultiSelect,
@@ -2195,7 +2640,10 @@ Future<void> _generateSilence(double duration) async {
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F0F16),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: border, style: BorderStyle.solid),
+                      border: Border.all(
+                        color: border,
+                        style: BorderStyle.solid,
+                      ),
                     ),
                     child: Row(
                       children: const [
@@ -2204,7 +2652,10 @@ Future<void> _generateSilence(double duration) async {
                         Expanded(
                           child: Text(
                             "Drag & drop files here to quick-select (hint only).",
-                            style: TextStyle(color: Colors.white54, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -2214,7 +2665,10 @@ Future<void> _generateSilence(double duration) async {
                   if (_recentFiles.isNotEmpty) ...[
                     const Text(
                       "Recent Files",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -2250,7 +2704,10 @@ Future<void> _generateSilence(double duration) async {
                     color: surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: accent.withOpacity(0.7), width: 1.2),
+                      side: BorderSide(
+                        color: accent.withOpacity(0.7),
+                        width: 1.2,
+                      ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -2259,7 +2716,11 @@ Future<void> _generateSilence(double duration) async {
                         children: [
                           Row(
                             children: const [
-                              Icon(Icons.video_settings, color: accent, size: 18),
+                              Icon(
+                                Icons.video_settings,
+                                color: accent,
+                                size: 18,
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 "VIDEO EDITING",
@@ -2334,12 +2795,16 @@ Future<void> _generateSilence(double duration) async {
                             children: [
                               _infoChip("Resolution: $_selectedResolution"),
                               _infoChip(
-                                  "Crop: ${_cropParams['width']}x${_cropParams['height']} @ ${_cropParams['x']},${_cropParams['y']}"),
+                                "Crop: ${_cropParams['width']}x${_cropParams['height']} @ ${_cropParams['x']},${_cropParams['y']}",
+                              ),
                               _infoChip("Trim: $_trimStart / $_trimDuration s"),
                               _infoChip("Rotate: $_rotateValue"),
-                              _infoChip("Speed: ${_speedMultiplier.toStringAsFixed(2)}x"),
                               _infoChip(
-                                  "Watermark: x${_watermarkParams['x']} y${_watermarkParams['y']} w${_watermarkParams['w']} h${_watermarkParams['h']}"),
+                                "Speed: ${_speedMultiplier.toStringAsFixed(2)}x",
+                              ),
+                              _infoChip(
+                                "Watermark: x${_watermarkParams['x']} y${_watermarkParams['y']} w${_watermarkParams['w']} h${_watermarkParams['h']}",
+                              ),
                             ],
                           ),
                         ],
@@ -2351,7 +2816,10 @@ Future<void> _generateSilence(double duration) async {
                     color: surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: Color(0xFF4CAF50), width: 1.2),
+                      side: const BorderSide(
+                        color: Color(0xFF4CAF50),
+                        width: 1.2,
+                      ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(8),
@@ -2365,8 +2833,13 @@ Future<void> _generateSilence(double duration) async {
                         ),
                         child: ExpansionTile(
                           initiallyExpanded: _audioExpanded,
-                          onExpansionChanged: (v) => setState(() => _audioExpanded = v),
-                          leading: const Icon(Icons.audiotrack, color: Color(0xFF4CAF50), size: 18),
+                          onExpansionChanged: (v) =>
+                              setState(() => _audioExpanded = v),
+                          leading: const Icon(
+                            Icons.audiotrack,
+                            color: Color(0xFF4CAF50),
+                            size: 18,
+                          ),
                           title: const Text(
                             "AUDIO PROCESSING",
                             style: TextStyle(
@@ -2376,7 +2849,10 @@ Future<void> _generateSilence(double duration) async {
                               color: Color(0xFF4CAF50),
                             ),
                           ),
-                          childrenPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          childrenPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 8,
+                          ),
                           children: [
                             Wrap(
                               spacing: 12,
@@ -2394,6 +2870,81 @@ Future<void> _generateSilence(double duration) async {
                                   },
                                   enabled: _audioPath != null,
                                 ),
+                               PopupMenuButton<String>(
+  icon: Icon(Icons.subtitles, color: Colors.blue),
+  itemBuilder: (context) => [
+    PopupMenuItem(
+      value: 'direct',
+      child: Row(
+        children: [
+          Icon(Icons.subtitles, size: 20),
+          SizedBox(width: 8),
+          Text('Generate SRT (Direct)'),
+        ],
+      ),
+    ),
+    PopupMenuItem(
+      value: 'verbose',
+      child: Row(
+        children: [
+          Icon(Icons.subtitles_outlined, size: 20),
+          SizedBox(width: 8),
+          Text('Generate SRT (Verbose)'),
+        ],
+      ),
+    ),
+    PopupMenuItem(
+      value: 'translate',
+      child: Row(
+        children: [
+          Icon(Icons.translate, size: 20),
+          SizedBox(width: 8),
+          Text('Translate to English SRT'),
+        ],
+      ),
+    ),
+  ],
+  onSelected: (value) {
+    if (_audioPath == null) {
+      _log("Select an audio file first.");
+      return;
+    }
+    
+    final audioFile = File(_audioPath!);
+    
+    switch (value) {
+      case 'direct':
+        transcribeToSrt(audioFile);
+        break;
+      case 'verbose':
+        transcribeVerboseToSrt(audioFile);
+        break;
+      case 'translate':
+        translateAudioToEnglishSrt(audioFile);
+        break;
+    }
+  },
+  child: Container(
+    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.blue,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.subtitles, color: Colors.white),
+        SizedBox(width: 8),
+        Text(
+          'Generate Subtitles',
+          style: TextStyle(color: Colors.white),
+        ),
+        Icon(Icons.arrow_drop_down, color: Colors.white),
+      ],
+    ),
+  ),
+),
+
                                 _buildAudioBtn(
                                   "Volume Adjust",
                                   Icons.volume_up,
@@ -2409,7 +2960,9 @@ Future<void> _generateSilence(double duration) async {
                                 _buildAudioBtn(
                                   "Merge Audio",
                                   Icons.library_music,
-                                  () => _mergeAudioFiles(List<String>.from(_mergeAudioPaths)),
+                                  () => _mergeAudioFiles(
+                                    List<String>.from(_mergeAudioPaths),
+                                  ),
                                   enabled: _mergeAudioPaths.isNotEmpty,
                                 ),
                                 _buildAudioBtn(
@@ -2458,7 +3011,10 @@ Future<void> _generateSilence(double duration) async {
                                     _mergeAudioPaths.isEmpty
                                         ? "Pick audio files to merge."
                                         : "${_mergeAudioPaths.length} file${_mergeAudioPaths.length == 1 ? "" : "s"} ready.",
-                                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
                                 ElevatedButton.icon(
@@ -2466,7 +3022,9 @@ Future<void> _generateSilence(double duration) async {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF1C1C24),
                                     foregroundColor: const Color(0xFF4CAF50),
-                                    side: const BorderSide(color: Color(0xFF4CAF50)),
+                                    side: const BorderSide(
+                                      color: Color(0xFF4CAF50),
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -2481,13 +3039,23 @@ Future<void> _generateSilence(double duration) async {
                               spacing: 12,
                               runSpacing: 6,
                               children: [
-                                _infoChip(_audioPath != null
-                                    ? "Current audio: ${p.basename(_audioPath!)}"
-                                    : "No audio selected"),
-                                _infoChip("Volume: ${_volumeLevel.toStringAsFixed(2)}x"),
-                                _infoChip("Trim: $_audioTrimStart / $_audioTrimDuration s"),
-                                _infoChip("Rate/BR: ${( _sampleRate / 1000).toStringAsFixed(1)}kHz / $_bitrate"),
-                                _infoChip("Silence: ${_silenceDuration.toStringAsFixed(1)}s"),
+                                _infoChip(
+                                  _audioPath != null
+                                      ? "Current audio: ${p.basename(_audioPath!)}"
+                                      : "No audio selected",
+                                ),
+                                _infoChip(
+                                  "Volume: ${_volumeLevel.toStringAsFixed(2)}x",
+                                ),
+                                _infoChip(
+                                  "Trim: $_audioTrimStart / $_audioTrimDuration s",
+                                ),
+                                _infoChip(
+                                  "Rate/BR: ${(_sampleRate / 1000).toStringAsFixed(1)}kHz / $_bitrate",
+                                ),
+                                _infoChip(
+                                  "Silence: ${_silenceDuration.toStringAsFixed(1)}s",
+                                ),
                               ],
                             ),
                           ],
@@ -2500,7 +3068,10 @@ Future<void> _generateSilence(double duration) async {
                     color: surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: accent.withOpacity(0.7), width: 1.2),
+                      side: BorderSide(
+                        color: accent.withOpacity(0.7),
+                        width: 1.2,
+                      ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -2616,7 +3187,8 @@ Future<void> _generateSilence(double duration) async {
                                 "Combine Audio+Video",
                                 Icons.merge_type,
                                 () => _combineAudioVideoStreams(_audioPath!),
-                                enabled: _videoPath != null && _audioPath != null,
+                                enabled:
+                                    _videoPath != null && _audioPath != null,
                               ),
                             ],
                           ),
@@ -2656,19 +3228,22 @@ Future<void> _generateSilence(double duration) async {
                                   style: const TextStyle(color: Colors.white),
                                   decoration: InputDecoration(
                                     labelText: "Segment Duration (s)",
-                                    labelStyle:
-                                        const TextStyle(color: Colors.white70),
+                                    labelStyle: const TextStyle(
+                                      color: Colors.white70,
+                                    ),
                                     filled: true,
                                     fillColor: const Color(0xFF14141A),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide:
-                                          const BorderSide(color: border),
+                                      borderSide: const BorderSide(
+                                        color: border,
+                                      ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide:
-                                          const BorderSide(color: border),
+                                      borderSide: const BorderSide(
+                                        color: border,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -2732,7 +3307,8 @@ Future<void> _generateSilence(double duration) async {
                                   List<String>.from(_concatFiles),
                                 ),
                                 enabled:
-                                    _videoPath != null && _concatFiles.isNotEmpty,
+                                    _videoPath != null &&
+                                    _concatFiles.isNotEmpty,
                               ),
                               _buildActionBtn(
                                 "Change Container",
@@ -2786,6 +3362,12 @@ Future<void> _generateSilence(double duration) async {
                         "Split Audio (10s)",
                         Icons.cut,
                         _splitAudio,
+                        enabled: _audioPath != null,
+                      ),
+                      _buildActionBtn(
+                        "Split Audio (Parts)",
+                        Icons.call_split,
+                        _showAudioSplitPartsDialog,
                         enabled: _audioPath != null,
                       ),
                       _buildActionBtn(
@@ -2924,7 +3506,9 @@ Future<void> _generateSilence(double duration) async {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        path != null ? p.basename(path) : "Tap to select file...",
+                        path != null
+                            ? p.basename(path)
+                            : "Tap to select file...",
                         style: TextStyle(
                           fontSize: 12,
                           color: path != null ? Colors.white70 : Colors.grey,
@@ -3063,18 +3647,12 @@ Future<void> _generateSilence(double duration) async {
     return ActionChip(
       backgroundColor: const Color(0xFF1C1C24),
       side: const BorderSide(color: Color(0xFF4CAF50)),
-      label: Text(
-        label,
-        style: const TextStyle(color: Color(0xFF4CAF50)),
-      ),
+      label: Text(label, style: const TextStyle(color: Color(0xFF4CAF50))),
       onPressed: onTap,
     );
   }
 
-  Widget _buildDialogTextField(
-    String label,
-    TextEditingController controller,
-  ) {
+  Widget _buildDialogTextField(String label, TextEditingController controller) {
     return TextField(
       controller: controller,
       style: const TextStyle(color: Colors.white),

@@ -11,7 +11,6 @@ import 'package:file_selector/file_selector.dart';
 import 'package:html2md/html2md.dart' as html2md;
 import 'dart:io';
 
-import '../main.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -517,7 +516,7 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
 
     final List<PackageModel> crates = [];
 
-    Bs4Element? _firstTagWithClass(Bs4Element root, String tag, String key) {
+    Bs4Element? firstTagWithClass(Bs4Element root, String tag, String key) {
       for (final el in root.findAll(tag)) {
         final cls = el.attributes['class'] ?? '';
         if (cls.contains(key)) return el;
@@ -527,9 +526,9 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
 
     for (final item in items) {
       final row = item;
-      final nameTag = _firstTagWithClass(row, 'a', 'name');
-      final versionTag = _firstTagWithClass(row, 'span', 'version');
-      final descTag = _firstTagWithClass(row, 'div', 'description');
+      final nameTag = firstTagWithClass(row, 'a', 'name');
+      final versionTag = firstTagWithClass(row, 'span', 'version');
+      final descTag = firstTagWithClass(row, 'div', 'description');
 
       final name = nameTag?.text.trim() ?? 'Unknown';
       final link = nameTag?.attributes['href'] ?? '';
@@ -612,11 +611,9 @@ class _GoPackageSearchPageState extends State<GoPackageSearchPage> {
            leading: IconButton(
              icon: const Icon(Icons.arrow_back),
              onPressed: () {
-                        Navigator.push(
+                        Navigator.pop(
           context,
-          MaterialPageRoute(
-            builder: (_) => GitLoaderApp(),
-          ),
+       
         );// This pops the screen and goes back
              },
            ),

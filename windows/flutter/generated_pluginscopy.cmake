@@ -8,7 +8,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_saver
   file_selector_windows
   flutter_secure_storage_windows
-  flutter_sound
   local_auth_windows
   permission_handler_windows
   record_windows
@@ -19,7 +18,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  llm_llamacpp
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

@@ -1,3 +1,4 @@
+// ignore: library_prefixes
 import 'dart:math' as Math;
 
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ class AiSidebar extends StatefulWidget {
 class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
   final TextEditingController _ctrl = TextEditingController();
   final ScrollController _scroll = ScrollController();
-  
+
   // Magic: Animation controllers for that smooth feel
   bool _isHoveringSend = false;
 
@@ -59,8 +60,9 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     // Determine if we need to show the "Thinking..." bubble
     // We show it if the AI is thinking BUT hasn't started streaming text yet.
-    final bool showThinkingIndicator = widget.chatService.isThinking && 
-                                     widget.chatService.currentStreamingContent.isEmpty;
+    final bool showThinkingIndicator =
+        widget.chatService.isThinking &&
+        widget.chatService.currentStreamingContent.isEmpty;
 
     return Container(
       width: 350,
@@ -82,26 +84,35 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.blueAccent.withOpacity(0.2),
+                    color: Colors.blueAccent.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.auto_awesome, color: Colors.blueAccent, size: 20),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    color: Colors.blueAccent,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 const Text(
                   "AI Assistant",
                   style: TextStyle(
-                    color: Colors.white, 
-                    fontWeight: FontWeight.w600, 
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    letterSpacing: 0.5
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const Spacer(),
                 _buildHeaderBtn(Icons.settings_outlined, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ConfigEditor()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ConfigEditor()),
+                  );
                 }),
-                _buildHeaderBtn(Icons.delete_outline, () { /* clear logic */ }),
+                _buildHeaderBtn(Icons.delete_outline, () {
+                  /* clear logic */
+                }),
               ],
             ),
           ),
@@ -112,8 +123,9 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
               listenable: widget.chatService,
               builder: (ctx, _) {
                 final msgs = widget.chatService.messages;
-                final bool isStreaming = widget.chatService.currentStreamingContent.isNotEmpty;
-                
+                final bool isStreaming =
+                    widget.chatService.currentStreamingContent.isNotEmpty;
+
                 // Calculate total items: saved messages + (optional) streaming bubble + (optional) thinking bubble
                 int itemCount = msgs.length;
                 if (isStreaming) itemCount++;
@@ -128,12 +140,15 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
                     if (index < msgs.length) {
                       return _buildMsgBubble(msgs[index]);
                     }
-                    
+
                     // 2. Show Streaming Message (Active typing)
                     if (isStreaming && index == msgs.length) {
                       return _buildMsgBubble(
-                        Message(role: "assistant", content: widget.chatService.currentStreamingContent),
-                        isStreaming: true
+                        Message(
+                          role: "assistant",
+                          content: widget.chatService.currentStreamingContent,
+                        ),
+                        isStreaming: true,
                       );
                     }
 
@@ -170,7 +185,10 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
                       decoration: const InputDecoration(
                         hintText: "Ask me anything...",
                         hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         border: InputBorder.none,
                         isDense: true,
                       ),
@@ -179,7 +197,7 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(width: 8),
-                
+
                 // Send Button with Hover effect
                 MouseRegion(
                   onEnter: (_) => setState(() => _isHoveringSend = true),
@@ -190,19 +208,30 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _isHoveringSend ? Colors.blueAccent : Colors.blueAccent.withOpacity(0.8),
+                        color: _isHoveringSend
+                            ? Colors.blueAccent
+                            : Colors.blueAccent.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
-                           if (_isHoveringSend) BoxShadow(color: Colors.blueAccent.withOpacity(0.4), blurRadius: 8, offset: const Offset(0,2))
-                        ]
+                          if (_isHoveringSend)
+                            BoxShadow(
+                              color: Colors.blueAccent.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                        ],
                       ),
-                      child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.send_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -264,27 +293,44 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-             Container(
-               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-               decoration: BoxDecoration(
-                 color: Colors.white.withOpacity(0.05),
-                 borderRadius: const BorderRadius.vertical(top: Radius.circular(8))
-               ),
-               child: const Row(
-                 children: [
-                   Icon(Icons.build_circle_outlined, color: Colors.orange, size: 14),
-                   SizedBox(width: 6),
-                   Text("TOOL OUTPUT", style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold))
-                 ],
-               )
-             ),
-             Padding(
-               padding: const EdgeInsets.all(12),
-               child: SelectableText(
-                 msg.content,
-                 style: const TextStyle(color: Colors.grey, fontFamily: "monospace", fontSize: 12),
-               ),
-             )
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(8),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.build_circle_outlined,
+                    color: Colors.orange,
+                    size: 14,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    "TOOL OUTPUT",
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: SelectableText(
+                msg.content,
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontFamily: "monospace",
+                  fontSize: 12,
+                ),
+              ),
+            ),
           ],
         ),
       );
@@ -294,7 +340,9 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // AI Avatar (Left)
@@ -302,7 +350,11 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
             const CircleAvatar(
               radius: 14,
               backgroundColor: Color(0xFF353B45),
-              child: Icon(Icons.auto_awesome, size: 16, color: Colors.blueAccent),
+              child: Icon(
+                Icons.auto_awesome,
+                size: 16,
+                color: Colors.blueAccent,
+              ),
             ),
             const SizedBox(width: 8),
           ],
@@ -313,9 +365,13 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isUser ? Colors.blueAccent : const Color(0xFF2C313C),
-                gradient: isUser 
-                  ? const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF448AFF)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-                  : null,
+                gradient: isUser
+                    ? const LinearGradient(
+                        colors: [Color(0xFF2979FF), Color(0xFF448AFF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(isUser ? 16 : 4),
                   topRight: Radius.circular(isUser ? 4 : 16),
@@ -323,32 +379,59 @@ class _AiSidebarState extends State<AiSidebar> with TickerProviderStateMixin {
                   bottomRight: const Radius.circular(16),
                 ),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
-                ]
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Tool Call Indicator (e.g. "Calling: read_file")
                   if (msg.toolCalls != null && msg.toolCalls!.isNotEmpty)
-                    ...msg.toolCalls!.map((tc) => Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(4)),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.code, size: 12, color: Colors.yellowAccent),
-                          const SizedBox(width: 4),
-                          Text("Function: ${tc.function.name}", style: const TextStyle(color: Colors.yellowAccent, fontSize: 11, fontFamily: "monospace")),
-                        ],
+                    ...msg.toolCalls!.map(
+                      (tc) => Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black26,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.code,
+                              size: 12,
+                              color: Colors.yellowAccent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "Function: ${tc.function.name}",
+                              style: const TextStyle(
+                                color: Colors.yellowAccent,
+                                fontSize: 11,
+                                fontFamily: "monospace",
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    )),
-                  
+                    ),
+
                   // Main Content
                   SelectableText(
-                    msg.content, 
-                    style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4)
+                    msg.content,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
@@ -377,13 +460,17 @@ class _JumpingDots extends StatefulWidget {
   State<_JumpingDots> createState() => _JumpingDotsState();
 }
 
-class _JumpingDotsState extends State<_JumpingDots> with SingleTickerProviderStateMixin {
+class _JumpingDotsState extends State<_JumpingDots>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))..repeat();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat();
   }
 
   @override
@@ -399,7 +486,7 @@ class _JumpingDotsState extends State<_JumpingDots> with SingleTickerProviderSta
       children: List.generate(3, (index) {
         return ScaleTransition(
           scale: DelayTween(begin: 0.0, end: 1.0, delay: index * 0.2).animate(
-             CurvedAnimation(parent: _controller, curve: Curves.easeInOut)
+            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
           ),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 2),

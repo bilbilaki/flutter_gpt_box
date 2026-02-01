@@ -22,6 +22,7 @@ final class _ChatSettingsState extends State<_ChatSettings> {
   Widget build(BuildContext context) {
     final items = [
       _buildIgnoreCtxConstraint(),
+      _buildUseTool(),
       _buildUseTools(),
       _buildHeadTailMode(),
       SizedBox(child: _buildList),

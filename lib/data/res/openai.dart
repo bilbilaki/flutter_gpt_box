@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
@@ -9,17 +10,15 @@ import 'package:gpt_box/data/model/chat/type.dart';
 import 'package:gpt_box/data/res/l10n.dart';
 import 'package:gpt_box/data/res/url.dart';
 import 'package:gpt_box/data/store/all.dart';
-import 'package:gpt_box/main.dart';
-import 'package:gpt_box/view/page/home/home.dart';
 
 import 'package:openai_dart/openai_dart.dart';
 import 'package:dio/dio.dart';
+import 'package:path/path.dart' as p;
 
 abstract final class Cfg {
   static var client = OpenAIClient(
     apiKey: vn.value.key,
     baseUrl: vn.value.url,
-    client: httpCli,
   );
   static final models = nvn<List<String>>();
 
@@ -109,9 +108,17 @@ abstract final class Cfg {
     bool force = false,
     bool diffUrl = false,
   }) async {
+    if (current.useLocalModel) {
+      final localPath = current.localModelsPath;
+      if (localPath == null || localPath.trim().isEmpty) {
+        models.value = [];
+        return false;
+      }
+    }
     // Some private sites may not need key
     if (current.url.startsWith('https://api.openai.com') &&
-        current.key.isEmpty) {
+        current.key.isEmpty &&
+        !current.useLocalModel) {
       return false;
     }
     try {
@@ -126,11 +133,9 @@ abstract final class Cfg {
 
   /// Apply the current profile to the openai client.
   static void applyClient() {
-    httpCli = ProxyHttpClient.create();
     client = OpenAIClient(
       apiKey: vn.value.key,
       baseUrl: vn.value.url,
-      client: httpCli,
     );
   }
 
@@ -146,13 +151,25 @@ abstract final class Cfg {
     required void Function(String model) onSelected,
     required String? initial,
   }) async {
-    if (Cfg.current.key.isEmpty) {
+    if (Cfg.current.key.isEmpty && !Cfg.current.useLocalModel) {
       context.showRoundDialog(
         title: l10n.attention,
         child: Text(l10n.needOpenAIKey),
         actions: Btnx.oks,
       );
       return;
+    }
+    if (Cfg.current.useLocalModel) {
+      final localPath = Cfg.current.localModelsPath;
+      if (localPath == null || localPath.trim().isEmpty) {
+        context.showRoundDialog(
+          title: l10n.attention,
+          child: const Text('Local models path is not set.'),
+          actions: Btnx.oks,
+        );
+        return;
+      }
+      await Cfg.updateModels(force: true);
     }
 
     final selected = await context.showPickSingleDialog(
@@ -204,6 +221,28 @@ abstract final class Cfg {
 
     if (selected == null) return;
     onSelected(selected);
+    _applyLocalModelSelection(selected);
+  }
+
+  static void _applyLocalModelSelection(String selected) {
+    final cfg = Cfg.current;
+    if (!cfg.useLocalModel) return;
+    final localPath = cfg.localModelsPath;
+    String? resolvedPath;
+    var selectedName = selected;
+    if (selected.isNotEmpty && p.isAbsolute(selected)) {
+      resolvedPath = selected;
+      selectedName = p.basename(selected);
+    } else if (localPath != null && localPath.trim().isNotEmpty) {
+      resolvedPath = p.join(localPath, selected);
+    }
+
+    final updated = cfg.copyWith(
+      selectedLocalModelName: selectedName,
+      selectedLocalModelPath: resolvedPath,
+      listAvaliableLocalModel: Cfg.models.value ?? cfg.listAvaliableLocalModel,
+    );
+    Cfg.setTo(cfg: updated);
   }
 
   /// Show the dialog to pick the profile.
@@ -266,6 +305,13 @@ abstract final class _ModelsCacher {
 
   static Future<List<String>> fetch(String key, {bool refresh = false}) async {
     final now = DateTime.now();
+    final localModels = _tryLocalModels();
+    if (localModels != null) {
+      models[key] = localModels;
+      updateTime[key] = now;
+      return localModels;
+    }
+
     final last = updateTime[key];
     if (!refresh && (last != null && now.difference(last).inMinutes < 5)) {
       final models_ = models[key];
@@ -292,6 +338,24 @@ abstract final class _ModelsCacher {
     models[key] = strs;
     updateTime[key] = now;
     return strs;
+  }
+
+  static List<String>? _tryLocalModels() {
+    final cfg = Cfg.current;
+    if (!cfg.useLocalModel) return null;
+    final localPath = cfg.localModelsPath;
+    if (localPath == null || localPath.trim().isEmpty) return null;
+    final dir = Directory(localPath);
+    if (!dir.existsSync()) return [];
+
+    final files = dir
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .where((file) => file.path.toLowerCase().endsWith('.gguf'))
+        .toList();
+    files.sort((a, b) =>
+        a.path.toLowerCase().compareTo(b.path.toLowerCase()));
+    return files.map((file) => p.basename(file.path)).toList();
   }
 
   static List<String> _decodeModels(Response resp, String endpoint) {

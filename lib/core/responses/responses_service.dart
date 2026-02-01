@@ -1,14 +1,13 @@
- part of 'package:gpt_box/view/page/home/home.dart';
+part of 'package:gpt_box/view/page/home/home.dart';
 
 class ResponsesService {
-  late http.Client _client;
+  late final http.Client _client;
   final Duration defaultTimeout;
 
   ResponsesService({
     http.Client? client,
     this.defaultTimeout = const Duration(minutes: 30),
-  }) : _client = client ?? httpCli;
-
+  }) : _client = client!;
 
   Uri _root() {
     final base = Cfg.current.url.trim().replaceAll(RegExp(r'/+$'), '');
@@ -32,6 +31,7 @@ class ResponsesService {
           : 'application/json',
     };
   }
+
   Future<DeepResponse> createRaw(Map<String, dynamic> body) async {
     final res = await _client
         .post(_root(), headers: _headers(), body: jsonEncode(body))

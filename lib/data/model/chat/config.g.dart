@@ -15,6 +15,15 @@ _ChatConfig _$ChatConfigFromJson(Map<String, dynamic> json) => _ChatConfig(
       (json['historyLen'] as num?)?.toInt() ?? ChatConfigX.defaultHistoryLen,
   id: json['id'] as String? ?? ChatConfigX.defaultId,
   name: json['name'] as String? ?? '',
+  useLocalModel: json['useLocalModel'] as bool? ?? false,
+  listAvaliableLocalModel:
+      (json['listAvaliableLocalModel'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  selectedLocalModelName: json['selectedLocalModelName'] as String?,
+  selectedLocalModelPath: json['selectedLocalModelPath'] as String?,
+  localModelsPath: json['localModelsPath'] as String?,
   lastResponseId: json['lastResponseId'] as String?,
   genTitlePrompt: json['genTitlePrompt'] as String?,
   genTitleModel: json['genTitleModel'] as String?,
@@ -31,6 +40,7 @@ _ChatConfig _$ChatConfigFromJson(Map<String, dynamic> json) => _ChatConfig(
   isVertex: json['isVertex'] as bool?,
   vertexProjectId: json['vertexProjectId'] as String?,
   vertexLocation: json['vertexLocation'] as String?,
+  usingResponseAPI: json['usingResponseAPI'] as bool? ?? false,
   proxyHost: json['proxyHost'] as String? ?? '',
   proxyPort: (json['proxyPort'] as num?)?.toInt() ?? 0,
   proxyType: json['proxyType'] as String? ?? ChatConfigX.defaultProxyType,
@@ -46,6 +56,11 @@ Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
       'historyLen': instance.historyLen,
       'id': instance.id,
       'name': instance.name,
+      'useLocalModel': instance.useLocalModel,
+      'listAvaliableLocalModel': instance.listAvaliableLocalModel,
+      'selectedLocalModelName': instance.selectedLocalModelName,
+      'selectedLocalModelPath': instance.selectedLocalModelPath,
+      'localModelsPath': instance.localModelsPath,
       'lastResponseId': instance.lastResponseId,
       'genTitlePrompt': instance.genTitlePrompt,
       'genTitleModel': instance.genTitleModel,
@@ -62,6 +77,7 @@ Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
       'isVertex': instance.isVertex,
       'vertexProjectId': instance.vertexProjectId,
       'vertexLocation': instance.vertexLocation,
+      'usingResponseAPI': instance.usingResponseAPI,
       'proxyHost': instance.proxyHost,
       'proxyPort': instance.proxyPort,
       'proxyType': instance.proxyType,

@@ -185,7 +185,11 @@ final class _HomeBottomState extends State<_HomeBottom> {
   Widget _buildFileSearchBtn() {
     return IconButton(
       onPressed: () async {
-        await _navigateToPage(context, GitLoaderApp());
+        await _navigateToPage(context, MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: theme,
+      home: const RemoteLoaderPage(),
+    ));
       },
       icon: Icon(Icons.search, size: 17),
     );
@@ -253,7 +257,8 @@ final class _HomeBottomState extends State<_HomeBottom> {
     setState(() => _isExtrasMenuExpanded = false);
     await _navigateToPage(context, page);
   }
-
+        
+        
   Widget _buildExtrasMenuItem(
     BuildContext context, {
     required String label,

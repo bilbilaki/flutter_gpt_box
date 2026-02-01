@@ -92,7 +92,7 @@ class _AdvancedCodeEditorState extends State<AdvancedCodeEditor> {
                 foldingIconSize: 20,
                 foldedIconColor: Colors.blueAccent,
                 unfoldedIconColor: Colors.white54,
-                foldedLineHighlightColor: Colors.blue.withOpacity(0.1),
+                foldedLineHighlightColor: Colors.blue.withValues(alpha: 0.1),
               ),
 
               // 3. ADVANCED SUGGESTION STYLE (IntelliSense Popup)
@@ -101,7 +101,7 @@ class _AdvancedCodeEditorState extends State<AdvancedCodeEditor> {
                 backgroundColor: const Color(0xFF21252b),
                 focusColor: const Color(0xFF2c313a),
                 hoverColor: const Color(0xFF3e4451),
-                splashColor: Colors.blue.withOpacity(0.2),
+                splashColor: Colors.blue.withValues(alpha: 0.2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side: const BorderSide(color: Color(0xFF181a1f), width: 1),

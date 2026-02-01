@@ -3,9 +3,12 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
-import '../../app.dart';
+import '../../app.dart' show theme;
 import 'entries.dart';
+import 'recent_projects_store.dart';
 import 'repo_loader.dart';
 import 'screens/pkg_search_screen.dart';
 import 'utils/colors.dart';
@@ -150,17 +153,229 @@ class RemoteLoaderPage extends StatefulWidget {
   const RemoteLoaderPage({super.key});
 
   @override
-  State<RemoteLoaderPage> createState() => _RemoteLoaderPageState();
+  State<RemoteLoaderPage> createState() => _RemoteLoaderPageState();       
 }
 
 class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
   final TextEditingController _urlController = TextEditingController();
   bool _isLoading = false;
   String? _statusMessage;
+  bool _loadingRecents = true;
+  List<ProjectEntry> _recentProjects = [];
+
+  Future<void> _loadRecents() async {
+    final items = await ProjectHistoryStore().load();
+    if (!mounted) return;
+    setState(() {
+      _recentProjects = items;
+      _loadingRecents = false;
+    });
+  }
+
+  Future<void> _recordProject(String name, String path) async {
+    await ProjectHistoryStore().add(
+      ProjectEntry(name: name, path: path, openedAt: DateTime.now()),
+    );
+    await _loadRecents();
+  }
+
+  Future<String?> _selectStorageBasePath() async {
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Choose storage location'),
+        content: const Text(
+          'Where should the downloaded repository be stored?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              final dir = await getApplicationDocumentsDirectory();
+              if (ctx.mounted) Navigator.of(ctx).pop(dir.path);
+            },
+            child: const Text('Internal (app data)'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final path = await FilePicker.platform.getDirectoryPath(
+                dialogTitle: 'Select a folder to store the repo',
+              );
+              if (ctx.mounted) Navigator.of(ctx).pop(path);
+            },
+            child: const Text('Pick folder'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<_ConflictResolution?> _resolveConflict(
+    String baseDir,
+    String suggestedName,
+  ) {
+    final controller = TextEditingController(text: "${suggestedName}_copy");
+    return showDialog<_ConflictResolution>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Folder already exists'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'A folder named "$suggestedName" already exists at\n$baseDir.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Rename to',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.of(ctx).pop(_ConflictResolution.cancel()),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(ctx).pop(_ConflictResolution.replace()),
+            child: const Text('Replace'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx)
+                .pop(_ConflictResolution.rename(controller.text.trim())),
+            child: const Text('Rename'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _deriveRepoName(String url) {
+    final cleaned = url.endsWith('.git') ? url.substring(0, url.length - 4) : url;
+    final parts = cleaned.split('/');
+    return parts.isNotEmpty ? parts.last : 'repository';
+  }
+
+  Future<void> _openProject(String path, {String? name}) async {
+    final projectName = name ?? p.basename(path);
+    if (!await Directory(path).exists()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Path does not exist: $path')),
+        );
+      }
+      return;
+    }
+    await _recordProject(projectName, path);
+
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RepoBrowserScaffold(path: path, title: projectName),
+      ),
+    );
+  }
+
+  Widget _buildRecentProjectsSection() {
+    if (_loadingRecents) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: LinearProgressIndicator(),
+      );
+    }
+    if (_recentProjects.isEmpty) return const SizedBox.shrink();
+
+    final items = _recentProjects.take(5).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Recent projects',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProjectsHistoryPage(
+                      onOpen: (entry) =>
+                          _openProject(entry.path, name: entry.name),
+                    ),
+                  ),
+                );
+              },
+              child: const Text('View all'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ...items.map(
+          (entry) => Card(
+            child: ListTile(
+              title: Text(entry.name, overflow: TextOverflow.ellipsis),
+              subtitle: Text(entry.path, overflow: TextOverflow.ellipsis),
+              trailing: IconButton(
+                icon: const Icon(Icons.open_in_new),
+                onPressed: () =>
+                    _openProject(entry.path, name: entry.name),
+              ),
+              onTap: () => _openProject(entry.path, name: entry.name),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecents();
+  }
 
   void _loadRepo() async {
     final url = _urlController.text.trim();
     if (url.isEmpty) return;
+
+    final storagePath = await _selectStorageBasePath();
+    if (storagePath == null) {
+      setState(() => _statusMessage = "Storage selection cancelled");
+      return;
+    }
+
+    String folderName = _deriveRepoName(url);
+    String destinationPath = p.join(storagePath, folderName);
+    while (await Directory(destinationPath).exists()) {
+      final resolution = await _resolveConflict(storagePath, folderName);
+      if (resolution == null || resolution.action == _ConflictAction.cancel) {
+        setState(() => _statusMessage = "Download cancelled");
+        return;
+      }
+      if (resolution.action == _ConflictAction.replace) {
+        await Directory(destinationPath).delete(recursive: true);
+        break;
+      }
+      if (resolution.action == _ConflictAction.rename) {
+        final newName = resolution.newName?.trim();
+        if (newName == null || newName.isEmpty) continue;
+        folderName = newName;
+        destinationPath = p.join(storagePath, folderName);
+      }
+    }
 
     setState(() {
       _isLoading = true;
@@ -168,20 +383,19 @@ class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
     });
 
     try {
-      String localPath = await RepoUtils.downloadAndExtract(url);
+      final localPath = await RepoUtils.downloadAndExtract(
+        url,
+        targetDirPath: storagePath,
+        folderName: folderName,
+        overwriteExisting: false,
+      );
 
       if (mounted) {
         setState(() {
           _isLoading = false;
           _statusMessage = null;
         });
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => RepoBrowserScaffold(path: localPath, title: "Root"),
-          ),
-        );
+        await _openProject(localPath, name: folderName);
       }
     } catch (e) {
       setState(() {
@@ -226,15 +440,9 @@ class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
           _isLoading = false;
           _statusMessage = null;
         });
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => RepoBrowserScaffold(
-              path: selectedDirectory,
-              title: "Local Repository",
-            ),
-          ),
+        await _openProject(
+          selectedDirectory,
+          name: p.basename(selectedDirectory),
         );
       }
     } catch (e) {
@@ -250,12 +458,11 @@ class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
     return Scaffold(
       appBar: AppBar(
        leading: IconButton(
-             icon: const Icon(Icons.arrow_back),
-             onPressed: () {
-                                   Navigator.pop(context
-        );// This pops the screen and goes back
-             },
-           ),
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context); // This pops the screen and goes back
+          },
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -368,6 +575,9 @@ class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
                         ),
                 ),
               ),
+              const SizedBox(height: 24),
+              _buildRecentProjectsSection(),
+              const SizedBox(height: 12),
                        SizedBox(height: 20,),
                 ElevatedButton(onPressed: (){
                     Navigator.push(
@@ -382,7 +592,13 @@ class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
                     Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => GoPackageSearchPage(),
+            builder: (_) => MaterialApp(
+         
+
+      debugShowCheckedModeBanner: false,
+      theme: theme,
+      home: const GoPackageSearchPage(),
+    )
           ),
         );
                 }, child: Text("Search packages and libraries")),
@@ -407,5 +623,78 @@ class _RemoteLoaderPageState extends State<RemoteLoaderPage> {
     );
   }
 }
+
+class ProjectsHistoryPage extends StatefulWidget {
+  final Future<void> Function(ProjectEntry entry) onOpen;
+  const ProjectsHistoryPage({super.key, required this.onOpen});
+
+  @override
+  State<ProjectsHistoryPage> createState() => _ProjectsHistoryPageState();
+}
+
+class _ProjectsHistoryPageState extends State<ProjectsHistoryPage> {
+  bool _loading = true;
+  List<ProjectEntry> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final data = await ProjectHistoryStore().load();
+    if (!mounted) return;
+    setState(() {
+      _items = data;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Projects history')),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _items.isEmpty
+              ? const Center(child: Text('No projects yet'))
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemBuilder: (context, index) {
+                    final entry = _items[index];
+                    return ListTile(
+                      title: Text(entry.name),
+                      subtitle: Text(entry.path),
+                      leading: const Icon(Icons.history),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.open_in_new),
+                        onPressed: () async => widget.onOpen(entry),
+                      ),
+                      onTap: () async => widget.onOpen(entry),
+                    );
+                  },
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemCount: _items.length,
+                ),
+    );
+  }
+}
+
+class _ConflictResolution {
+  final _ConflictAction action;
+  final String? newName;
+
+  const _ConflictResolution._private(this.action, [this.newName]);
+
+  factory _ConflictResolution.rename(String? name) =>
+      _ConflictResolution._private(_ConflictAction.rename, name);
+  factory _ConflictResolution.replace() =>
+      _ConflictResolution._private(_ConflictAction.replace);
+  factory _ConflictResolution.cancel() =>
+      _ConflictResolution._private(_ConflictAction.cancel);
+}
+
+enum _ConflictAction { rename, replace, cancel }
 
 

@@ -340,7 +340,7 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              color: Colors.red.withOpacity(0.2),
+              color: Colors.red.withAlpha(20),
               child: Row(
                 children: [
                   const Icon(Icons.error_outline, color: _accentColor),
@@ -456,7 +456,7 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: _primaryColor.withOpacity(0.2),
+                                        color: _primaryColor.withAlpha(20),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -506,7 +506,7 @@ class _XAiSearchFantasyState extends State<XAiSearchFantasy> {
                                         ),
                                       ),
                                     )
-                                    .toList(),
+                                    ,
                               ],
                             ),
                           ),

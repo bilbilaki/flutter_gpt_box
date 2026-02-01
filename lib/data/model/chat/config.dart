@@ -21,6 +21,12 @@ abstract class ChatConfig with _$ChatConfig {
     @Default(ChatConfigX.defaultHistoryLen) int historyLen,
     @Default(ChatConfigX.defaultId) String id,
     @Default('') String name,
+    @Default(false)bool useLocalModel,
+    @Default([])List<String> listAvaliableLocalModel,
+    String? selectedLocalModelName,
+    String? selectedLocalModelPath,
+    String? localModelsPath,
+
     String? lastResponseId,
     String? genTitlePrompt,
     String? genTitleModel,
@@ -39,6 +45,7 @@ abstract class ChatConfig with _$ChatConfig {
     bool? isVertex,
     String? vertexProjectId,
     String? vertexLocation,
+    @Default(false) bool usingResponseAPI,
     @Default('') String proxyHost,
     @Default(0) int proxyPort,
     @Default(ChatConfigX.defaultProxyType) String proxyType,
@@ -71,6 +78,13 @@ extension ChatConfigX on ChatConfig {
   static const defaultProxyPort = 0;
   static const defaultProxyType = 'http';
   static const defaultProxyEnabled = false;
+    static const defaultusingResponseAPI = false;
+    static const defaultSelectedLocalModelName='';
+    static const defaultSelectedLocalModelPath='';
+    static const defaultuseLocalModel = false;
+
+
+
   static const lastResponseId = null;
 
   static const defaultOne = ChatConfig(
@@ -91,6 +105,7 @@ extension ChatConfigX on ChatConfig {
     proxyType: defaultProxyType,
     proxyEnabled: defaultProxyEnabled,
     lastResponseId: lastResponseId,
+    usingResponseAPI: defaultusingResponseAPI,
     // audioModel: defaultaudioModel,
     // trnscrbModel: defaulttrnscrbModel,
     // tskrModel: defaulttaskrModel,
@@ -158,6 +173,12 @@ extension ChatConfigX on ChatConfig {
       proxyPort: params_['proxyPort'] ?? defaultProxyPort,
       proxyType: params_['proxyType'] ?? defaultProxyType,
       proxyEnabled: params_['proxyEnabled'] ?? defaultProxyEnabled,
+      usingResponseAPI: params_['usingResponseAPI'] ?? defaultusingResponseAPI,
+      useLocalModel: params_['useLocalModel']?? defaultuseLocalModel,
+      selectedLocalModelName: params_['selectedLocalModelName']??defaultSelectedLocalModelName,
+      selectedLocalModelPath: params_['selectedLocalModelPath']??defaultSelectedLocalModelPath,
+      listAvaliableLocalModel: params_['listAvaliableLocalModel']??[],
+      localModelsPath : params_['localModelsPath']
     );
   }
 }

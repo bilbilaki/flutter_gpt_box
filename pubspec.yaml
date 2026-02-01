@@ -101,6 +101,7 @@ dependencies:
   flutter_sound: ^9.30.0
   flutter_ffmpeg_kit_full: ^1.1.5
   audio_session: ^0.2.2
+  llm_llamacpp: ^0.1.5
 dependency_overrides:
   # fl_lib:
   #   path: ../fl_lib
@@ -112,6 +113,8 @@ dependency_overrides:
   #   path: ../fl_build
   # flutter_highlight:
   #   path: ../highlight.dart/flutter_highlight
+  hooks: 0.19.1
+  code_assets: 0.19.1
   freezed_annotation: ^3.0.0
   freezed: ^3.0.0
   flutter_math_fork: ^0.7.4
