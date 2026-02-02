@@ -6,6 +6,7 @@ import 'package:fl_lib/fl_lib.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gpt_box/core/util/api_balance.dart';
+import 'package:gpt_box/core/util/local_model_manager.dart';
 import 'package:gpt_box/core/util/tool_func/tool.dart';
 import 'package:gpt_box/data/model/chat/config.dart';
 import 'package:gpt_box/data/res/build_data.dart';
@@ -281,6 +282,9 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
             value: cfg.useLocalModel,
             onChanged: (value) {
               Cfg.setTo(cfg: cfg.copyWith(useLocalModel: value));
+              if (!value) {
+                unawaited(ejectLocalModel(context: context));
+              }
               if (value){
                 if(cfg.listAvaliableLocalModel==[]){
                   showModalBottomSheet(context: context, builder: (ctx){
@@ -290,6 +294,19 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
               }
             },
           ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.eject),
+          title: const Text('Eject Local Model'),
+          subtitle: Text(
+            LocalModelManager.isLoaded
+                ? 'Loaded: ${LocalModelManager.loadedPath ?? ''}'
+                : 'No model loaded',
+          ),
+          onTap: () async {
+            await ejectLocalModel(context: context);
+            setState(() {});
+          },
         ),
       ],
     );
