@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:gpt_box/core/util/file_type.dart';
 //import 'package:flutter_tiktoken/flutter_tiktoken.dart';
 import 'package:gpt_box/core/util/chat_title.dart';
+import 'package:gpt_box/core/util/local_model_manager.dart';
 import 'package:gpt_box/core/util/tool_func/tool.dart';
 import 'package:gpt_box/data/model/chat/config.dart';
 import 'package:gpt_box/data/model/chat/folder.dart';

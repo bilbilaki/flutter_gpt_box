@@ -582,57 +582,49 @@ Future<void> _onCreateTextModelLocal(
   final assistRawBuffer = StringBuffer();
 
   try {
-    // Initialize llama.cpp repository
-    final repo = LlamaCppChatRepository(
-      contextSize: 4096, // Adjust based on your needs
-      nGpuLayers: 0, // Set > 0 for GPU acceleration if available
+    // Load (or reuse) the local model once and keep it resident.
+    final repo = await LocalModelManager.loadModel(
+      modelPath,
+      contextSize: 4096,
+      nGpuLayers: 0,
     );
 
-    try {
-      // Load the model
-      await repo.loadModel(modelPath);
+    // Prepare conversation history
+    final messages = await _prepareLocalModelMessages(workingChat, question);
 
-      // Prepare conversation history
-      final messages = await _prepareLocalModelMessages(workingChat, question);
+    // Start streaming
+    final stream = repo.streamChat('local-model', messages: messages);
 
-      // Start streaming
-      final stream = repo.streamChat('local-model', messages: messages);
-
-      // Listen to stream
-      await for (final chunk in stream) {
-        if (!_loadingChatIds.value.contains(chatId)) {
-          // User cancelled
-          break;
-        }
-
-        final content = chunk.message?.content;
-        if (content != null && content.isNotEmpty) {
-          assistRawBuffer.write(content);
-          
-          // Update UI with the accumulated content
-          final parts = splitDataUrisToChatContents(assistRawBuffer.toString());
-          assistReply.content
-            ..clear()
-            ..addAll(parts);
-          _chatItemRNMap[assistReply.id]?.notify();
-          _autoScroll(chatId);
-        }
-
-        // Handle errors from stream
-        if (chunk.status!=null ) {
-          print('Local model status: ${chunk.status}');
-        }
+    // Listen to stream
+    await for (final chunk in stream) {
+      if (!_loadingChatIds.value.contains(chatId)) {
+        // User cancelled
+        break;
       }
 
-      // Store chat after successful completion
-      _storeChat(chatId);
-      await titleCompleter?.future;
-      await Future.delayed(const Duration(milliseconds: 300));
+      final content = chunk.message?.content;
+      if (content != null && content.isNotEmpty) {
+        assistRawBuffer.write(content);
 
-    } finally {
-      // Always dispose the repository
-      repo.dispose();
+        // Update UI with the accumulated content
+        final parts = splitDataUrisToChatContents(assistRawBuffer.toString());
+        assistReply.content
+          ..clear()
+          ..addAll(parts);
+        _chatItemRNMap[assistReply.id]?.notify();
+        _autoScroll(chatId);
+      }
+
+      // Handle errors from stream
+      if (chunk.status != null) {
+        print('Local model status: ${chunk.status}');
+      }
     }
+
+    // Store chat after successful completion
+    _storeChat(chatId);
+    await titleCompleter?.future;
+    await Future.delayed(const Duration(milliseconds: 300));
 
   } catch (e, s) {
     _onErr(e, s, chatId, 'Local model inference');
@@ -647,6 +639,19 @@ Future<void> _onCreateTextModelLocal(
     _loadingChatIds.value.remove(chatId);
     _loadingChatIds.notify();
     _autoHideCtrl.autoHideEnabled = true;
+  }
+}
+
+Future<void> ejectLocalModel({BuildContext? context}) async {
+  if (!LocalModelManager.isLoaded) {
+    if (context != null) {
+      context.showSnackBar('No local model loaded');
+    }
+    return;
+  }
+  await LocalModelManager.eject();
+  if (context != null) {
+    context.showSnackBar('Local model unloaded');
   }
 }
 
