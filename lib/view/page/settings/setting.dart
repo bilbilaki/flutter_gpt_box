@@ -22,6 +22,7 @@ import 'package:gpt_box/view/page/home/home.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:shortid/shortid.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:world_countries/world_countries.dart';
 
 part 'mcp.dart';
 part 'profile.dart';
@@ -113,6 +114,8 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
     return Cfg.vn.listenVal((cfg) {
       final children = [
       _buildLocale(),
+            _buildTranslateLanguage(cfg),   // <-- new
+
       // _buildColorSeed(),
       _buildUseLocalModelTitle(cfg),
       _buildThemeMode(),
@@ -195,6 +198,37 @@ final class _AppSettingsPageState extends State<AppSettingsPage> {
   //     },
   //   );
   // }
+Widget _buildTranslateLanguage(ChatConfig cfg) {
+  // Get the currently stored language name, e.g. "English", "Arabic"
+  final currentLangName = cfg.defaultTranslateLanguage ?? 'English';
+
+  return ListTile(
+    leading: const Icon(Icons.translate),
+    title: Text('Translate to'),
+    subtitle: Text(currentLangName, style: UIs.text13Grey),
+    onTap: () async {
+      // Show LanguagePicker
+      final selected = await LanguagePicker(
+        // Optionally restrict to common languages:
+        // filter: (lang) => lang.isCommon,
+        onSelect: (language) {
+          // This callback is called when user picks a language.
+          // 'language' is a NaturalLanguage object.
+          // We want to save its common name (or ISO code) to settings.
+          final langName = language.commonNameFor( BasicLocale(language)) ?? language.name;
+          // Update the config
+          final newCfg = cfg.copyWith(defaultTranslateLanguage: langName);
+          Cfg.setTo(cfg: newCfg);
+          Navigator.pop(context); // close the picker
+        },
+      ).showInModalBottomSheet(context) ?? false;
+
+      // The picker handles its own UI – you just call show* methods.
+      // But you need to hold a reference to the picker if you want to
+      // listen to onSelect. The simpler way is to use its showInDialog / showInModalBottomSheet.
+    },
+  );
+}
 
   Widget _buildLocale() {
     return ValueListenableBuilder(

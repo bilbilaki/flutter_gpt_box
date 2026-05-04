@@ -39,14 +39,16 @@ final class _HomeBottomState extends State<_HomeBottom> {
       return;
     }
     final appdir = await getApplicationCacheDirectory();
- final   _recordingPath1= await Directory(
-          p.join(
-            appdir.path,
-            'rec_hold',
-            
-          ),).create();
-        _recordingPath= await  File(p.join(_recordingPath1.path, 'record_${DateTime.now().millisecondsSinceEpoch}.wav')).create();
-    
+    final _recordingPath1 = await Directory(
+      p.join(appdir.path, 'rec_hold'),
+    ).create();
+    _recordingPath = await File(
+      p.join(
+        _recordingPath1.path,
+        'record_${DateTime.now().millisecondsSinceEpoch}.wav',
+      ),
+    ).create();
+
     try {
       await _audioRecorder.start(
         const RecordConfig(
@@ -74,19 +76,18 @@ final class _HomeBottomState extends State<_HomeBottom> {
     final path = _recordingPath.path;
     if (!File(path).existsSync()) {
       context.showSnackBar('No audio captured');
-    
 
       return;
     }
 
     final chatId = _curChatId.value;
-      final files = [File(path)];
-  if (files.isEmpty) return;
-  _filesPicked.value.addAll(files.map((e) => e.path).whereType<String>());
-  _filesPicked.notify();
+    final files = [File(path)];
+    if (files.isEmpty) return;
+    _filesPicked.value.addAll(files.map((e) => e.path).whereType<String>());
+    _filesPicked.notify();
     _onCreateRequest(context, chatId);
-   // File(_recordingPath.path).deleteSync();
-   ////TODO thinking about how remove old files and implant result if find answer
+    // File(_recordingPath.path).deleteSync();
+    ////TODO thinking about how remove old files and implant result if find answer
   }
 
   @override
@@ -160,17 +161,16 @@ final class _HomeBottomState extends State<_HomeBottom> {
             _buildVoiceChatBtn(),
           ],
         ),
-       const SizedBox(height: 0.5),
-       Row(children: [
+        const SizedBox(height: 0.5),
+        Row(
+          children: [
             _buildExtrasMenu(),
             const Spacer(),
             UIs.width7,
             _buildSwitchChatType(),
             UIs.width7,
-
-
-       ]),
-        
+          ],
+        ),
       ],
     );
   }
@@ -185,11 +185,14 @@ final class _HomeBottomState extends State<_HomeBottom> {
   Widget _buildFileSearchBtn() {
     return IconButton(
       onPressed: () async {
-        await _navigateToPage(context, MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: theme,
-      home: const RemoteLoaderPage(),
-    ));
+        await _navigateToPage(
+          context,
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: theme,
+            home: const RemoteLoaderPage(),
+          ),
+        );
       },
       icon: Icon(Icons.search, size: 17),
     );
@@ -247,7 +250,8 @@ final class _HomeBottomState extends State<_HomeBottom> {
             _isExtrasMenuExpanded ? Icons.expand_more : Icons.menu_open,
             size: 19,
           ),
-          onPressed: () => setState(() => _isExtrasMenuExpanded = !_isExtrasMenuExpanded),
+          onPressed: () =>
+              setState(() => _isExtrasMenuExpanded = !_isExtrasMenuExpanded),
         ),
       ],
     );
@@ -257,8 +261,7 @@ final class _HomeBottomState extends State<_HomeBottom> {
     setState(() => _isExtrasMenuExpanded = false);
     await _navigateToPage(context, page);
   }
-        
-        
+
   Widget _buildExtrasMenuItem(
     BuildContext context, {
     required String label,
@@ -275,7 +278,9 @@ final class _HomeBottomState extends State<_HomeBottom> {
           minimumSize: const Size(0, 0),
           backgroundColor: colorScheme.surface.withOpacity(0.12),
           foregroundColor: colorScheme.onSurface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         onPressed: onPressed,
         icon: Icon(icon, size: 17),
@@ -301,28 +306,10 @@ final class _HomeBottomState extends State<_HomeBottom> {
 
   Widget _buildFileBtn() {
     return Cfg.chatType.listenVal((chatType) {
-      return switch (chatType) {
-        ChatType.text || ChatType.img => IconButton(
-          onPressed: () => _onTapFilePick(context),
-          icon: const Icon(MingCute.file_upload_fill, size: 19),
-        ),
-        ChatType.audio => IconButton(
-          onPressed: () => _onTapFilePick(context),
-          icon: const Icon(MingCute.file_upload_fill, size: 19),
-        ),
-        ChatType.voice => IconButton(
-          onPressed: () => _onTapFilePick(context),
-          icon: const Icon(MingCute.file_upload_fill, size: 19),
-        ),
-        ChatType.voicejustin => IconButton(
-          onPressed: () => _onTapFilePick(context),
-          icon: const Icon(MingCute.file_upload_fill, size: 19),
-        ),
-        ChatType.autoenglishtrans => IconButton(
-          onPressed: () => _onTapFilePick(context),
-          icon: const Icon(MingCute.file_upload_fill, size: 19),
-        ),
-      };
+      return IconButton(
+        onPressed: () => _onTapFilePick(context),
+        icon: const Icon(MingCute.file_upload_fill, size: 19),
+      );
     });
   }
 
@@ -436,7 +423,20 @@ final class _HomeBottomState extends State<_HomeBottom> {
         key: ValueKey(chatT),
         child: PopupMenu(
           items: ChatType.btns,
-          onSelected: (val) => Cfg.chatType.value = val,
+          onSelected: (val) {
+            if (val == ChatType.autoenglishtrans) {
+              setState(() {
+                isAutoTranslateEnable = true;
+              });
+            } else {
+              isAutoTranslateEnable
+                  ? setState(() {
+                      isAutoTranslateEnable = false;
+                    })
+                  : null;
+            }
+            Cfg.chatType.value = val;
+          },
           initialValue: chatT,
           tooltip: libL10n.select,
           borderRadius: BorderRadius.circular(17),

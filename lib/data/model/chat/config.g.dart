@@ -45,6 +45,8 @@ _ChatConfig _$ChatConfigFromJson(Map<String, dynamic> json) => _ChatConfig(
   proxyPort: (json['proxyPort'] as num?)?.toInt() ?? 0,
   proxyType: json['proxyType'] as String? ?? ChatConfigX.defaultProxyType,
   proxyEnabled: json['proxyEnabled'] as bool? ?? false,
+  summarizedContent: json['summarizedContent'] as String?,
+  extractedContent: json['extractedContent'] as String?,
 );
 
 Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
@@ -82,4 +84,6 @@ Map<String, dynamic> _$ChatConfigToJson(_ChatConfig instance) =>
       'proxyPort': instance.proxyPort,
       'proxyType': instance.proxyType,
       'proxyEnabled': instance.proxyEnabled,
+      'summarizedContent': instance.summarizedContent,
+      'extractedContent': instance.extractedContent,
     };

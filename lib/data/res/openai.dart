@@ -325,9 +325,6 @@ abstract final class _ModelsCacher {
         'https://api.deepseek.com/v1/models',
       _ when endpoint.startsWith('https://models.inference.ai.azure.com') =>
         'https://models.inference.ai.azure.com/models',
-
-      _ when endpoint.startsWith('https://api.avalai.org') =>
-        'https://api.avalai.org/v1/models',
       _ => '$endpoint/models',
     };
     final val = await myDio.get(

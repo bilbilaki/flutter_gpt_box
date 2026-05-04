@@ -8,7 +8,13 @@ class _ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<_ChatPage>
+
+
     with AutomaticKeepAliveClientMixin {
+      final Map<String, String?> _translatedMessages = {};
+final Map<String, bool> _isTranslatingMessage = {};
+final Map<String, bool> _showOriginalMessage = {};  // false = show translation
+
   final Map<int, String?> _translatedOverviews = {};
   final Map<int, bool> _isTranslatingMap = {};
   final _translator = MovieTvTranslator();
@@ -21,6 +27,15 @@ class _ChatPageState extends State<_ChatPage>
       setState(() => _isTranslatingMap[key] = false);
     }
   }
+Future<void> _translateMessage(String messageId, String originalText) async {
+  setState(() => _isTranslatingMessage[messageId] = true);
+  try {
+    final translated = await _translator.mainTreanslator(originalText);
+    setState(() => _translatedMessages[messageId] = translated);
+  } finally {
+    setState(() => _isTranslatingMessage[messageId] = false);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -139,18 +154,13 @@ class _ChatPageState extends State<_ChatPage>
 
     final title = switch (chatItem.role) {
       ChatRole.user ||
-      ChatRole.system => ChatRoleTitle(role: chatItem.role, loading: false),
-      ChatRole.tool || ChatRole.assist => _loadingChatIds.listenVal((chats) {
+      ChatRole.system ||ChatRole.developer||ChatRole.jinjatemplate => ChatRoleTitle(role: chatItem.role, loading: false),
+      ChatRole.tool || ChatRole.assist||ChatRole.ask ||ChatRole.embeddingstore => _loadingChatIds.listenVal((chats) {
         final isLast = chatItems.length - 1 == idx;
         final isWorking = chats.contains(_curChatId.value) && isLast;
         return ChatRoleTitle(role: chatItem.role, loading: isWorking);
       }),
 
-      ChatRole.ask || ChatRole.assist => _loadingChatIds.listenVal((chats) {
-        final isLast = chatItems.length - 1 == idx;
-        final isWorking = chats.contains(_curChatId.value) && isLast;
-        return ChatRoleTitle(role: chatItem.role, loading: isWorking);
-      }),
     };
 
     final child = Padding(
@@ -167,10 +177,12 @@ class _ChatPageState extends State<_ChatPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ChatHistoryContentView(
-                    chatItem: chatItem,
-                    postCallback: () {
-                      setState(() {});
-                    },
+                   chatItem: chatItem,
+  translatedText: _translatedMessages[chatItem.id],
+  showTranslation: _showOriginalMessage[chatItem.id] == false,
+  isTranslating: _isTranslatingMessage[chatItem.id] ?? false,
+  postCallback: () { setState(() {}); },
+                 
                   ),
 
                   _audioPlayersFor(chatItem),
@@ -182,8 +194,44 @@ class _ChatPageState extends State<_ChatPage>
         ],
       ),
     );
+final bool canTranslate = chatItem.content.any((c) => c.type.isText);
 
     final hovers = _buildChatItemHovers(chatItems, chatItem);
+    if (canTranslate) {
+  final isTranslating = _isTranslatingMessage[chatItem.id] ?? false;
+  final showOriginal = _showOriginalMessage[chatItem.id] ?? true;
+
+  hovers.add(
+    Btn.icon(
+      onTap: isTranslating
+          ? null
+          : () {
+              if (_translatedMessages[chatItem.id] == null && showOriginal) {
+                // not yet translated – start translation
+                final original = chatItem.content
+                    .where((c) => c.type.isText)
+                    .map((c) => c.raw)
+                    .join('\n');
+                _translateMessage(chatItem.id, original);
+              }
+              // toggle view
+              setState(() {
+                _showOriginalMessage[chatItem.id] = !showOriginal;
+              });
+            },
+      text: isTranslating
+          ? 'Translating…'
+          : (showOriginal ? 'Translate' : 'Original'),
+      icon: Icon(
+        isTranslating
+            ? MingCute.loading_2_line
+            : (showOriginal ? Icons.translate : Icons.text_fields),
+       
+      ),
+    ),
+  );
+}
+
     const pad = 7.0;
 
     final content = InkWell(
@@ -359,7 +407,8 @@ class _ChatPageState extends State<_ChatPage>
     final replayEnabled = chatItem.role.isUser;
     const size = 18.0;
     final color = context.theme.iconTheme.color?.withValues(alpha: 0.8);
-
+ bool isTranslating = _isTranslatingMessage[chatItem.id] ?? false;
+   bool showOriginal = _showOriginalMessage[chatItem.id] ?? true;
     return [
       Btn.icon(
         onTap: () {
@@ -369,6 +418,10 @@ class _ChatPageState extends State<_ChatPage>
         text: l10n.freeCopy,
         icon: Icon(BoxIcons.bxs_crop, size: size, color: color),
       ),
+      // only for text content
+
+
+
       if (replayEnabled)
         _loadingChatIds.listenVal((chats) {
           final isWorking = chats.contains(_curChatId.value);
@@ -381,7 +434,10 @@ class _ChatPageState extends State<_ChatPage>
             text: l10n.replay,
             icon: Icon(MingCute.refresh_4_line, size: size, color: color),
           );
-        }),
+        }
+        
+        ),
+        
       if (replayEnabled)
         Btn.icon(
           onTap: () {

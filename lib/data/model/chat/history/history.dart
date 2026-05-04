@@ -89,13 +89,22 @@ final class ChatHistoryItem {
   @JsonKey(includeIfNull: false)
   final String? lastResponseId;
   @JsonKey(includeIfNull: false)
-  final int? inputTokens; // New parameter for input token count
+  final int? inputTokens;
   @JsonKey(includeIfNull: false)
-  final int? outputTokens; // New parameter for output token count
+  final int? outputTokens;
   @JsonKey(includeIfNull: false)
-  final int? totalTokens; // New parameter for total token count
+  final int? totalTokens;
   @JsonKey(includeIfNull: false)
   final String? nanobenana;
+
+  // New fields for translation and grammar
+  @JsonKey(includeIfNull: false)
+  final String? translatedContent;
+  @JsonKey(includeIfNull: false)
+  final String? grammarFixedContent;
+  @JsonKey(includeIfNull: false)
+  final bool? autoTranslate;
+
   ChatHistoryItem({
     required this.role,
     required this.content,
@@ -105,10 +114,13 @@ final class ChatHistoryItem {
     this.toolCallId,
     this.toolCalls,
     this.reasoning,
-    this.inputTokens, // Initialize new parameter
-    this.outputTokens, // Initialize new parameter
+    this.inputTokens,
+    this.outputTokens,
     this.totalTokens,
-    this.nanobenana, // Initialize new parameter
+    this.nanobenana,
+    this.translatedContent,
+    this.grammarFixedContent,
+    this.autoTranslate,
   });
 
   ChatHistoryItem.gen({
@@ -118,10 +130,13 @@ final class ChatHistoryItem {
     this.lastResponseId,
     this.toolCalls,
     this.reasoning,
-    this.inputTokens, // Initialize new parameter
-    this.outputTokens, // Initialize new parameter
-    this.totalTokens, // Initialize new parameter
+    this.inputTokens,
+    this.outputTokens,
+    this.totalTokens,
     this.nanobenana,
+    this.translatedContent,
+    this.grammarFixedContent,
+    this.autoTranslate,
   }) : createdAt = DateTime.now(),
        id = shortid.generate();
 
@@ -134,10 +149,13 @@ final class ChatHistoryItem {
     this.toolCalls,
     this.lastResponseId,
     this.reasoning,
-    this.inputTokens, // Initialize new parameter
-    this.outputTokens, // Initialize new parameter
+    this.inputTokens,
+    this.outputTokens,
     this.totalTokens,
-    this.nanobenana, // Initialize new parameter
+    this.nanobenana,
+    this.translatedContent,
+    this.grammarFixedContent,
+    this.autoTranslate,
   }) : content = [
          ChatContent.noid(lastResponseId: lastResponseId, type: type, raw: raw),
        ],
@@ -155,6 +173,7 @@ final class ChatHistoryItem {
   }
 }
 
+
 /// Handle [audio] and [image] as url (/path & https://) or base64
 @JsonEnum()
 enum ChatContentType {
@@ -162,20 +181,28 @@ enum ChatContentType {
   audio,
   image,
   file,
-  nanobenana;
+  nanobenana,
+  video,
+  embedded,
+  tts,
+  stt;
 
   bool get isText => this == text;
   bool get isAudio => this == audio;
   bool get isImage => this == image;
   bool get isFile => this == file;
   bool get isNanoBenana => this == nanobenana;
+  bool get isVideo => this == video;
+  bool get isEmbedded => this == embedded;
+  bool get isTts => this == tts;
+  bool get isStt => this == stt;
 }
 
 @JsonSerializable()
 final class ChatContent with EquatableMixin {
   final ChatContentType type;
   @JsonKey(includeIfNull: false)
-   String? lastResponseId;
+  String? lastResponseId;
   late final String raw;
   @Default('')
   final String id;
@@ -186,26 +213,40 @@ final class ChatContent with EquatableMixin {
     required this.raw,
     required String id,
   }) : id = id.isEmpty ? shortid.generate() : id;
+
   ChatContent.noid({
     required this.lastResponseId,
     required this.type,
     required this.raw,
   }) : id = shortid.generate();
+
   ChatContent.text(this.raw, {this.lastResponseId})
-    : type = ChatContentType.text,
-      id = shortid.generate();
+      : type = ChatContentType.text,
+        id = shortid.generate();
   ChatContent.audio(this.raw, {this.lastResponseId})
-    : type = ChatContentType.audio,
-      id = shortid.generate();
+      : type = ChatContentType.audio,
+        id = shortid.generate();
   ChatContent.image(this.raw, {this.lastResponseId})
-    : type = ChatContentType.image,
-      id = shortid.generate();
+      : type = ChatContentType.image,
+        id = shortid.generate();
   ChatContent.file(this.raw, {this.lastResponseId})
-    : type = ChatContentType.file,
-      id = shortid.generate();
+      : type = ChatContentType.file,
+        id = shortid.generate();
   ChatContent.nanobenana(this.raw, {this.lastResponseId})
-    : type = ChatContentType.nanobenana,
-      id = shortid.generate();
+      : type = ChatContentType.nanobenana,
+        id = shortid.generate();
+  ChatContent.video(this.raw, {this.lastResponseId})
+      : type = ChatContentType.video,
+        id = shortid.generate();
+  ChatContent.embedded(this.raw, {this.lastResponseId})
+      : type = ChatContentType.embedded,
+        id = shortid.generate();
+  ChatContent.tts(this.raw, {this.lastResponseId})
+      : type = ChatContentType.tts,
+        id = shortid.generate();
+  ChatContent.stt(this.raw, {this.lastResponseId})
+      : type = ChatContentType.stt,
+        id = shortid.generate();
 
   factory ChatContent.fromJson(Map<String, dynamic> json) =>
       _$ChatContentFromJson(json);
@@ -222,13 +263,19 @@ enum ChatRole {
   assist,
   system,
   tool,
-  ask;
+  ask,
+  developer,
+  jinjatemplate,
+  embeddingstore;
 
   bool get isUser => this == user;
   bool get isAssist => this == assist;
   bool get isSystem => this == system;
   bool get isTool => this == tool;
   bool get isAsk => this == ask;
+  bool get isDeveloper => this == developer;
+  bool get isJinjaTemplate => this == jinjatemplate;
+  bool get isEmbeddingStore => this == embeddingstore;
 
   String get localized => switch (this) {
     user => Stores.setting.avatar.get(),
@@ -236,6 +283,9 @@ enum ChatRole {
     system => '⚙️',
     tool => '🛠️',
     ask => '🤖🛠️',
+    developer => '👨‍💻',
+    jinjatemplate => '📄',
+    embeddingstore => '🗄️',
   };
 
   Color get color {
@@ -245,6 +295,9 @@ enum ChatRole {
       system => UIs.primaryColor.withRed(233),
       tool => UIs.primaryColor.withBlue(33),
       ask => UIs.primaryColor.withBlue(300),
+      developer => UIs.primaryColor.withGreen(200),
+      jinjatemplate => UIs.primaryColor.withRed(150).withBlue(255),
+      embeddingstore => UIs.primaryColor.withRed(255).withGreen(200),
     };
     return c.withValues(alpha: 0.6);
   }

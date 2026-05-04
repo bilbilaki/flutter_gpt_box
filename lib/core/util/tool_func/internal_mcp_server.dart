@@ -37,9 +37,6 @@ class InternalMcpServer {
       case 'urlluancher':
         onToolLog('[$serverName] Opening url for User...');
         return await TfUrlLuancher.instance.run(mockCall, arguments, onToolLog);
-      case 'smssender':
-        onToolLog('[$serverName] Sending SMS Message...');
-        return await TfSMSSender.instance.run(mockCall, arguments, onToolLog);
       case 'downloader':
         onToolLog('[$serverName] Managing Download Task...');
         return await TfDownloader.instance.run(mockCall, arguments, onToolLog);

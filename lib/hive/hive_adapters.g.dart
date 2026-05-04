@@ -29,13 +29,16 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
       outputTokens: (fields[8] as num?)?.toInt(),
       totalTokens: (fields[9] as num?)?.toInt(),
       nanobenana: fields[10] as String?,
+      translatedContent: fields[12] as String?,
+      grammarFixedContent: fields[13] as String?,
+      autoTranslate: fields[14] as bool?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatHistoryItem obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.role)
       ..writeByte(1)
@@ -59,7 +62,13 @@ class ChatHistoryItemAdapter extends TypeAdapter<ChatHistoryItem> {
       ..writeByte(10)
       ..write(obj.nanobenana)
       ..writeByte(11)
-      ..write(obj.lastResponseId);
+      ..write(obj.lastResponseId)
+      ..writeByte(12)
+      ..write(obj.translatedContent)
+      ..writeByte(13)
+      ..write(obj.grammarFixedContent)
+      ..writeByte(14)
+      ..write(obj.autoTranslate);
   }
 
   @override
@@ -90,6 +99,14 @@ class ChatContentTypeAdapter extends TypeAdapter<ChatContentType> {
         return ChatContentType.file;
       case 4:
         return ChatContentType.nanobenana;
+      case 5:
+        return ChatContentType.video;
+      case 6:
+        return ChatContentType.embedded;
+      case 7:
+        return ChatContentType.tts;
+      case 8:
+        return ChatContentType.stt;
       default:
         return ChatContentType.text;
     }
@@ -108,6 +125,14 @@ class ChatContentTypeAdapter extends TypeAdapter<ChatContentType> {
         writer.writeByte(3);
       case ChatContentType.nanobenana:
         writer.writeByte(4);
+      case ChatContentType.video:
+        writer.writeByte(5);
+      case ChatContentType.embedded:
+        writer.writeByte(6);
+      case ChatContentType.tts:
+        writer.writeByte(7);
+      case ChatContentType.stt:
+        writer.writeByte(8);
     }
   }
 
@@ -182,6 +207,12 @@ class ChatRoleAdapter extends TypeAdapter<ChatRole> {
         return ChatRole.tool;
       case 4:
         return ChatRole.ask;
+      case 5:
+        return ChatRole.developer;
+      case 6:
+        return ChatRole.jinjatemplate;
+      case 7:
+        return ChatRole.embeddingstore;
       default:
         return ChatRole.user;
     }
@@ -200,6 +231,12 @@ class ChatRoleAdapter extends TypeAdapter<ChatRole> {
         writer.writeByte(3);
       case ChatRole.ask:
         writer.writeByte(4);
+      case ChatRole.developer:
+        writer.writeByte(5);
+      case ChatRole.jinjatemplate:
+        writer.writeByte(6);
+      case ChatRole.embeddingstore:
+        writer.writeByte(7);
     }
   }
 
@@ -317,13 +354,15 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       proxyPort: fields[49] == null ? 0 : (fields[49] as num).toInt(),
       proxyType: fields[50] == null ? 'http' : fields[50] as String,
       proxyEnabled: fields[51] == null ? false : fields[51] as bool,
+      summarizedContent: fields[58] as String?,
+      extractedContent: fields[59] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatConfig obj) {
     writer
-      ..writeByte(33)
+      ..writeByte(35)
       ..writeByte(25)
       ..write(obj.prompt)
       ..writeByte(26)
@@ -389,7 +428,11 @@ class ChatConfigAdapter extends TypeAdapter<ChatConfig> {
       ..writeByte(56)
       ..write(obj.selectedLocalModelPath)
       ..writeByte(57)
-      ..write(obj.localModelsPath);
+      ..write(obj.localModelsPath)
+      ..writeByte(58)
+      ..write(obj.summarizedContent)
+      ..writeByte(59)
+      ..write(obj.extractedContent);
   }
 
   @override

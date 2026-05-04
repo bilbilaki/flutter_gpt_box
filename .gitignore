@@ -11,7 +11,7 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-
+assets/embeddinggemma-300M_seq512_mixed-precision.tflite
 # IntelliJ related
 *.iml
 *.ipr

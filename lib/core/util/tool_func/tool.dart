@@ -37,7 +37,6 @@ part 'func/history.dart';
 part 'mcp.dart';
 part 'internal_mcp_server.dart';
 part 'func/urlluancher.dart';
-part 'func/contectsms.dart';
 part 'func/download.dart';
 part 'func/filemanager.dart';
 part 'func/webbuilder.dart';
@@ -50,7 +49,6 @@ abstract final class OpenAIFuncCalls {
     TfTerminal.instance,
     TfHttpReq.instance,
     TfUrlLuancher.instance,
-    TfSMSSender.instance,
     TfDownloader.instance,
     TfFileManager.instance,
     TfWebBuilder.instance,

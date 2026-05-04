@@ -5,7 +5,7 @@ nextTypeId: 22
 types:
   ChatHistoryItem:
     typeId: 0
-    nextIndex: 12
+    nextIndex: 15
     fields:
       role:
         index: 0
@@ -31,9 +31,15 @@ types:
         index: 10
       lastResponseId:
         index: 11
+      translatedContent:
+        index: 12
+      grammarFixedContent:
+        index: 13
+      autoTranslate:
+        index: 14
   ChatContentType:
     typeId: 1
-    nextIndex: 5
+    nextIndex: 9
     fields:
       text:
         index: 0
@@ -45,6 +51,14 @@ types:
         index: 3
       nanobenana:
         index: 4
+      video:
+        index: 5
+      embedded:
+        index: 6
+      tts:
+        index: 7
+      stt:
+        index: 8
   ChatContent:
     typeId: 2
     nextIndex: 4
@@ -59,7 +73,7 @@ types:
         index: 3
   ChatRole:
     typeId: 3
-    nextIndex: 5
+    nextIndex: 8
     fields:
       user:
         index: 0
@@ -71,6 +85,12 @@ types:
         index: 3
       ask:
         index: 4
+      developer:
+        index: 5
+      jinjatemplate:
+        index: 6
+      embeddingstore:
+        index: 7
   ChatHistory:
     typeId: 5
     nextIndex: 11
@@ -93,7 +113,7 @@ types:
         index: 10
   ChatConfig:
     typeId: 6
-    nextIndex: 58
+    nextIndex: 60
     fields:
       prompt:
         index: 25
@@ -161,6 +181,10 @@ types:
         index: 56
       localModelsPath:
         index: 57
+      summarizedContent:
+        index: 58
+      extractedContent:
+        index: 59
   ChatType:
     typeId: 7
     nextIndex: 6

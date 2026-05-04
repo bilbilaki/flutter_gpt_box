@@ -43,7 +43,6 @@ final class _McpPageState extends State<McpPage>
         _buildSwitchTile(TfHttpReq.instance),
         _buildSwitchTile(TfTerminal.instance),
         _buildSwitchTile(TfUrlLuancher.instance),
-        _buildSwitchTile(TfSMSSender.instance),
         _buildSwitchTile(TfDownloader.instance),
         _buildSwitchTile(TfFileManager.instance),
         _buildSwitchTile(TfWebBuilder.instance),

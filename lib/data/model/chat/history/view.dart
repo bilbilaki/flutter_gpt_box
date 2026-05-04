@@ -64,13 +64,17 @@ final class ChatRoleTitle extends StatelessWidget {
 
 final class ChatHistoryContentView extends StatelessWidget {
   final ChatHistoryItem chatItem;
+  final String? translatedText;        // null if not translated
+  final bool showTranslation;          // false = show original, true = show translation
+  final bool isTranslating;            // show loading indicator
+
   String bas = '';
   void Function()? postCallback;
 
   ChatHistoryContentView({
     required this.chatItem,
     this.postCallback,
-    super.key,
+    super.key, this.translatedText, required this.showTranslation, required this.isTranslating,
   });
 
   @override
@@ -121,7 +125,9 @@ final class ChatHistoryContentView extends StatelessWidget {
   Widget _buildText(BuildContext context, ChatContent content) {
     // If the text contains inline base64 data URIs (e.g. data:image/...),
     // split the text into segments and render decoded images inline.
-    final s = content.raw;
+    final s = (showTranslation && translatedText != null)
+      ? translatedText!
+      : content.raw;
     // Match data:image/...;base64,.... and allow optional parameters like
     // charset before the final `;base64` (e.g. data:image/png;charset=utf-8;base64,...)
     final dataUriRe = RegExp(

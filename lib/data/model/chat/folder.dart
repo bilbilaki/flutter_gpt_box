@@ -16,7 +16,7 @@ final class ChatFolder {
   final String? colorIndicator;
   @JsonKey(includeIfNull: false)
   @HiveField(3)
-  final bool? isExpanded;
+   bool? isExpanded= true;
 
   ChatFolder({
     required this.id,

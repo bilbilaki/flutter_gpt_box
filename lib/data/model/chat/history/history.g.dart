@@ -55,6 +55,9 @@ ChatHistoryItem _$ChatHistoryItemFromJson(Map<String, dynamic> json) =>
       outputTokens: (json['outputTokens'] as num?)?.toInt(),
       totalTokens: (json['totalTokens'] as num?)?.toInt(),
       nanobenana: json['nanobenana'] as String?,
+      translatedContent: json['translatedContent'] as String?,
+      grammarFixedContent: json['grammarFixedContent'] as String?,
+      autoTranslate: json['autoTranslate'] as bool?,
     );
 
 Map<String, dynamic> _$ChatHistoryItemToJson(ChatHistoryItem instance) =>
@@ -71,6 +74,9 @@ Map<String, dynamic> _$ChatHistoryItemToJson(ChatHistoryItem instance) =>
       'outputTokens': ?instance.outputTokens,
       'totalTokens': ?instance.totalTokens,
       'nanobenana': ?instance.nanobenana,
+      'translatedContent': ?instance.translatedContent,
+      'grammarFixedContent': ?instance.grammarFixedContent,
+      'autoTranslate': ?instance.autoTranslate,
     };
 
 const _$ChatRoleEnumMap = {
@@ -79,6 +85,9 @@ const _$ChatRoleEnumMap = {
   ChatRole.system: 'system',
   ChatRole.tool: 'tool',
   ChatRole.ask: 'ask',
+  ChatRole.developer: 'developer',
+  ChatRole.jinjatemplate: 'jinjatemplate',
+  ChatRole.embeddingstore: 'embeddingstore',
 };
 
 ChatContent _$ChatContentFromJson(Map<String, dynamic> json) => ChatContent(
@@ -102,6 +111,10 @@ const _$ChatContentTypeEnumMap = {
   ChatContentType.image: 'image',
   ChatContentType.file: 'file',
   ChatContentType.nanobenana: 'nanobenana',
+  ChatContentType.video: 'video',
+  ChatContentType.embedded: 'embedded',
+  ChatContentType.tts: 'tts',
+  ChatContentType.stt: 'stt',
 };
 
 ChatSettings _$ChatSettingsFromJson(Map<String, dynamic> json) => ChatSettings(

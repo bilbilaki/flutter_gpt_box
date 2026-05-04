@@ -4,7 +4,8 @@ typedef OaiHistoryItem = ChatCompletionMessage;
 typedef OaiContent = ChatCompletionMessageContentPart;
 
 extension ChatHistoryX on ChatHistory {
-  static ChatHistory get empty => ChatHistory.noid(lastResponseId: null,items: []);
+  static ChatHistory get empty =>
+      ChatHistory.noid(lastResponseId: null, items: []);
 
   String get toMarkdown {
     final sb = StringBuffer();
@@ -41,7 +42,7 @@ extension ChatHistoryX on ChatHistory {
     bool? isPinned,
     String? colorIndicator,
     String? folderId,
-    String? l
+    String? l,
   }) {
     return ChatHistory(
       // Preserve lastResponseId unless an explicit override is provided.
@@ -60,7 +61,7 @@ extension ChatHistoryX on ChatHistory {
 
   bool containsKeywords(List<String> keywords) {
     return items.any(
-      (e) => e.content.any((e) => keywords.any((k)=> e.raw.contains(k))),
+      (e) => e.content.any((e) => keywords.any((k) => e.raw.contains(k))),
     );
   }
 }
@@ -75,6 +76,10 @@ extension ChatHistoryItemX on ChatHistoryItem {
             ChatContentType.audio => '[$id](${e.raw})',
             ChatContentType.file => '[$id](${e.raw})',
             ChatContentType.nanobenana => '![$id](${e.raw})',
+            ChatContentType.video => '[$id](${e.raw})',
+            ChatContentType.embedded => '[$id](${e.raw})',
+            ChatContentType.tts => '[$id](${e.raw})',
+            ChatContentType.stt => '[$id](${e.raw})',
           },
         )
         .join('\n');
@@ -136,6 +141,20 @@ extension ChatHistoryItemX on ChatHistoryItem {
           toolCallId: toolCallId ?? '',
           content: content.map((e) => e.raw).join('\n'),
         );
+      case ChatRole.developer:
+        return ChatCompletionMessage.developer(
+          content: ChatCompletionDeveloperMessageContent.text(
+            content.map((e) => e.raw).join('\n'),
+          ),
+        );
+      case ChatRole.jinjatemplate:
+        // TODO: Handle this case.
+        return ChatCompletionMessage.fromJson({});
+      case ChatRole.embeddingstore:
+        return ChatCompletionMessage.function(
+          content: content.map((e) => e.raw).join('\n'),
+          name: toolCallId ?? '',
+        );
     }
   }
 }
@@ -180,11 +199,17 @@ extension ChatContentX on ChatContent {
     }
   }
 
-  ChatContent copyWith({ChatContentType? type, String? raw, String? id, String? lastResponseId}) {
+  ChatContent copyWith({
+    ChatContentType? type,
+    String? raw,
+    String? id,
+    String? lastResponseId,
+  }) {
     return ChatContent(
       type: type ?? this.type,
       raw: raw ?? this.raw,
-      id: id ?? this.id, lastResponseId:lastResponseId??this.lastResponseId ,
+      id: id ?? this.id,
+      lastResponseId: lastResponseId ?? this.lastResponseId,
     );
   }
 

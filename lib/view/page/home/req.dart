@@ -109,6 +109,21 @@ List<Map<String, dynamic>> _chatContentToResponsesInput(
         return {'type': 'input_file', 'file_url': c.raw};
       case ChatContentType.nanobenana:
         return {'type': 'input_image', 'image_url': c.raw};
+      case ChatContentType.video:
+
+        ///TODO check and correctly implanting here
+        return {
+          'type': 'input_image',
+          'image_url': [c.raw],
+        };
+      case ChatContentType.embedded:
+        return {'type': 'input_text', 'text': c.raw};
+
+      case ChatContentType.tts:
+        return {'type': 'input_text', 'text': c.raw};
+
+      case ChatContentType.stt:
+        return {'type': 'input_audio', 'audio_url': c.raw};
     }
   }).toList();
 }
@@ -124,10 +139,8 @@ bool _validChatCfg(BuildContext context) {
   }
   return true;
 }
-Future<void> _rollingSummarize(
-  BuildContext context, 
-  String chatId, 
-) async {
+
+Future<void> _rollingSummarize(BuildContext context, String chatId) async {
   final workingChat = allHistories[chatId];
   if (workingChat == null) {
     final msg = 'Chat($chatId) not found';
@@ -139,51 +152,55 @@ Future<void> _rollingSummarize(
   if (chat == null || chat.items.length < 15) return; // Only summarize if long
 
   // 1. Define the "Chunk" to summarize (skip the Anchor at index 0, keep recent 5)
-  final rangeStart = 1; 
-  final rangeEnd = chat.items.length - 5; 
-  
+  final rangeStart = 1;
+  final rangeEnd = chat.items.length - 5;
+
   if (rangeEnd <= rangeStart) return;
 
   final chunkToSummarize = chat.items.getRange(rangeStart, rangeEnd).toList();
 
   // 2. Send to API for summarization
   // Use a lightweight request here, separate from the main chat flow
-  final summaryPrompt = "Summarize the following conversation thread into a concise paragraph, preserving key facts and user preferences:\n\n${chunkToSummarize.map((e) => "${e.role.name}: ${e.toMarkdown}").join("\n")}";
-    final questionContents = <ChatContent>[ChatContent.text(summaryPrompt)];
+  final summaryPrompt =
+      "Summarize the following conversation thread into a concise paragraph, preserving key facts and user preferences:\n\n${chunkToSummarize.map((e) => "${e.role.name}: ${e.toMarkdown}").join("\n")}";
+  final questionContents = <ChatContent>[ChatContent.text(summaryPrompt)];
 
-final question = ChatHistoryItem.gen(
+  final question = ChatHistoryItem.gen(
     content: questionContents,
     role: ChatRole.user,
   );
   final msgs = (await _historyCarried(workingChat)).toList();
   msgs.add(await question.toOpenAI());
 
- // final summary = await Cfg.client.createChatCompletion(request:CreateChatCompletionRequest(model: ChatCompletionModel.modelId(  Cfg.current.altrModel??Cfg.current.model), messages: [] ); // Use summarizerModelId here
- CreateChatCompletionResponse? resp;
-    try {
-      resp = await Cfg.client.createChatCompletion(
-        request: CreateChatCompletionRequest(
-          messages: msgs,
-          model: ChatCompletionModel.modelId(Cfg.current.altrModel??Cfg.current.model),
+  // final summary = await Cfg.client.createChatCompletion(request:CreateChatCompletionRequest(model: ChatCompletionModel.modelId(  Cfg.current.altrModel??Cfg.current.model), messages: [] ); // Use summarizerModelId here
+  CreateChatCompletionResponse? resp;
+  try {
+    resp = await Cfg.client.createChatCompletion(
+      request: CreateChatCompletionRequest(
+        messages: msgs,
+        model: ChatCompletionModel.modelId(
+          Cfg.current.altrModel ?? Cfg.current.model,
         ),
-      );
-    } catch (e, s) {
-      _onErr(e, s, chatId, 'MCP');
-      return;
-    }
+      ),
+    );
+  } catch (e, s) {
+    _onErr(e, s, chatId, 'MCP');
+    return;
+  }
   // 3. "Collapse" the history
   // Remove the old messages
   chat.items.removeRange(rangeStart, rangeEnd);
-  
+
   // Insert the summary
   final summaryItem = ChatHistoryItem.single(
     role: ChatRole.system, // System role works best for context injection
     raw: "PREVIOUS CONTEXT SUMMARY: ${resp.choices.first.message.content}",
   );
-  
+
   chat.items.insert(rangeStart, summaryItem);
   _chatRN.notify(); // Update UI
 }
+
 Future<Iterable<ChatCompletionMessage>> _historyCarried(
   ChatHistory workingChat,
 ) async {
@@ -202,56 +219,63 @@ Future<Iterable<ChatCompletionMessage>> _historyCarried(
   final promptStr = promptParts.join('\n\n');
   // Inside _historyCarried function in req.dart
 
-// 1. Keep your existing System Prompt logic
-final prompt = promptStr.isNotEmpty 
-    ? await ChatHistoryItem.single(role: ChatRole.system, raw: promptStr).toOpenAI() 
-    : null;
+  // 1. Keep your existing System Prompt logic
+  final prompt = promptStr.isNotEmpty
+      ? await ChatHistoryItem.single(
+          role: ChatRole.system,
+          raw: promptStr,
+        ).toOpenAI()
+      : null;
 
-// 2. Identify the "Anchor" (The very first User message)
-final firstUserItem = workingChat.items.firstWhereOrNull((e) => e.role.isUser);
-ChatCompletionMessage? anchorMsg;
-if (firstUserItem != null) {
-  anchorMsg = await firstUserItem.toOpenAI();
-}
+  // 2. Identify the "Anchor" (The very first User message)
+  final firstUserItem = workingChat.items.firstWhereOrNull(
+    (e) => e.role.isUser,
+  );
+  ChatCompletionMessage? anchorMsg;
+  if (firstUserItem != null) {
+    anchorMsg = await firstUserItem.toOpenAI();
+  }
 
-// 3. Build the "Sliding Window" (Recent Messages)
-var count = 0;
-final recentMsgs = <ChatCompletionMessage>[];
-// We use a Set to avoid duplicating the Anchor if it's also in the recent list
-final includedIds = <String>{}; 
+  // 3. Build the "Sliding Window" (Recent Messages)
+  var count = 0;
+  final recentMsgs = <ChatCompletionMessage>[];
+  // We use a Set to avoid duplicating the Anchor if it's also in the recent list
+  final includedIds = <String>{};
 
-for (final item in workingChat.items.reversed) {
-  if (count > config.historyLen) break;
-  if (item.role.isSystem) continue;
+  for (final item in workingChat.items.reversed) {
+    if (count > config.historyLen) break;
+    if (item.role.isSystem) continue;
 
-  // Your existing logic for skipping large tool outputs
-  final isTool = item.role.isTool;
-  final rawLen = item.toMarkdown.length;
-  if (isTool && rawLen > 4000 && count > 2) continue;
+    // Your existing logic for skipping large tool outputs
+    final isTool = item.role.isTool;
+    final rawLen = item.toMarkdown.length;
+    if (isTool && rawLen > 4000 && count > 2) continue;
 
-  final msg = await item.toOpenAI();
-  recentMsgs.add(msg);
-  includedIds.add(item.id); // Assuming ChatHistoryItem has a unique 'id'
-  count++;
-}
+    final msg = await item.toOpenAI();
+    recentMsgs.add(msg);
+    includedIds.add(item.id); // Assuming ChatHistoryItem has a unique 'id'
+    count++;
+  }
 
-// 4. Assemble the Final Context Stack
-final finalMsgs = <ChatCompletionMessage>[];
+  // 4. Assemble the Final Context Stack
+  final finalMsgs = <ChatCompletionMessage>[];
 
-// A. System Prompt (Always First)
-if (prompt != null) finalMsgs.add(prompt);
+  // A. System Prompt (Always First)
+  if (prompt != null) finalMsgs.add(prompt);
 
-// B. The Anchor (First User Message) - Only add if NOT already in recentMsgs
-if (anchorMsg != null && firstUserItem != null && !includedIds.contains(firstUserItem.id)) {
-   // OPTIONAL: You can inject a visual separator to help the AI understand this is old context
-  //  anchorMsg = anchorMsg.copyWith(content: "Original Request: " + anchorMsg.content); 
-   finalMsgs.add(anchorMsg);
-}
+  // B. The Anchor (First User Message) - Only add if NOT already in recentMsgs
+  if (anchorMsg != null &&
+      firstUserItem != null &&
+      !includedIds.contains(firstUserItem.id)) {
+    // OPTIONAL: You can inject a visual separator to help the AI understand this is old context
+    //  anchorMsg = anchorMsg.copyWith(content: "Original Request: " + anchorMsg.content);
+    finalMsgs.add(anchorMsg);
+  }
 
-// C. The Sliding Window (Recent Context)
-finalMsgs.addAll(recentMsgs.reversed);
+  // C. The Sliding Window (Recent Context)
+  finalMsgs.addAll(recentMsgs.reversed);
 
-return finalMsgs;
+  return finalMsgs;
 }
 
 void _onCreateRequest(BuildContext context, String chatId) async {
@@ -279,7 +303,7 @@ void _onCreateRequest(BuildContext context, String chatId) async {
     (ChatType.audio, _) => _onAudioModel,
     (ChatType.voice, _) => _onTtsModel,
     (ChatType.voicejustin, _) => _onCreateText,
-    (ChatType.autoenglishtrans, _) => _onCreateTextTranslated,
+    (ChatType.autoenglishtrans, _) => _onCreateText,
   };
 
   return await func(context, chatId, input, _filesPicked.value);
@@ -359,7 +383,7 @@ Future<void> _onCreateTextResponses(
   _loadingChatIds.value.add(chatId);
   _loadingChatIds.notify();
   _autoHideCtrl.autoHideEnabled = false;
-  
+
   final responses = ResponsesService();
   final tools = await _responsesToolsForChat(workingChat0);
   final instructions = _buildPinnedInstructions(cfg);
@@ -515,6 +539,7 @@ Future<void> _onCreateTextResponses(
     _chatItemRNMap.remove(mcpLogItem.id)?.dispose();
   }
 }
+
 Future<void> _onCreateTextModelLocal(
   BuildContext context,
   String chatId,
@@ -531,7 +556,7 @@ Future<void> _onCreateTextModelLocal(
 
   final config = Cfg.current;
   final modelPath = config.selectedLocalModelPath;
-  
+
   if (modelPath == null || modelPath.isEmpty) {
     final msg = 'No local model selected';
     Loggers.app.warning(msg);
@@ -566,7 +591,7 @@ Future<void> _onCreateTextModelLocal(
   _chatRN.notify();
   _autoScroll(chatId);
   _filesPicked.value = [];
-  
+
   final titleCompleter = await genChatTitle(context, chatId, config);
 
   // Create assistant reply placeholder
@@ -625,15 +650,13 @@ Future<void> _onCreateTextModelLocal(
     _storeChat(chatId);
     await titleCompleter?.future;
     await Future.delayed(const Duration(milliseconds: 300));
-
   } catch (e, s) {
     _onErr(e, s, chatId, 'Local model inference');
-    
+
     // Add error message to chat
     assistReply.content.clear();
     assistReply.content.add(ChatContent.text('Error: $e'));
     _chatItemRNMap[assistReply.id]?.notify();
-    
   } finally {
     // Cleanup
     _loadingChatIds.value.remove(chatId);
@@ -669,12 +692,9 @@ Future<List<LLMMessage>> _prepareLocalModelMessages(
     if (memories.isNotEmpty) memories.join('\n'),
   ];
   final promptStr = promptParts.join('\n\n');
-  
+
   if (promptStr.isNotEmpty) {
-    messages.add(LLMMessage(
-      role: LLMRole.system,
-      content: promptStr,
-    ));
+    messages.add(LLMMessage(role: LLMRole.system, content: promptStr));
   }
 
   final ignoreCtxCons = workingChat.settings?.ignoreContextConstraint == true;
@@ -682,33 +702,31 @@ Future<List<LLMMessage>> _prepareLocalModelMessages(
     // Convert all items
     for (final item in workingChat.items) {
       if (item.role.isSystem) continue;
-      
+
       final content = await _itemToContent(item);
-      messages.add(LLMMessage(
-        role: _convertChatRoleToLLMRole(item.role),
-        content: content,
-      ));
+      messages.add(
+        LLMMessage(
+          role: _convertChatRoleToLLMRole(item.role),
+          content: content,
+        ),
+      );
     }
-    
+
     // Add current question
     final questionContent = await _itemToContent(question);
-    messages.add(LLMMessage(
-      role: LLMRole.user,
-      content: questionContent,
-    ));
-    
+    messages.add(LLMMessage(role: LLMRole.user, content: questionContent));
+
     return messages;
   }
 
   // 2. Anchor message
-  final firstUserItem = workingChat.items.firstWhereOrNull((e) => e.role.isUser);
+  final firstUserItem = workingChat.items.firstWhereOrNull(
+    (e) => e.role.isUser,
+  );
   LLMMessage? anchorMsg;
   if (firstUserItem != null) {
     final content = await _itemToContent(firstUserItem);
-    anchorMsg = LLMMessage(
-      role: LLMRole.user,
-      content: content,
-    );
+    anchorMsg = LLMMessage(role: LLMRole.user, content: content);
   }
 
   // 3. Sliding window
@@ -725,16 +743,17 @@ Future<List<LLMMessage>> _prepareLocalModelMessages(
     if (isTool && rawLen > 4000 && count > 2) continue;
 
     final content = await _itemToContent(item);
-    recentMsgs.add(LLMMessage(
-      role: _convertChatRoleToLLMRole(item.role),
-      content: content,
-    ));
+    recentMsgs.add(
+      LLMMessage(role: _convertChatRoleToLLMRole(item.role), content: content),
+    );
     includedIds.add(item.id);
     count++;
   }
 
   // 4. Assemble final messages
-  if (anchorMsg != null && firstUserItem != null && !includedIds.contains(firstUserItem.id)) {
+  if (anchorMsg != null &&
+      firstUserItem != null &&
+      !includedIds.contains(firstUserItem.id)) {
     messages.add(anchorMsg);
   }
 
@@ -742,13 +761,11 @@ Future<List<LLMMessage>> _prepareLocalModelMessages(
 
   // Add current question
   final questionContent = await _itemToContent(question);
-  messages.add(LLMMessage(
-    role: LLMRole.user,
-    content: questionContent,
-  ));
+  messages.add(LLMMessage(role: LLMRole.user, content: questionContent));
 
   return messages;
 }
+
 LLMRole _convertChatRoleToLLMRole(ChatRole chatRole) {
   switch (chatRole) {
     case ChatRole.user:
@@ -769,13 +786,20 @@ Future<String> _itemToContent(ChatHistoryItem item) async {
   // you might need to adapt this. Otherwise:
   return item.content.map((c) => c.raw).join('\n');
 }
+
 Future<void> _onCreateText(
   BuildContext context,
   String chatId,
   String input,
   List<String> files,
 ) async {
- if (Cfg.current.useLocalModel) {
+    if (isAutoTranslateEnable) {
+    final i = input;
+    final ii = await MovieTvTranslator().mainTreanslator(i);
+    if (ii != null && ii != ''&&ii.contains("backtrac")) input = ii;
+  }
+
+  if (Cfg.current.useLocalModel) {
     await _onCreateTextModelLocal(context, chatId, input, files);
     return;
   }
@@ -790,8 +814,8 @@ Future<void> _onCreateText(
     context.showSnackBar(msg);
     return;
   }
-  final config = Cfg.current;
 
+  final config = Cfg.current;
   final questionContents = <ChatContent>[ChatContent.text(input)];
   for (final file in files) {
     if (!modelUseFilePath) {
@@ -840,11 +864,31 @@ Future<void> _onCreateText(
           messages: msgs,
           model: ChatCompletionModel.modelId(config.model),
           tools: availableMcp.toList(),
+          temperature: ss.temperature.get(),
         ),
       );
     } catch (e, s) {
-      _onErr(e, s, chatId, 'MCP');
-      return;
+      try {
+        resp = await Cfg.client.createChatCompletion(
+          request: CreateChatCompletionRequest(
+            messages: msgs,
+            model: ChatCompletionModel.modelId(config.model),
+            tools: availableMcp.toList(),
+          ),
+        );
+      } catch (e, s) {
+        try {
+          resp = await Cfg.client.createChatCompletion(
+            request: CreateChatCompletionRequest(
+              messages: msgs,
+              model: ChatCompletionModel.modelId(config.model),
+            ),
+          );
+        } catch (e, s) {
+          _onErr(e, s, chatId, 'MCP');
+          return;
+        }
+      }
     }
 
     final firstMcpReply = resp.choices.firstOrNull;
@@ -951,6 +995,7 @@ Future<void> _onCreateText(
         await Future.delayed(const Duration(milliseconds: 300));
       },
       onError: (e, s) {
+        _storeChat(chatId);
         _onErr(e, s, chatId, 'Listen text stream');
       },
     );
@@ -1874,220 +1919,5 @@ Future<void> _onTtsModel(
     _loadingChatIds.value.remove(chatId);
     _loadingChatIds.notify();
     _onErr(e, s, chatId, 'Catch audio stream');
-  }
-}
-
-Future<void> _onCreateTextTranslated(
-  BuildContext context,
-  String chatId,
-  String input,
-  List<String> files,
-) async {
-  final workingChat = allHistories[chatId];
-  if (workingChat == null) {
-    final msg = 'Chat($chatId) not found';
-    Loggers.app.warning(msg);
-    context.showSnackBar(msg);
-    return;
-  }
-  const int maxAttempts = 10;
-  const Duration delayBetween = Duration(milliseconds: 300);
-  final String translatePrompt =
-      'just without any changes to text content translate that to English and return translated text without anything more . Text Content : $input';
-  String translated = '';
-  CreateChatCompletionResponse? translatetxt;
-  for (int attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      translatetxt = await Cfg.client.createChatCompletion(
-        request: CreateChatCompletionRequest(
-          messages: [
-            ChatCompletionMessage.user(
-              content: ChatCompletionUserMessageContent.string(translatePrompt),
-            ),
-          ],
-          model: ChatCompletionModel.modelId(Cfg.current.model),
-        ),
-      );
-      translated =
-          translatetxt.choices.firstOrNull?.message.content?.trim() ?? '';
-    } catch (e) {
-      translated = '';
-    }
-    if (translated.isNotEmpty) break;
-    await Future.delayed(delayBetween);
-  }
-  if (translated.isEmpty) {
-    final msg = 'Translator returned empty result';
-    Loggers.app.warning(msg);
-    context.showSnackBar(msg);
-    return;
-  }
-  final questionContents = <ChatContent>[ChatContent.text(translated)];
-  for (final file in files) {
-    if (!modelUseFilePath) {
-      final content = await contentFromPath(file);
-      questionContents.add(content);
-    } else if (modelUseFilePath) {
-      final content = <ChatContent>[
-        ChatContent.text(
-          'For Using Tools with file operation use this File Path: $file',
-        ),
-      ];
-      questionContents.addAll(content);
-      modelUseFilePath = false;
-    }
-  }
-  final question = ChatHistoryItem.gen(
-    content: questionContents,
-    role: ChatRole.user,
-  );
-  final msgs = (await _historyCarried(workingChat)).toList();
-  msgs.add(await question.toOpenAI());
-
-  workingChat.items.add(question);
-  inputCtrl.clear();
-  _chatRN.notify();
-  _autoScroll(chatId);
-  final titleCompleter = await genChatTitle(context, chatId, Cfg.current);
-
-  final mcpCompatible = Cfg.isMcpCompatible();
-
-  final chatScopeUseMcp = workingChat.settings?.useTools != false;
-
-  final availableMcp = await OpenAIFuncCalls.tools;
-  final isMcpEmpty = availableMcp.isEmpty;
-
-  if (mcpCompatible && chatScopeUseMcp && !isMcpEmpty) {
-    final mcpReply = ChatHistoryItem.single(role: ChatRole.tool, raw: '');
-    workingChat.items.add(mcpReply);
-    _chatRN.notify();
-    _autoScroll(chatId);
-
-    CreateChatCompletionResponse? resp;
-    try {
-      resp = await Cfg.client.createChatCompletion(
-        request: CreateChatCompletionRequest(
-          messages: msgs,
-          model: ChatCompletionModel.modelId(Cfg.current.model),
-          tools: availableMcp.toList(),
-        ),
-      );
-    } catch (e, s) {
-      _onErr(e, s, chatId, 'MCP');
-      return;
-    }
-
-    final firstMcpReply = resp.choices.firstOrNull;
-    final mcpCalls = firstMcpReply?.message.toolCalls;
-    if (mcpCalls != null && mcpCalls.isNotEmpty) {
-      final assistReply = ChatHistoryItem.gen(
-        role: ChatRole.assist,
-        content: [],
-        toolCalls: mcpCalls,
-      );
-      workingChat.items.add(assistReply);
-      msgs.add(await assistReply.toOpenAI());
-      void onMcpLog(String log) {
-        final content = ChatContent.text(log);
-        if (mcpReply.content.isEmpty) {
-          mcpReply.content.add(content);
-        } else {
-          mcpReply.content[0] = content;
-        }
-        _chatItemRNMap[mcpReply.id]?.notify();
-      }
-
-      for (final mcpCall in mcpCalls) {
-        final contents = <ChatContent>[];
-        try {
-          final msg = await appResourcePool.withResource(() async {
-            return await OpenAIFuncCalls.handle(
-              mcpCall,
-              (e, s) => _askMcpConfirm(context, e, s),
-              onMcpLog,
-            );
-          });
-          if (msg != null) contents.addAll(msg);
-        } catch (e, s) {
-          _onErr(e, s, chatId, 'MCP call');
-        }
-        if (contents.isNotEmpty && contents.every((e) => e.raw.isNotEmpty)) {
-          final historyItem = ChatHistoryItem.gen(
-            role: ChatRole.tool,
-            content: contents,
-            toolCallId: mcpCall.id,
-          );
-          workingChat.items.add(historyItem);
-          msgs.add(await historyItem.toOpenAI());
-        }
-      }
-    }
-
-    _chatItemRNMap[mcpReply.id]?.notify();
-    workingChat.items.remove(mcpReply);
-    _chatRN.notify();
-    _chatItemRNMap.remove(mcpReply.id)?.dispose();
-  }
-
-  final chatStream = Cfg.client.createChatCompletionStream(
-    request: CreateChatCompletionRequest(
-      messages: msgs,
-      model: ChatCompletionModel.modelId(Cfg.current.model),
-    ),
-  );
-  final assistReply = ChatHistoryItem.single(role: ChatRole.assist);
-  workingChat.items.add(assistReply);
-  _chatRN.notify();
-  _filesPicked.value = [];
-
-  try {
-    final sub = chatStream.listen(
-      (eve) async {
-        final delta = eve.choices.firstOrNull?.delta;
-        if (delta == null) return;
-
-        final content = delta.content;
-        if (content != null) {
-          final prev = assistReply.content.isEmpty
-              ? ''
-              : assistReply.content.map((e) => e.raw).join();
-          final merged = '$prev$content';
-          final parts = splitDataUrisToChatContents(merged);
-          assistReply.content
-            ..clear()
-            ..addAll(parts);
-          _chatItemRNMap[assistReply.id]?.notify();
-        }
-
-        final deltaResoningContent = delta.reasoningContent;
-        if (deltaResoningContent != null) {
-          final originReasoning = assistReply.reasoning ?? '';
-          final newReasoning = '$originReasoning$deltaResoningContent';
-          assistReply.reasoning = newReasoning;
-          _chatItemRNMap[assistReply.id]?.notify();
-        }
-
-        _autoScroll(chatId);
-      },
-      onDone: () async {
-        _onStopStreamSub(chatId);
-        _loadingChatIds.value.remove(chatId);
-        _loadingChatIds.notify();
-        _autoHideCtrl.autoHideEnabled = true;
-
-        _storeChat(chatId);
-
-        await titleCompleter?.future;
-        await Future.delayed(const Duration(milliseconds: 300));
-      },
-      onError: (e, s) {
-        _onErr(e, s, chatId, 'Listen text stream');
-      },
-    );
-    _chatStreamSubs[chatId] = sub;
-  } catch (e, s) {
-    _loadingChatIds.value.remove(chatId);
-    _loadingChatIds.notify();
-    _onErr(e, s, chatId, 'Catch text stream');
   }
 }

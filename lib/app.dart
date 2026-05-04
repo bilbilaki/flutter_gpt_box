@@ -10,6 +10,7 @@ import 'package:gpt_box/generated/l10n/l10n.dart';
 import 'package:gpt_box/view/page/home/home.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:world_countries/world_countries.dart';
 
 part 'intro.dart';
 const bg = Color(0xFF000000);
@@ -179,6 +180,8 @@ class MyApp extends StatelessWidget {
       title: 'GPT Box fork',
       locale: locale.toLocale,
       localizationsDelegates: const [
+            TypedLocaleDelegate(), // required for language picker
+
         ...AppLocalizations.localizationsDelegates,
         LibLocalizations.delegate,
       ],

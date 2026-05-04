@@ -21,8 +21,8 @@ abstract class ChatConfig with _$ChatConfig {
     @Default(ChatConfigX.defaultHistoryLen) int historyLen,
     @Default(ChatConfigX.defaultId) String id,
     @Default('') String name,
-    @Default(false)bool useLocalModel,
-    @Default([])List<String> listAvaliableLocalModel,
+    @Default(false) bool useLocalModel,
+    @Default([]) List<String> listAvaliableLocalModel,
     String? selectedLocalModelName,
     String? selectedLocalModelPath,
     String? localModelsPath,
@@ -38,7 +38,7 @@ abstract class ChatConfig with _$ChatConfig {
     String? trnscrbModel,
     String? defaultTranslateLanguage,
 
-    // Newly added nullable fields
+    // Newly added nullable fields (existing)
     String? file,
     String? image,
     String? audio,
@@ -50,6 +50,10 @@ abstract class ChatConfig with _$ChatConfig {
     @Default(0) int proxyPort,
     @Default(ChatConfigX.defaultProxyType) String proxyType,
     @Default(false) bool proxyEnabled,
+
+    // New fields for summarized and extracted content
+    String? summarizedContent,
+    String? extractedContent,
   }) = _ChatConfig;
 
   factory ChatConfig.fromJson(Map<String, dynamic> json) =>
@@ -78,12 +82,10 @@ extension ChatConfigX on ChatConfig {
   static const defaultProxyPort = 0;
   static const defaultProxyType = 'http';
   static const defaultProxyEnabled = false;
-    static const defaultusingResponseAPI = false;
-    static const defaultSelectedLocalModelName='';
-    static const defaultSelectedLocalModelPath='';
-    static const defaultuseLocalModel = false;
-
-
+  static const defaultusingResponseAPI = false;
+  static const defaultSelectedLocalModelName = '';
+  static const defaultSelectedLocalModelPath = '';
+  static const defaultuseLocalModel = false;
 
   static const lastResponseId = null;
 
@@ -152,16 +154,15 @@ extension ChatConfigX on ChatConfig {
       genTitlePrompt: params_['genTitlePrompt'],
       genTitleModel: params_['genTitleModel'],
       imgModel: params_['imgModel'],
-      // Parse newly added nullable fields
+      // Existing newly added nullable fields
       file: params_['file'],
       image: params_['image'],
       audio: params_['audio'],
-      lastResponseId: params_['lastResponseId']??lastResponseId,
+      lastResponseId: params_['lastResponseId'] ?? lastResponseId,
       historyLen: params_['historyLen'] ?? defaultHistoryLen,
       tskrModel: params_['TaskerModel'] ?? defaulttaskrModel,
       audioModel: params_['AudioModel'] ?? defaultaudioModel,
       altrModel: params_['AlterModel'] ?? defaultaltrModel,
-
       wrkrModel: params_['TaskerModel'] ?? defaultwrkrModel,
       trnscrbModel: params_['TaskerModel'] ?? defaulttrnscrbModel,
       defaultTranslateLanguage:
@@ -174,11 +175,17 @@ extension ChatConfigX on ChatConfig {
       proxyType: params_['proxyType'] ?? defaultProxyType,
       proxyEnabled: params_['proxyEnabled'] ?? defaultProxyEnabled,
       usingResponseAPI: params_['usingResponseAPI'] ?? defaultusingResponseAPI,
-      useLocalModel: params_['useLocalModel']?? defaultuseLocalModel,
-      selectedLocalModelName: params_['selectedLocalModelName']??defaultSelectedLocalModelName,
-      selectedLocalModelPath: params_['selectedLocalModelPath']??defaultSelectedLocalModelPath,
-      listAvaliableLocalModel: params_['listAvaliableLocalModel']??[],
-      localModelsPath : params_['localModelsPath']
+      useLocalModel: params_['useLocalModel'] ?? defaultuseLocalModel,
+      selectedLocalModelName:
+          params_['selectedLocalModelName'] ?? defaultSelectedLocalModelName,
+      selectedLocalModelPath:
+          params_['selectedLocalModelPath'] ?? defaultSelectedLocalModelPath,
+      listAvaliableLocalModel: params_['listAvaliableLocalModel'] ?? [],
+      localModelsPath: params_['localModelsPath'],
+
+      // New fields for summarized and extracted content
+      summarizedContent: params_['summarizedContent'],
+      extractedContent: params_['extractedContent'],
     );
   }
 }

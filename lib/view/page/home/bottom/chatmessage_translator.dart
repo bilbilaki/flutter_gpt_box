@@ -8,13 +8,13 @@ class MovieTvTranslator {
     baseUrl: Cfg.current.url,
   );
 
-  Future<String> mainTreanslator(String text) async {
-    final targetLanguage = Cfg.current.defaultTranslateLanguage ?? 'English';
+  Future<String> mainTreanslator(String text, {String? targetLang}) async {
+    final targetLanguage =targetLang!=null?targetLang.isNotEmpty?targetLang: Cfg.current.defaultTranslateLanguage ?? 'English':'English';
 
     return persistentCache.runOrGet(text, targetLanguage, () async {
       final res = await client.createChatCompletion(
         request: openai.CreateChatCompletionRequest(
-          model: openai.ChatCompletionModel.modelId(Cfg.current.model),
+          model: openai.ChatCompletionModel.modelId(Cfg.current.trnscrbModel??Cfg.current.model),
           messages: [
             openai.ChatCompletionMessage.system(
               content:
@@ -35,7 +35,7 @@ Text to translate: """$text"""''',
             ),
           ],
 
-          temperature: aiSettings.temperature,
+          temperature: ss.temperature.get(),
         ),
       );
       return (res.choices.first.message.content ?? '').trim();

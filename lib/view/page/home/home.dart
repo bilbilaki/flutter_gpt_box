@@ -26,7 +26,7 @@ import 'package:gpt_box/data/res/openai.dart';
 import 'package:gpt_box/data/store/all.dart';
 import 'package:gpt_box/data/store/dummy.dart';
 import 'package:gpt_box/data/store/setting.dart';
-import 'package:gpt_box/main.dart' show  persistentCache;
+import 'package:gpt_box/main.dart' show persistentCache;
 import 'package:gpt_box/view/loader/main.dart';
 import 'package:gpt_box/view/page/home/bottom/prompt_generator.dart';
 import 'package:gpt_box/view/page/settings/setting.dart';
@@ -76,6 +76,7 @@ part 'package:gpt_box/core/responses/chat_tool_call.dart';
 
 //part '../../widget/v1.dart';
 final aiSettings = AiSettings();
+  bool isAutoTranslateEnable = false;
 
 // Global resource pool to limit concurrent heavy operations (file IO, base64, tool calls).
 // Size tuned conservatively; adjust based on profiling. Timeout omitted to avoid unintended failures.
